@@ -30,13 +30,8 @@
     GitHub = "thomas-fossati"
 
     [people.setrofim]
-    Name = "Sergei Trofmimov"
-    Email = "sergei.trofmimov@arm.com"
-    GitHub = "setrofim"
-
-    [people.setrofim]
-    Name = "Sergei Trofmimov"
-    Email = "sergei.trofmimov@arm.com"
+    Name = "Sergei Trofimov"
+    Email = "sergei.trofimov@arm.com"
     GitHub = "setrofim"
 
     [people.yogeshdeshpande]
