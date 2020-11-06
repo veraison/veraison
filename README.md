@@ -16,7 +16,7 @@ Project _VERAISON_: **VER**ific**A**t**I**on of atte**S**tati**ON**
 </p>
 
 ## Briefly...
-Project Veraison will build software components that can be used to build Attestation Verification Services.
+Project Veraison will build software components that can be used to build an Attestation Verification Service.
 
 ## Background
 Attestation is the system by which something produces evidence about itself that another party can use to evaluate the trustworthiness of that entity. A critical part of establishing trust based on that evidence is Verifying what is presented to ensure it meets a policy established to prove trustworthiness. The act of Verification will often require comparing evidence against reference values or checking cryptographic signing by a known trust anchors. This is a complex task to be performed by an arbitrary user of a system and it is often delegated to a trusted Verification Service instead. The nature of the Service will depend upon the deployment - it may be a local software component or it may reside as a network or internet accessible component. The actual nature of the Service will depend upon the actual deployment. The Verification Service will need up to date data for the process of appraising the evidence presented to it. This must be obtained from authoritative sources, which normally implies establishing business relationships between the Verification Service and those sources. 

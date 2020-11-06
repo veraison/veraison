@@ -10,7 +10,6 @@
     people = [
       "simonfrostarm", 
       "thomasfossati",
-      "setrofim",     
       "yogeshdeshpande",   
       "manugupta",  
     ]
@@ -28,11 +27,6 @@
     Name = "Thomas Fossati"
     Email = "thomas.fossati@arm.com"
     GitHub = "thomas-fossati"
-
-    [people.setrofim]
-    Name = "Sergei Trofimov"
-    Email = "sergei.trofimov@arm.com"
-    GitHub = "setrofim"
 
     [people.yogeshdeshpande]
     Name = "Yogesh Deshpande"
