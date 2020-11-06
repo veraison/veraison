@@ -23,6 +23,11 @@
     Email = "simon.frost@arm.com"
     GitHub = "simonfrost-arm"
 
+    [people.sergeitrofimov]
+    Name = "Sergei Trofimov"
+    Email = "sergei.trofimov@arm.com"
+    GitHub = "setrofim"
+
     [people.thomasfossati]
     Name = "Thomas Fossati"
     Email = "thomas.fossati@arm.com"
