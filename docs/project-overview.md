@@ -23,7 +23,7 @@ To ensure that the core components are structured correctly for use as a service
 Further details on the above will be available within specific documentation on the reference deployment. (ToDo) 
 
 ## Scope 
-The following is the intended scope of the Veraison Project. This is being listed to help others understand the intended functionality. If you're considering adopting or contributing to Veraison and you think there's something missing for the core of an Attestation Verification service, let us know via. The following list should not be treated as a backlog, work items will be recorded elsewhere. 
+The following is the intended scope of the Veraison Project. This is being listed to help others understand the intended functionality. If you're considering adopting or contributing to Veraison and you think there's something missing for the core of an Attestation Verification service, let us know via the Zulip channel. The following list should not be treated as a backlog, work items will be recorded elsewhere. 
 ### Scope - Verification
 * An API to which an Attestation token, containing evidence claims, can be submitted. The API can either produce a simple boolean 'approved' response or a complex set of Attestation Results (verified claim summary). The results will be in a (signed) JSON format.
 * The implementation of the API will be extensible to new formats & scenarios (e.g. encrypted tokens) by plugins
@@ -50,7 +50,7 @@ Given the above, the scope of the Provisioning work is:
 ### Scope - Reference Deployments
 Reference deployments show that the APIs can be practically applied. The intent is that the Reference Deployments implemented can be a starting point for production deployments.
 * Self Hosted deployment e.g. servers in a corporate data centre
-* PAAS Hosted deployment e.g. AWS / Azure / GCP (other hyperscalers are available`)
+* PAAS Hosted deployment e.g. AWS / Azure / GCP (other hyperscalers are available)
 * APIs will be hosted and externally available
 * Storage will be provided to support the data model
 * Scaling out of API compute units in response to load
