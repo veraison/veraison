@@ -29,7 +29,7 @@ The following is the intended scope of the Veraison Project. This is being liste
 * The implementation of the API will be extensible to new formats & scenarios (e.g. encrypted tokens) using user defined plugins
 * The Appraisal Policy for the submitted evidence can be specified as a policy using the OPA (Open Policy Agent) language 'rego'. A plugin point for code, to support complex appraisal, will also be available.
 * The Policy can access Reference Values or Endorsements required to support the Appraisal by specifying queries
-* The API will record basic metrics for integration into deployment operational schemes
+* The API will record basic metrics for integration into the operational monitoring of deployments
 * In addition to the direct Verification of the supplied evidence, further policy can be deployed to add 'Derived Claims' to the Attestation results.
 
 ### Scope - Provisioning
@@ -71,7 +71,7 @@ It is not intended to look at other aspects of Attestation e.g.
 
 
 ## Programming Language
-GoLang is used as the implementation language for the project. This choice reflected the need for an efficient, memory managed language with good interoperability to other systems.
+GoLang is used as the implementation language for the project. This choice reflected the need for an efficient, memory managed language with good interoperability to other systems. Plugins added to extend the validation pipeline functionality can be implemented in other programming languages.
 
 ## Consuming Veraison
 Veraison will achieve its aims if the componentry is used to build verification services. There are several ways we anticipate the components being incorporated into such services:
