@@ -1,0 +1,135 @@
+openapi: '3.0.0'
+
+info:
+  title: challenge-response remote attestation
+  description: For further details, see draft-ietf-rats-reference-interaction-models
+  version: '1.0.0alpha'
+
+servers:
+  - url: 'https://veraison.example/challenge-response/v1'
+
+paths:
+  /newSession:
+    post:
+      description: >
+        Create a new challenge-response verification session resource.
+        The caller can supply the nonce using the "nonce" query argument, or
+        let the server choose one randomly specifying the number of bytes
+        of entropy needed using the "nonceSize" query argument.  The two
+        query arguments are mutually exclusive.  If "nonceSize" is not
+        supplied, a local default applies.
+      parameters:
+        - name: nonceSize
+          in: query
+          description: >
+            number of bytes of the returned nonce
+          required: false
+          schema:
+            type: integer
+        - name: nonce
+          in: query
+          description: >
+            the API server should not generate a nonce for this session and
+            use instead the one supplied by the client
+          required: false
+          schema:
+            type: string
+            format: byte
+      responses:
+        '201':
+          description: >
+            A new session resource is created and its URL is returned in the
+            Location header.  The resource will be kept alive for the specified
+            time-to-live.  The new resource comprises the nonce to be used in
+            subsequent interaction.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description:
+                URL of the newly created session resource to be used in
+                subsequent response interaction.  (The current content of the
+               resource is returned in the response body.)
+          content:
+            application/rats-challenge-response-session+json:
+              schema:
+                $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
+        default:
+          $ref: './schemas/components.yaml#/components/responses/Error'
+
+  /session/{SessionId}:
+    get:
+      description: >
+        retrieve the challenge-response session resource
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: >
+            The challenge-response session resource
+          content:
+            application/json:
+              schema:
+                $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
+        default:
+          $ref: './schemas/components.yaml#/components/responses/Error'
+    post:
+      description: >
+        Submit Evidence for validation.  The MIME type used for submission MUST
+        be one among those listed in the "accept" field of the parent
+        challenge-response session resource.  Evidence can only be submitted when
+        the challenge-response session is in state "waiting".
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        description: >
+          the Evidence to be validated
+        required: true
+        content:
+          '*/*':
+            schema:
+              $ref: './schemas/components.yaml#/components/schemas/EvidenceBytes'
+      responses:
+        '200':
+          description: >
+            The submission was successful and has been synchronously processed.
+            The returned challenge-response resource is in "complete" state an
+            includes the computed attestation result.  The client could
+            explicitly DELETE the resource, or let it be garbage collected
+            after its natural "expiry".
+          content:
+            application/json:
+              schema:
+                $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
+        '202':
+          description: >
+            The submission has been successful and will be processed
+            asynchronously. The client is supposed to poll the resource for
+            updates until the state is "processing".
+          content:
+            application/json:
+              schema:
+                $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
+        default:
+          $ref: './schemas/components.yaml#/components/responses/Error'
+    delete:
+      description: >
+        Delete the session
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '204':
+          description: >
+            The session has been successfully cancelled.
+        default:
+          $ref: './schemas/components.yaml#/components/responses/Error'
+
+components:
+  parameters:
+    SessionId:
+      name: SessionId
+      in: path
+      required: true
+      schema:
+        type: string
