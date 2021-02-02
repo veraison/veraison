@@ -1,0 +1,6 @@
+CREATE TABLE trust_anchor(
+    tenant_id integer,
+    ta_type integer,
+    ta_id text,
+    value blob
+);

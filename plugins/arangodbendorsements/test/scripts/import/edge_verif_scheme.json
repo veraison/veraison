@@ -1,0 +1,23 @@
+[
+  {
+    "rel": "psa-rot-compound",
+    "_from": "swid_collection/example.acme.roadrunner-sw-bl-v1-0-0",
+    "_to": "hwid_collection/example.acme.roadrunner-hw-v1-0-0"
+  },
+  {
+    "rel": "psa-rot-compound",
+    "_from": "swid_collection/example.acme.roadrunner-sw-prot-v1-0-0",
+    "_to": "hwid_collection/example.acme.roadrunner-hw-v1-0-0"
+  },
+  {
+
+    "rel": "psa-rot-compound",
+    "_from": "swid_collection/example.acme.roadrunner-sw-arot-v1-0-0",
+    "_to":  "hwid_collection/example.acme.roadrunner-hw-v1-0-0"
+  },
+  {
+    "rel": "psa-rot-compound",
+    "_from": "swid_collection/example.acme.roadrunner-sw-app-v1-0-0",
+    "_to": "hwid_collection/example.acme.roadrunner-hw-v1-0-0"
+  }
+]
