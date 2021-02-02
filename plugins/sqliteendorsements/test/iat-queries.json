@@ -1,0 +1,9 @@
+{
+    "hardware_id": {
+        "platform_id": "$.implementation_id"
+    },
+    "software_components": {
+        "platform_id": "$.implementation_id",
+        "measurements": "$.sw_components[*].measurement_value"
+    }
+}
