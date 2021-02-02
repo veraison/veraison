@@ -1,6 +1,47 @@
-# Challenge/Response
+# Interaction models
 
-## Session setup
+The APIs described here are meant to be instantiations of the abstract
+protocols described in [Reference Interaction Models for Remote Attestation
+Procedures](https://datatracker.ietf.org/doc/draft-ietf-rats-reference-interaction-models/).
+
+## Challenge/Response
+
+Each Challenge-Response session is associated to its own resource, with the
+following attributes:
+
+* The session nonce;
+* An expiry date after which the session is garbage collected;
+* The accepted MIME types for Evidence to submit;
+* The session state (`waiting` -> `processing` -> `complete` | `failed`)
+* The submitted Evidence;
+* The produced Attestation Result.
+
+The resource is created in response to a client `POST` (1).  Subsequently, the
+client interacts with its session resource by `POST`ing Evidence to verify (2),
+and possibly polling it until the Attestation Result pops up (3).  In (2), the
+server may decide to reply synchronously by including the Attestation Result
+directly in the response.  In such case, (3) is not necessary.  The optional
+cleanup step in (4) allows a client to explicitly destroy the session resource.
+In any case the resource is garbage collected at any point in time after the
+session expiry has elapsed.
+
+```
+ o        (1) POST           .-------------.
+/|\ ------------------------>| /newSession |
+/ \ \                        '------+------'
+ \ \ \                              |
+  \ \ \                             V
+   \ \ \  (2) POST Evidence  .-------------.
+    \ \ '------------------->| /session/01 |
+     \ \                    '-------------'
+      \ \                        ^  ^
+       \ \    (3) GET            |  |
+        \ '----------------------'  |
+         \     (4) DELETE           |
+          '-------------------------'
+```
+
+### Session setup
 
 * To start a new session and obtain a time-bounded nonce value:
 
@@ -25,7 +66,7 @@
   }
 ```
 
-## Asynchronous verification
+### Asynchronous verification
 
 * Submit evidence for this session:
 
@@ -88,7 +129,7 @@
   }
 ```
 
-## Synchronous verification
+### Synchronous verification
 
 * Submit evidence for this session and obtain the attestation result right away
   (200):
