@@ -6,12 +6,12 @@ backends and attestation token formats.
 
 ## Directory layout
 
-Each subdirectory (except for bin/ -- see later) contains code for a plugin.
-The name of the directory indicates what type of the plugin it is. In addition,
-there is a buildall.sh script. This script traverses the subdirectories and
-executes build.sh inside each one if it finds it. The latter script will build
-the plugin binary and copy it into bin/ directory at this level, creating it if
-necessary.
+Each subdirectory (except for `bin/` -- see later) contains code for a plugin.
+The name of the directory indicates what type of the plugin it is.  The GNU
+`make(1)` command can be invoked with one of the predefined targets (`all`,
+`test`, `lint`, or `clean`), either at this level or in a plugin directory of
+choice.  The `all` target will build the plugin binary and copy it into `bin/`
+directory at this level, creating it if necessary.
 
 ## Plugin types
 
@@ -26,7 +26,7 @@ corresponding interface
 | evidenceextractor | EvidenceExtractorPlugin | IEvidenceExtractor   |
 | trustanchorstore  | TrustAnchorStorePlugin  | ITrustAnchorStore    |
 
-Definitions for these can be found under ../common/
+Definitions for these can be found under `../common/`
 
 ## Adding a new plugin
 
