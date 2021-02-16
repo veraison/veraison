@@ -16,6 +16,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"veraison/common"
 )
@@ -77,11 +78,11 @@ func TestPopulateQueryDescriptor(t *testing.T) {
 
 	var claims map[string]interface{}
 	claimsFile := filepath.Join(wd, "test", "iat-input.json")
-	readJson(claimsFile, &claims)
+	require.Nil(t, readJson(claimsFile, &claims))
 
 	var querySpecs map[string]map[string]string
 	specsFile := filepath.Join(wd, "test", "iat-queries.json")
-	readJson(specsFile, &querySpecs)
+	require.Nil(t, readJson(specsFile, &querySpecs))
 
 	var qd common.QueryDescriptor
 
@@ -89,15 +90,15 @@ func TestPopulateQueryDescriptor(t *testing.T) {
 	assert.Nil(err, "failed to populte query descriptor")
 
 	assert.Equal(qd.Name, "hardware_id", "QueryDescriptor name not set properly")
-	expected_args := common.QueryArgs{
+	expectedArgs := common.QueryArgs{
 		"platform_id": []interface{}{"76543210fedcba9817161514131211101f1e1d1c1b1a1918"},
 	}
-	assert.Equal(expected_args, qd.Args, "QueryDescriptor arguments not set properly")
+	assert.Equal(expectedArgs, qd.Args, "QueryDescriptor arguments not set properly")
 
 	err = common.PopulateQueryDescriptor(claims, "software_components", querySpecs["software_components"], &qd)
 	assert.Nil(err, "failed to populate query descriptor")
 
-	expected_args = common.QueryArgs{
+	expectedArgs = common.QueryArgs{
 		"platform_id": []interface{}{"76543210fedcba9817161514131211101f1e1d1c1b1a1918"},
 		"measurements": []interface{}{
 			"76543210fedcba9817161514131211101f1e1d1c1b1a1916",
@@ -106,7 +107,7 @@ func TestPopulateQueryDescriptor(t *testing.T) {
 			"76543210fedcba9817161514131211101f1e1d1c1b1a1919",
 		},
 	}
-	assert.Equal(expected_args, qd.Args, "QueryDescriptor arguments not set properly")
+	assert.Equal(expectedArgs, qd.Args, "QueryDescriptor arguments not set properly")
 }
 
 func TestParseQueryDescriptors(t *testing.T) {
@@ -119,7 +120,7 @@ func TestParseQueryDescriptors(t *testing.T) {
 
 	var claims map[string]interface{}
 	claimsFile := filepath.Join(wd, "test", "iat-input.json")
-	readJson(claimsFile, &claims)
+	require.Nil(t, readJson(claimsFile, &claims))
 
 	specsFile := filepath.Join(wd, "test", "iat-queries.json")
 	data, err := ioutil.ReadFile(specsFile)
@@ -127,7 +128,7 @@ func TestParseQueryDescriptors(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expected_qds := []common.QueryDescriptor{
+	expectedQds := []common.QueryDescriptor{
 		{
 			Name: "hardware_id",
 			Args: common.QueryArgs{
@@ -158,7 +159,7 @@ func TestParseQueryDescriptors(t *testing.T) {
 	sort.Sort(common.QueryDescriptorsByName(qds))
 
 	for i, qd := range qds {
-		eqd := expected_qds[i]
+		eqd := expectedQds[i]
 
 		assert.Equal(eqd.Name, qd.Name, "descriptor query name matches")
 	}
