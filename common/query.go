@@ -132,3 +132,22 @@ func ParseQueryDescriptors(claims map[string]interface{}, data []byte) ([]*Query
 
 	return qds, nil
 }
+
+// QueryDescriptorsByName implements sort.Interface for sorting query descriptors by name.
+type QueryDescriptorsByName []*QueryDescriptor
+
+// Len returns the length of QueryDescriptor slice to be sorted.
+func (q QueryDescriptorsByName) Len() int {
+	return len(q)
+}
+
+// Less returns true iff the QueryDescriptor at index i compares as "less" than the
+// one at index j, based on their names.
+func (q QueryDescriptorsByName) Less(i, j int) bool {
+	return q[i].Name < q[j].Name
+}
+
+// Swap swaps QueryDescriptors at the specified indexes.
+func (q QueryDescriptorsByName) Swap(i, j int) {
+	q[i], q[j] = q[j], q[i]
+}

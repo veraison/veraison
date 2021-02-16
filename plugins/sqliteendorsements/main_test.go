@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -153,6 +154,8 @@ func TestParseQueryDescriptors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+
+	sort.Sort(common.QueryDescriptorsByName(qds))
 
 	for i, qd := range qds {
 		eqd := expected_qds[i]
