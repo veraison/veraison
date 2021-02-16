@@ -21,7 +21,7 @@ func (tf TokenFormat) String() string {
 	case DiceToken:
 		return "dice"
 	default:
-		return fmt.Sprintf("TokenFormat(%v)", tf)
+		return fmt.Sprintf("TokenFormat(%d)", tf)
 	}
 }
 

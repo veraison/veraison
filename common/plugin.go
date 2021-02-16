@@ -6,7 +6,6 @@ package common
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -72,21 +71,21 @@ func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, e
 
 			rpcClient, err := client.Client()
 			if err != nil {
-				log.Printf("Failed to load RPC client from %v: %v\n", pluginPath, err)
+				hclog.Default().Error("Failed to load RPC client from %v: %v\n", pluginPath, err)
 				client.Kill()
 				continue
 			}
 
 			raw, err := rpcClient.Dispense(plugType)
 			if err != nil {
-				log.Printf("Plugin %v does not implement a %v\n", pluginPath, plugType)
+				hclog.Default().Debug("Plugin %v does not implement a %v\n", pluginPath, plugType)
 				client.Kill()
 				continue
 			}
 
 			named := raw.(INamed)
 			if named.GetName() != plugName {
-				log.Printf("Wrong name in %v.\n", pluginPath)
+				hclog.Default().Debug("Wrong name in %v.\n", pluginPath)
 				client.Kill()
 				continue
 			}
