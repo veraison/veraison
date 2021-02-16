@@ -18,15 +18,18 @@ import (
 
 //initDb does the script invocation to start the Docker for
 // Arango DB and sets DB elements from json containers
-func initDb() error {
+func initDb(t *testing.T) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 	dbpath := filepath.Join(wd, "test", "scripts")
 
-	os.Chdir(dbpath)
-	defer os.Chdir(wd)
+	require.Nil(t, os.Chdir(dbpath))
+	defer func() {
+		require.Nil(t, os.Chdir(wd))
+	}()
+
 	CmdStartArango := &exec.Cmd{
 		Path:   "./arango-start.sh",
 		Args:   []string{""},
@@ -40,16 +43,17 @@ func initDb() error {
 	return nil
 }
 
-//finiDb() does the clean up of DB and brings the docker down
-func finiDb() error {
+// finiDb does the clean up of DB and brings the docker down
+func finiDb(t *testing.T) {
 	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
+	require.Nil(t, err)
+
 	dbpath := filepath.Join(wd, "test", "scripts")
 
-	os.Chdir(dbpath)
-	defer os.Chdir(wd)
+	require.Nil(t, os.Chdir(dbpath))
+	defer func() {
+		require.Nil(t, os.Chdir(wd))
+	}()
 
 	CmdStopArango := &exec.Cmd{
 		Path:   "./arango-stop.sh",
@@ -57,11 +61,10 @@ func finiDb() error {
 		Stdout: os.Stdout,
 		Stderr: os.Stdout,
 	}
+
 	fmt.Println("Starting Command", CmdStopArango.String())
-	if err := CmdStopArango.Run(); err != nil {
-		return fmt.Errorf("Failed stopping Arango: %v", err)
-	}
-	return nil
+
+	require.Nil(t, CmdStopArango.Run())
 }
 
 //testGetSupportedQueries checks the number of supported queries
@@ -249,9 +252,9 @@ func TestArangoDbEndorsementStore(t *testing.T) {
 		"edgeCollection": "edge_verif_scheme",
 		"relCollection":  "edge_rel_scheme",
 	}
-	require.Nil(t, initDb())
+	require.Nil(t, initDb(t))
 
-	defer finiDb()
+	defer finiDb(t)
 	fetcher := new(ArangoEndorsementStore)
 	err := fetcher.Init(argList)
 	if err != nil {
@@ -281,9 +284,9 @@ func TestArangoDbAlternativeSwComponent(t *testing.T) {
 		"relCollection":  "edge_rel_scheme",
 		"AltAlgorithm":   "Normal",
 	}
-	require.Nil(t, initDb())
+	require.Nil(t, initDb(t))
 
-	defer finiDb()
+	defer finiDb(t)
 	fetcher := new(ArangoEndorsementStore)
 	err := fetcher.Init(argList)
 	if err != nil {
@@ -307,8 +310,8 @@ func TestArangoDbEndorsementAllSwComponents(t *testing.T) {
 		"edgeCollection": "edge_verif_scheme",
 		"relCollection":  "edge_rel_scheme",
 	}
-	require.Nil(t, initDb())
-	defer finiDb()
+	require.Nil(t, initDb(t))
+	defer finiDb(t)
 	fetcher := new(ArangoEndorsementStore)
 
 	err := fetcher.Init(argList)
@@ -333,8 +336,8 @@ func TestArangoDbEndorsementLatestLinkedSwComponent(t *testing.T) {
 		"edgeCollection": "edge_verif_scheme",
 		"relCollection":  "edge_rel_scheme",
 	}
-	require.Nil(t, initDb())
-	defer finiDb()
+	require.Nil(t, initDb(t))
+	defer finiDb(t)
 	fetcher := new(ArangoEndorsementStore)
 
 	err := fetcher.Init(argList)
@@ -360,8 +363,8 @@ func TestArangoDbEndorsementLatestSwComponent(t *testing.T) {
 		"edgeCollection": "edge_verif_scheme",
 		"relCollection":  "edge_rel_scheme",
 	}
-	require.Nil(t, initDb())
-	defer finiDb()
+	require.Nil(t, initDb(t))
+	defer finiDb(t)
 	fetcher := new(ArangoEndorsementStore)
 
 	err := fetcher.Init(argList)
