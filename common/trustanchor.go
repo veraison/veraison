@@ -33,7 +33,7 @@ func (t TrustAnchorType) String() string {
 	case TaTypeCert:
 		return "certificate"
 	default:
-		return fmt.Sprintf("TrustAnchorType(%v)", t)
+		return fmt.Sprintf("TrustAnchorType(%d)", t)
 	}
 }
 
