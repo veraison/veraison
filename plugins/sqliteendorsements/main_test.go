@@ -58,7 +58,7 @@ func finiDb(path string) {
 	}
 }
 
-func readJson(path string, v interface{}) error {
+func readJSON(path string, v interface{}) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -78,11 +78,11 @@ func TestPopulateQueryDescriptor(t *testing.T) {
 
 	var claims map[string]interface{}
 	claimsFile := filepath.Join(wd, "test", "iat-input.json")
-	require.Nil(t, readJson(claimsFile, &claims))
+	require.Nil(t, readJSON(claimsFile, &claims))
 
 	var querySpecs map[string]map[string]string
 	specsFile := filepath.Join(wd, "test", "iat-queries.json")
-	require.Nil(t, readJson(specsFile, &querySpecs))
+	require.Nil(t, readJSON(specsFile, &querySpecs))
 
 	var qd common.QueryDescriptor
 
@@ -120,7 +120,7 @@ func TestParseQueryDescriptors(t *testing.T) {
 
 	var claims map[string]interface{}
 	claimsFile := filepath.Join(wd, "test", "iat-input.json")
-	require.Nil(t, readJson(claimsFile, &claims))
+	require.Nil(t, readJSON(claimsFile, &claims))
 
 	specsFile := filepath.Join(wd, "test", "iat-queries.json")
 	data, err := ioutil.ReadFile(specsFile)
@@ -189,7 +189,7 @@ func TestSqliteEndorsementStore(t *testing.T) {
 
 	testGetSupportedQueries(t, fetcher)
 	testSupportsQuery(t, fetcher)
-	testQueryHardwareId(t, fetcher)
+	testQueryHardwareID(t, fetcher)
 	testQuerySoftwareComponents(t, fetcher)
 }
 
@@ -218,7 +218,7 @@ func testSupportsQuery(t *testing.T, fetcher common.IEndorsementStore) {
 		"fetcher claims to support a non-existing query")
 }
 
-func testQueryHardwareId(t *testing.T, fetcher common.IEndorsementStore) {
+func testQueryHardwareID(t *testing.T, fetcher common.IEndorsementStore) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{

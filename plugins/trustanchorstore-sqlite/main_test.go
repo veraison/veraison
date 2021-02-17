@@ -14,9 +14,10 @@ import (
 	"strings"
 	"testing"
 
+	"veraison/common"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	"veraison/common"
 )
 
 func initDb(schemaFile string) (string, error) {
@@ -146,8 +147,8 @@ func Test_Key_RoundTrip(t *testing.T) {
 	err = taStore.AddPublicKeyFromPEM(1, kid, keyData)
 	assert.Nil(err)
 
-	taId := map[string]interface{}{"key-id": kid}
-	taData, err := taStore.GetTrustAnchor(1, common.TrustAnchorID{Type: common.TaTypeKey, Value: taId})
+	taID := map[string]interface{}{"key-id": kid}
+	taData, err := taStore.GetTrustAnchor(1, common.TrustAnchorID{Type: common.TaTypeKey, Value: taID})
 	assert.Nil(err)
 	assert.Equal(taData, keyData)
 }

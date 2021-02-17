@@ -38,10 +38,10 @@ func (ee EvidenceExtractor) GetTrustAnchorID(token []byte) (common.TrustAnchorID
 		return common.TrustAnchorID{}, err
 	}
 
-	taId := make(map[string]interface{})
-	taId["key-id"] = psaToken.InstID
+	taID := make(map[string]interface{})
+	taID["key-id"] = psaToken.InstID
 
-	return common.TrustAnchorID{Type: common.TaTypeKey, Value: taId}, nil
+	return common.TrustAnchorID{Type: common.TaTypeKey, Value: taID}, nil
 }
 
 func (ee EvidenceExtractor) ExtractEvidence(token []byte, trustAnchor []byte) (map[string]interface{}, error) {

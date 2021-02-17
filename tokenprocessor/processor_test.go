@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"veraison/common"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
-	"veraison/common"
 )
 
 var FWID = []uint8{

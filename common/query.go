@@ -74,7 +74,7 @@ func PopulateQueryDescriptor(
 	for pName, pPath := range params {
 		expr, err := jp.ParseString(pPath)
 		if err != nil {
-			return fmt.Errorf("Could not parse query param path: %v", err)
+			return fmt.Errorf("could not parse query param path: %v", err)
 		}
 
 		qd.Args[pName] = expr.Get(claims)
@@ -101,19 +101,18 @@ func ParseQueryDescriptors(claims map[string]interface{}, data []byte) ([]*Query
 	case map[string]interface{}:
 		querySpecs = v
 	default:
-		return nil, fmt.Errorf("Unexped type for unmashaled query specs; must be a JSON object")
+		return nil, fmt.Errorf("unexpected type for unmashaled query specs; must be a JSON object")
 	}
 
 	for queryName, unmarshaledArgsSpec := range querySpecs {
 		qd := new(QueryDescriptor)
 		qd.Constraint = QcNone
-		var argsSpec map[string]string
+		argsSpec := make(map[string]string)
 
 		switch v := unmarshaledArgsSpec.(type) {
 		case map[string]string:
 			argsSpec = v
 		case map[string]interface{}:
-			argsSpec := make(map[string]string)
 			for key, val := range v {
 				switch v1 := val.(type) {
 				case string:

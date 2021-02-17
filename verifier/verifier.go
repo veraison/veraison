@@ -14,8 +14,8 @@ import (
 )
 
 type Verifier struct {
-	pm        *policy.PolicyManager
-	em        *endorsement.EndorsementManager
+	pm        *policy.Manager
+	em        *endorsement.Manager
 	pe        common.IPolicyEngine
 	rpcClient plugin.ClientProtocol
 	client    *plugin.Client
@@ -24,14 +24,14 @@ type Verifier struct {
 func NewVerifier() (*Verifier, error) {
 	v := new(Verifier)
 
-	v.pm = policy.NewPolicyManager()
-	v.em = endorsement.NewEndorsementManager()
+	v.pm = policy.NewManager()
+	v.em = endorsement.NewManager()
 
 	return v, nil
 }
 
 // Initialize bootstraps the verifier
-func (v *Verifier) Initialize(vc VerifierConfig) error {
+func (v *Verifier) Initialize(vc Config) error {
 	if err := v.em.InitializeStore(vc.PluginLocations, vc.EndorsementStoreName, vc.EndorsementStoreParams); err != nil {
 		return err
 	}
@@ -49,10 +49,10 @@ func (v *Verifier) Initialize(vc VerifierConfig) error {
 
 	v.pe = lp.Raw.(common.IPolicyEngine)
 	v.client = lp.PluginClient
-	v.rpcClient = lp.RpcClient
+	v.rpcClient = lp.RPCClient
 
 	if v.client == nil {
-		return fmt.Errorf("Failed to find policy engine with name '%v'", engineName)
+		return fmt.Errorf("failed to find policy engine with name '%v'", engineName)
 	}
 
 	err = v.pe.Init(vc.PolicyEngineParams)
@@ -90,9 +90,9 @@ func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.Atte
 		if len(qr) == 1 {
 			endorsements[name] = qr[0]
 		} else if len(qr) == 0 {
-			return nil, fmt.Errorf("No matches for '%v'", name)
+			return nil, fmt.Errorf("no matches for '%v'", name)
 		} else {
-			return nil, fmt.Errorf("Too many matches for '%v'", name)
+			return nil, fmt.Errorf("too many matches for '%v'", name)
 		}
 	}
 

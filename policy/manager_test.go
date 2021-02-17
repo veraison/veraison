@@ -58,7 +58,7 @@ func finiDb(path string) {
 func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 	assert := assert.New(t)
 
-	pm := NewPolicyManager()
+	pm := NewManager()
 
 	wd, err := os.Getwd()
 	if err != nil {

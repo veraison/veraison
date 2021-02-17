@@ -22,7 +22,7 @@ type SoftwareEndoresement struct {
 	Measurement string
 	Type        string
 	Version     string
-	SignerId    string
+	SignerID    string
 }
 
 // EndorsementMatches maps query name onto the corresponding QueryResult. This
@@ -99,7 +99,7 @@ func (e *BaseEndorsementStore) GetEndorsements(qds ...QueryDescriptor) (Endorsem
 		}
 
 		if !checkConstraintHolds(qr, qd.Constraint) {
-			return nil, fmt.Errorf("Result for query '%v' failed to satisfy constraint", qd.Name)
+			return nil, fmt.Errorf("result for query '%v' failed to satisfy constraint", qd.Name)
 		}
 
 		matches[qd.Name] = qr
@@ -113,7 +113,7 @@ func (e *BaseEndorsementStore) GetEndorsements(qds ...QueryDescriptor) (Endorsem
 func (e *BaseEndorsementStore) RunQuery(name string, args QueryArgs) (QueryResult, error) {
 	queryFunc, ok := e.Queries[name]
 	if !ok {
-		return nil, fmt.Errorf("Query '%v' not implemented", name)
+		return nil, fmt.Errorf("query '%v' not implemented", name)
 	}
 
 	result, err := queryFunc(args)
@@ -140,9 +140,8 @@ func (e *BaseEndorsementStore) GetSupportedQueries() []string {
 func (e *BaseEndorsementStore) SupportsQuery(query string) bool {
 	if _, ok := e.Queries[query]; ok {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func checkConstraintHolds(r QueryResult, c QueryConstraint) bool {
