@@ -12,6 +12,9 @@
 
 .DEFAULT_GOAL := test
 
+.PHONY: all
+all:
+
 .PHONY: test
 test: ; go test -v -cover -race $(GOPKG)
 
