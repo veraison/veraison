@@ -160,7 +160,7 @@ func (e *EndorsementStoreRPC) GetEndorsements(qds ...QueryDescriptor) (Endorseme
 		}
 
 		if !checkConstraintHolds(qr, qd.Constraint) {
-			return nil, fmt.Errorf("Result for query '%v' failed to satisfy constraint", qd.Name)
+			return nil, fmt.Errorf("result for query '%v' failed to satisfy constraint", qd.Name)
 		}
 
 		matches[qd.Name] = qr

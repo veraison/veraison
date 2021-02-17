@@ -9,20 +9,20 @@ import (
 	"veraison/common"
 )
 
-type PolicyManager struct {
+type Manager struct {
 	StoreName string
 	Store     common.IPolicyStore
-	RpcClient plugin.ClientProtocol
+	RPCClient plugin.ClientProtocol
 	Client    *plugin.Client
 }
 
-func NewPolicyManager() *PolicyManager {
-	return &PolicyManager{
+func NewManager() *Manager {
+	return &Manager{
 		StoreName: "[none]",
 	}
 }
 
-func (pm *PolicyManager) InitializeStore(
+func (pm *Manager) InitializeStore(
 	pluginLocaitons []string,
 	name string,
 	params common.PolicyStoreParams,
@@ -35,7 +35,7 @@ func (pm *PolicyManager) InitializeStore(
 	}
 
 	pm.Store = lp.Raw.(common.IPolicyStore)
-	pm.RpcClient = lp.RpcClient
+	pm.RPCClient = lp.RPCClient
 	pm.Client = lp.PluginClient
 
 	if err = pm.Store.Init(params); err != nil {
@@ -46,22 +46,22 @@ func (pm *PolicyManager) InitializeStore(
 	return nil
 }
 
-func (pm *PolicyManager) GetPolicy(tenantId int, tokenFormat common.TokenFormat) (*common.Policy, error) {
-	return pm.Store.GetPolicy(tenantId, tokenFormat)
+func (pm *Manager) GetPolicy(tenantID int, tokenFormat common.TokenFormat) (*common.Policy, error) {
+	return pm.Store.GetPolicy(tenantID, tokenFormat)
 }
 
-func (pm *PolicyManager) PutPolicy(tenantId int, policy *common.Policy) error {
-	return pm.Store.PutPolicy(tenantId, policy)
+func (pm *Manager) PutPolicy(tenantID int, policy *common.Policy) error {
+	return pm.Store.PutPolicy(tenantID, policy)
 }
 
-func (pm *PolicyManager) PutPolicyBytes(tenantId int, policyBytes []byte) error {
+func (pm *Manager) PutPolicyBytes(tenantID int, policyBytes []byte) error {
 	policies, err := common.ReadPoliciesFromBytes(policyBytes)
 	if err != nil {
 		return err
 	}
 
 	for _, policy := range policies {
-		err = pm.PutPolicy(tenantId, policy)
+		err = pm.PutPolicy(tenantID, policy)
 		if err != nil {
 			// TODO: implement transactions and roll back here
 			return err
@@ -71,7 +71,7 @@ func (pm *PolicyManager) PutPolicyBytes(tenantId int, policyBytes []byte) error 
 	return nil
 }
 
-func (pm *PolicyManager) Close() {
+func (pm *Manager) Close() {
 	pm.Client.Kill()
-	pm.RpcClient.Close()
+	pm.RPCClient.Close()
 }

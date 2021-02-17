@@ -152,7 +152,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 
 		segments := strings.Split(f.Name, string(os.PathSeparator))
 		if len(segments) != 2 {
-			return nil, fmt.Errorf("Directory structure too deep/shallow: %v", f.Name)
+			return nil, fmt.Errorf("directory structure too deep/shallow: %v", f.Name)
 		}
 
 		formatName := Canonize(segments[0])
@@ -167,7 +167,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 		switch fileName {
 		case "rules":
 			if entry.ReadRules {
-				return nil, fmt.Errorf("Multiple rules definitions found for %v.", formatName)
+				return nil, fmt.Errorf("multiple rules definitions found for %v", formatName)
 			}
 
 			rulesFile, err := f.Open()
@@ -182,7 +182,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 			entry.ReadRules = true
 		case "query_map", "query_map.json":
 			if entry.ReadQMap {
-				return nil, fmt.Errorf("Multiple query map definitions found for %v.", formatName)
+				return nil, fmt.Errorf("multiple query map definitions found for %v", formatName)
 			}
 
 			qmapFile, err := f.Open()
@@ -196,7 +196,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 			}
 			entry.ReadQMap = true
 		default:
-			return nil, fmt.Errorf("Unexpected entry: %v", f.Name)
+			return nil, fmt.Errorf("unexpected entry: %v", f.Name)
 		}
 
 	}
@@ -204,7 +204,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 	var policies []*Policy
 	for _, entry := range entries {
 		if !(entry.ReadQMap && entry.ReadRules) {
-			return nil, fmt.Errorf("Incomplete defintion for '%v'.", entry.TokenFormatName)
+			return nil, fmt.Errorf("incomplete definition for '%v'", entry.TokenFormatName)
 		}
 		policies = append(policies, entry.Policy)
 	}
@@ -234,13 +234,13 @@ type IPolicyStore interface {
 	// Init initializes the policy store, creating the necessary database connections, etc.
 	Init(args PolicyStoreParams) error
 
-	// GetPolicy returns the Polocy stored for the specified tenant and
+	// GetPolicy returns the Policy stored for the specified tenant and
 	// token format. If such a policy is not found, an error will be
 	// returned.
-	GetPolicy(tenantId int, tokenFormat TokenFormat) (*Policy, error)
+	GetPolicy(tenantID int, tokenFormat TokenFormat) (*Policy, error)
 
 	// PutPolicy adds a Policy for the specified tenant.
-	PutPolicy(tenantId int, policy *Policy) error
+	PutPolicy(tenantID int, policy *Policy) error
 
 	// Close ensures a clean shut down of the policy store, closing the
 	// underlying database connections, etc.

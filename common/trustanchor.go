@@ -70,15 +70,15 @@ type ITrustAnchorStore interface {
 
 	// GetTrustAnchor retrieves a trust anchor based on the specified
 	// tenant and TrustAnchorID.
-	GetTrustAnchor(tenantId int, taId TrustAnchorID) ([]byte, error)
+	GetTrustAnchor(tenantID int, taID TrustAnchorID) ([]byte, error)
 
 	// AddCertsFromPEM adds a certificate chain to the trust anchor store
 	// for the specified tenant.
-	AddCertsFromPEM(tenantId int, value []byte) error
+	AddCertsFromPEM(tenantID int, value []byte) error
 
 	// AddPublicKeyFromPEM adds a public key to the store for the specified
 	// tenant under the specified key ID.
-	AddPublicKeyFromPEM(tenantId int, id interface{}, value []byte) error
+	AddPublicKeyFromPEM(tenantID int, id interface{}, value []byte) error
 
 	// Close cleanly terminates the ITrustAnchorStore instance.
 	Close() error
