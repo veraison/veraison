@@ -3,7 +3,6 @@
   -- SPDX-License-Identifier: Apache-2.0
 --->
 
-<
 # Welcome To VERAISON
 <font size="6
 ">
