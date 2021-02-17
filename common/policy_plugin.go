@@ -24,12 +24,12 @@ func (p *PolicyStorePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interfac
 }
 
 type GetPolicyArgs struct {
-	TenantId    int
+	TenantID    int
 	TokenFormat TokenFormat
 }
 
 type PutPolicyArgs struct {
-	TenantId int
+	TenantID int
 	Policy   *Policy
 }
 
@@ -47,13 +47,13 @@ func (s *PolicyStoreServer) Init(args PolicyStoreParams, resp *string) error {
 }
 
 func (s *PolicyStoreServer) GetPolicy(args GetPolicyArgs, resp *Policy) error {
-	policy, err := s.Impl.GetPolicy(args.TenantId, args.TokenFormat)
+	policy, err := s.Impl.GetPolicy(args.TenantID, args.TokenFormat)
 	*resp = *policy
 	return err
 }
 
 func (s *PolicyStoreServer) PutPolicy(args PutPolicyArgs, resp *interface{}) error {
-	return s.Impl.PutPolicy(args.TenantId, args.Policy)
+	return s.Impl.PutPolicy(args.TenantID, args.Policy)
 }
 
 func (s *PolicyStoreServer) Close(args interface{}, resp *interface{}) error {
@@ -78,17 +78,17 @@ func (e *PolicyStoreRPC) Init(args PolicyStoreParams) error {
 	return e.client.Call("Plugin.Init", args, nil)
 }
 
-func (e *PolicyStoreRPC) GetPolicy(tenantId int, tokenFormat TokenFormat) (*Policy, error) {
+func (e *PolicyStoreRPC) GetPolicy(tenantID int, tokenFormat TokenFormat) (*Policy, error) {
 	var resp Policy
 
-	args := GetPolicyArgs{TenantId: tenantId, TokenFormat: tokenFormat}
+	args := GetPolicyArgs{TenantID: tenantID, TokenFormat: tokenFormat}
 	err := e.client.Call("Plugin.GetPolicy", args, &resp)
 
 	return &resp, err
 }
 
-func (e *PolicyStoreRPC) PutPolicy(tenantId int, policy *Policy) error {
-	args := PutPolicyArgs{TenantId: tenantId, Policy: policy}
+func (e *PolicyStoreRPC) PutPolicy(tenantID int, policy *Policy) error {
+	args := PutPolicyArgs{TenantID: tenantID, Policy: policy}
 	// TODO: figure out why the last argument here must be non-nil
 	return e.client.Call("Plugin.PutPolicy", args, new(interface{}))
 }

@@ -30,7 +30,7 @@ const (
 	// https://datatracker.ietf.org/doc/draft-tschofenig-rats-psa-token/)
 	PsaIatToken = TokenFormat(iota)
 
-	// DICEToken is a token based on the TCG DICE specification
+	// DiceToken is a token based on the TCG DICE specification
 	// https://trustedcomputinggroup.org/wp-content/uploads/TCG_DICE_Attestation_Architecture_r22_02dec2020.pdf
 	DiceToken
 )
@@ -48,5 +48,5 @@ func TokenFormatFromString(value string) (TokenFormat, error) {
 		return TokenFormat(i), err
 	}
 
-	return 0, fmt.Errorf("Not a valid token format: %v", value)
+	return 0, fmt.Errorf("not a valid token format: %v", value)
 }

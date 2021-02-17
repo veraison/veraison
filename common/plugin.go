@@ -27,7 +27,7 @@ var PluginMap = map[string]plugin.Plugin{
 type LoadedPlugin struct {
 	Raw          interface{}
 	PluginClient *plugin.Client
-	RpcClient    plugin.ClientProtocol
+	RPCClient    plugin.ClientProtocol
 }
 
 // INamed defines inteface for named entities.
@@ -71,21 +71,21 @@ func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, e
 
 			rpcClient, err := client.Client()
 			if err != nil {
-				hclog.Default().Error("Failed to load RPC client from %v: %v\n", pluginPath, err)
+				hclog.Default().Error("failed to load RPC client from %v: %v\n", pluginPath, err)
 				client.Kill()
 				continue
 			}
 
 			raw, err := rpcClient.Dispense(plugType)
 			if err != nil {
-				hclog.Default().Debug("Plugin %v does not implement a %v\n", pluginPath, plugType)
+				hclog.Default().Debug("plugin %v does not implement a %v\n", pluginPath, plugType)
 				client.Kill()
 				continue
 			}
 
 			named := raw.(INamed)
 			if named.GetName() != plugName {
-				hclog.Default().Debug("Wrong name in %v.\n", pluginPath)
+				hclog.Default().Debug("wrong name in %v.\n", pluginPath)
 				client.Kill()
 				continue
 			}
@@ -93,7 +93,7 @@ func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, e
 			return &LoadedPlugin{
 				Raw:          raw,
 				PluginClient: client,
-				RpcClient:    rpcClient,
+				RPCClient:    rpcClient,
 			}, nil
 
 		}

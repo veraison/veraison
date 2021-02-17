@@ -112,8 +112,8 @@ func (r TrustAnchorStoreRPC) Close() error {
 	return r.client.Call("Plugin.Close", new(interface{}), nil)
 }
 
-func (r TrustAnchorStoreRPC) GetTrustAnchor(tenantId int, taId TrustAnchorID) ([]byte, error) {
-	args := GetTrustAnchorArgs{TenantID: tenantId, TrustAnchorID: taId}
+func (r TrustAnchorStoreRPC) GetTrustAnchor(tenantID int, taID TrustAnchorID) ([]byte, error) {
+	args := GetTrustAnchorArgs{TenantID: tenantID, TrustAnchorID: taID}
 	argsData, err := json.Marshal(args)
 	if err != nil {
 		return nil, err
@@ -125,9 +125,9 @@ func (r TrustAnchorStoreRPC) GetTrustAnchor(tenantId int, taId TrustAnchorID) ([
 	return result, err
 }
 
-func (r TrustAnchorStoreRPC) AddCertsFromPEM(tenantId int, value []byte) error {
-	taId := TrustAnchorID{Type: TaTypeCert}
-	args := GetTrustAnchorArgs{TenantID: tenantId, TrustAnchorID: taId}
+func (r TrustAnchorStoreRPC) AddCertsFromPEM(tenantID int, value []byte) error {
+	taID := TrustAnchorID{Type: TaTypeCert}
+	args := GetTrustAnchorArgs{TenantID: tenantID, TrustAnchorID: taID}
 	argsData, err := json.Marshal(args)
 	if err != nil {
 		return err
@@ -136,8 +136,8 @@ func (r TrustAnchorStoreRPC) AddCertsFromPEM(tenantId int, value []byte) error {
 	return r.client.Call("Plugin.AddCertsFromPEM", argsData, nil)
 }
 
-func (r TrustAnchorStoreRPC) AddPublicKeyFromPEM(tenantId int, kid interface{}, value []byte) error {
-	args := AddPublicKeyFromPEMArgs{TenantID: tenantId, KeyID: kid, Value: value}
+func (r TrustAnchorStoreRPC) AddPublicKeyFromPEM(tenantID int, kid interface{}, value []byte) error {
+	args := AddPublicKeyFromPEMArgs{TenantID: tenantID, KeyID: kid, Value: value}
 
 	argsData, err := json.Marshal(args)
 	if err != nil {
