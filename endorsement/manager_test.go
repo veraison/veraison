@@ -59,7 +59,7 @@ func finiDb(path string) {
 func TestLoadStore(t *testing.T) {
 	assert := assert.New(t)
 
-	pm := NewEndorsementManager()
+	pm := NewManager()
 
 	wd, err := os.Getwd()
 	if err != nil {
