@@ -19,7 +19,7 @@ import (
 
 var insertQueryText = "INSERT INTO trust_anchor(tenant_id, ta_type, ta_id, value) VALUES (?, ?, ?, ?)"
 var byTypeQueryText = "SELECT value FROM trust_anchor  WHERE tenant_id = ? AND ta_type = ?"
-var byIdQueryText = "SELECT value FROM trust_anchor  WHERE tenant_id = ? AND ta_id = ?"
+var byIDQueryText = "SELECT value FROM trust_anchor  WHERE tenant_id = ? AND ta_id = ?"
 
 type SqliteTrustAnchorStore struct {
 	db   *sql.DB
@@ -51,7 +51,7 @@ func (s *SqliteTrustAnchorStore) Init(params common.TrustAnchorStoreParams) erro
 	return nil
 }
 
-func (s SqliteTrustAnchorStore) AddCertsFromPEM(tenantId int, value []byte) error {
+func (s SqliteTrustAnchorStore) AddCertsFromPEM(tenantID int, value []byte) error {
 	rest := value
 	var block *pem.Block
 
@@ -66,7 +66,7 @@ func (s SqliteTrustAnchorStore) AddCertsFromPEM(tenantId int, value []byte) erro
 			return err
 		}
 
-		if _, err := s.db.Exec(insertQueryText, tenantId, common.TaTypeCert, nil, block.Bytes); err != nil {
+		if _, err := s.db.Exec(insertQueryText, tenantID, common.TaTypeCert, nil, block.Bytes); err != nil {
 			return err
 		}
 
@@ -75,7 +75,7 @@ func (s SqliteTrustAnchorStore) AddCertsFromPEM(tenantId int, value []byte) erro
 	return nil
 }
 
-func (s SqliteTrustAnchorStore) AddPublicKeyFromPEM(tenantId int, id interface{}, value []byte) error {
+func (s SqliteTrustAnchorStore) AddPublicKeyFromPEM(tenantID int, id interface{}, value []byte) error {
 	block, rest := pem.Decode(value)
 
 	if len(rest) != 0 {
@@ -105,21 +105,21 @@ func (s SqliteTrustAnchorStore) AddPublicKeyFromPEM(tenantId int, id interface{}
 		return fmt.Errorf("unsupported key value: %q", v)
 	}
 
-	if _, err := s.db.Exec(insertQueryText, tenantId, common.TaTypeKey, kid, block.Bytes); err != nil {
+	if _, err := s.db.Exec(insertQueryText, tenantID, common.TaTypeKey, kid, block.Bytes); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s SqliteTrustAnchorStore) GetTrustAnchor(tenantId int, taId common.TrustAnchorID) ([]byte, error) {
-	switch taId.Type {
+func (s SqliteTrustAnchorStore) GetTrustAnchor(tenantID int, taID common.TrustAnchorID) ([]byte, error) {
+	switch taID.Type {
 	case common.TaTypeCert:
-		return s.getCerts(tenantId)
+		return s.getCerts(tenantID)
 	case common.TaTypeKey:
 		var kid string
 
-		switch v := taId.Value["key-id"].(type) {
+		switch v := taID.Value["key-id"].(type) {
 		case string:
 			kid = v
 		case []byte:
@@ -130,16 +130,16 @@ func (s SqliteTrustAnchorStore) GetTrustAnchor(tenantId int, taId common.TrustAn
 			return nil, fmt.Errorf("unsupported key value: %q", v)
 		}
 
-		return s.getKey(tenantId, kid)
+		return s.getKey(tenantID, kid)
 	default:
-		return nil, fmt.Errorf("Trust anchor of type %s not supported", taId.Type.String())
+		return nil, fmt.Errorf("trust anchor of type %s not supported", taID.Type.String())
 	}
 }
 
-func (s SqliteTrustAnchorStore) getCerts(tenantId int) ([]byte, error) {
+func (s SqliteTrustAnchorStore) getCerts(tenantID int) ([]byte, error) {
 	var result []byte
 
-	rows, err := s.db.Query(byTypeQueryText, tenantId, common.TaTypeCert)
+	rows, err := s.db.Query(byTypeQueryText, tenantID, common.TaTypeCert)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +158,9 @@ func (s SqliteTrustAnchorStore) getCerts(tenantId int) ([]byte, error) {
 	return result, nil
 }
 
-func (s SqliteTrustAnchorStore) getKey(tenantId int, kid string) ([]byte, error) {
+func (s SqliteTrustAnchorStore) getKey(tenantID int, kid string) ([]byte, error) {
 	var keyData []byte
-	err := s.db.QueryRow(byIdQueryText, tenantId, kid).Scan(&keyData)
+	err := s.db.QueryRow(byIDQueryText, tenantID, kid).Scan(&keyData)
 	if err != nil {
 		return nil, err
 	}

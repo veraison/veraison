@@ -64,7 +64,7 @@ func (ee EvidenceExtractor) ExtractEvidence(token []byte, trustAnchor []byte) (m
 
 	// note: must verify this after extracting claims so that the Subject Alternative Name
 	// gets processed; otherwise, it will be raised an unhandled critical extension.
-	if _, err := aliasCert.Verify(opts); err != nil {
+	if _, err = aliasCert.Verify(opts); err != nil {
 		return nil, errors.New("failed to verify alias cert: " + err.Error())
 	}
 

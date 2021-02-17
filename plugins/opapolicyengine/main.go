@@ -41,7 +41,7 @@ func (pe *OpaPolicyEngine) CheckValid(
 	endorsements map[string]interface{},
 ) (bool, error) {
 	if pe.policy == nil {
-		return false, fmt.Errorf("Policy not set.")
+		return false, fmt.Errorf("policy not set")
 	}
 
 	input := map[string]interface{}{"evidence": evidence, "endorsements": endorsements}
@@ -61,7 +61,7 @@ func (pe *OpaPolicyEngine) CheckValid(
 	case bool:
 		return result.(bool), nil
 	default:
-		return false, fmt.Errorf("Query evaluated to %v; expected bool.", t)
+		return false, fmt.Errorf("query evaluated to %v; expected bool", t)
 	}
 }
 
@@ -70,7 +70,7 @@ func (pe *OpaPolicyEngine) GetClaims(
 	endorsements map[string]interface{},
 ) (map[string]interface{}, error) {
 	if pe.policy == nil {
-		return nil, fmt.Errorf("Policy not set.")
+		return nil, fmt.Errorf("policy not set")
 	}
 
 	input := map[string]interface{}{"evidence": evidence, "endorsements": endorsements}
@@ -90,7 +90,7 @@ func (pe *OpaPolicyEngine) GetClaims(
 	case map[string]interface{}:
 		return result.(map[string]interface{}), nil
 	default:
-		return nil, fmt.Errorf("Query evaluated to %v; expected map[string]interface{}.", t)
+		return nil, fmt.Errorf("query evaluated to %v; expected map[string]interface{}", t)
 	}
 }
 

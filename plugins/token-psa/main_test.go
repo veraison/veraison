@@ -7,8 +7,9 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"veraison/common"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetTrustAnchorID(t *testing.T) {
@@ -19,7 +20,7 @@ func TestGetTrustAnchorID(t *testing.T) {
 		t.Fatalf("Could not lead device certs file.")
 	}
 
-	expectedTaId := map[string]interface{}{
+	expectedTaID := map[string]interface{}{
 		"key-id": &[]byte{
 			0x01, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0x0f, 0x0e, 0x0d,
 			0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11,
@@ -29,10 +30,10 @@ func TestGetTrustAnchorID(t *testing.T) {
 
 	ee := new(EvidenceExtractor)
 
-	taId, err := ee.GetTrustAnchorID(tokenBytes)
+	taID, err := ee.GetTrustAnchorID(tokenBytes)
 	assert.Nil(err)
-	assert.Equal(common.TaTypeKey, taId.Type)
-	assert.Equal(expectedTaId, taId.Value)
+	assert.Equal(common.TaTypeKey, taID.Type)
+	assert.Equal(expectedTaID, taID.Value)
 }
 
 func TestExtractEvidence(t *testing.T) {

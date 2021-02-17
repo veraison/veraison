@@ -60,7 +60,7 @@ func (e *SqliteEndorsementStore) GetHardwareID(args common.QueryArgs) (common.Qu
 
 	platformIDArg, ok := args["platform_id"]
 	if !ok {
-		return nil, fmt.Errorf("Missing mandatory query argument 'platform_id'")
+		return nil, fmt.Errorf("missing mandatory query argument 'platform_id'")
 	}
 
 	switch v := platformIDArg.(type) {
@@ -69,10 +69,10 @@ func (e *SqliteEndorsementStore) GetHardwareID(args common.QueryArgs) (common.Qu
 	case []interface{}:
 		platformID, ok = v[0].(string)
 		if !ok {
-			return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string")
+			return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string")
 		}
 	default:
-		return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %T", v)
+		return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string; found: %T", v)
 	}
 
 	rows, err := e.db.Query("select hw_id from hardware where platform_id = ?", platformID)
@@ -100,7 +100,7 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 
 	platformIDArg, ok := args["platform_id"]
 	if !ok {
-		return nil, fmt.Errorf("Missing mandatory query argument 'platform_id'")
+		return nil, fmt.Errorf("missing mandatory query argument 'platform_id'")
 	}
 	switch v := platformIDArg.(type) {
 	case string:
@@ -108,15 +108,15 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 	case []interface{}:
 		platformID, ok = v[0].(string)
 		if !ok {
-			return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string")
+			return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string")
 		}
 	default:
-		return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %T", v)
+		return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string; found: %T", v)
 	}
 
 	measurementsArg, ok := args["measurements"]
 	if !ok {
-		return nil, fmt.Errorf("Missing mandatory query argument 'platform_id'")
+		return nil, fmt.Errorf("missing mandatory query argument 'platform_id'")
 	}
 
 	if measurementsArg == nil {
@@ -128,14 +128,14 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 		for _, elt := range v {
 			measure, ok := elt.(string)
 			if !ok {
-				return nil, fmt.Errorf("Unexpected element type for 'measurements' slice; must be a string")
+				return nil, fmt.Errorf("unexpected element type for 'measurements' slice; must be a string")
 			}
 			measurements = append(measurements, measure)
 		}
 	case []string:
 		measurements = v
 	default:
-		return nil, fmt.Errorf("Unexpected type for 'measurements'; must be a []string; found %T", v)
+		return nil, fmt.Errorf("unexpected type for 'measurements'; must be a []string; found %T", v)
 	}
 
 	// If no measurements provided, we automatically "match" an empty set of components
@@ -151,7 +151,7 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 	return e.getSoftwareEndorsements(schemeMeasMap, len(measurements))
 }
 
-func (e *SqliteEndorsementStore) processSchemeMeasurements(measurements []string, platformId string) (map[int][]string, error) {
+func (e *SqliteEndorsementStore) processSchemeMeasurements(measurements []string, platformID string) (map[int][]string, error) {
 	var schemeMeasMap = make(map[int][]string)
 
 	for _, measure := range measurements {
@@ -159,7 +159,7 @@ func (e *SqliteEndorsementStore) processSchemeMeasurements(measurements []string
 		rows, err := e.db.Query(
 			"select scheme_id from verif_scheme_sw where measurement = ? and platform_id = ?",
 			measure,
-			platformId,
+			platformID,
 		)
 		if err != nil {
 			return nil, err
@@ -167,16 +167,16 @@ func (e *SqliteEndorsementStore) processSchemeMeasurements(measurements []string
 		defer rows.Close()
 
 		for rows.Next() {
-			var schemeId int
-			if err := rows.Scan(&schemeId); err != nil {
+			var schemeID int
+			if err := rows.Scan(&schemeID); err != nil {
 				return nil, err
 			}
 
-			if _, ok := schemeMeasMap[schemeId]; !ok {
-				schemeMeasMap[schemeId] = make([]string, 0, len(measurements))
+			if _, ok := schemeMeasMap[schemeID]; !ok {
+				schemeMeasMap[schemeID] = make([]string, 0, len(measurements))
 			}
 
-			schemeMeasMap[schemeId] = append(schemeMeasMap[schemeId], measure)
+			schemeMeasMap[schemeID] = append(schemeMeasMap[schemeID], measure)
 		}
 	}
 
@@ -186,7 +186,7 @@ func (e *SqliteEndorsementStore) processSchemeMeasurements(measurements []string
 func (e *SqliteEndorsementStore) getSoftwareEndorsements(schemeMeasMap map[int][]string, numMeasurements int) ([]interface{}, error) {
 	var result []interface{}
 
-	for schemeId, schemeMeasures := range schemeMeasMap {
+	for schemeID, schemeMeasures := range schemeMeasMap {
 		if len(schemeMeasures) != numMeasurements {
 			continue
 		}
@@ -197,7 +197,7 @@ func (e *SqliteEndorsementStore) getSoftwareEndorsements(schemeMeasMap map[int][
 			"select measurement, type, version, signer_id "+
 				"from verif_scheme_sw "+
 				"where scheme_id = ?",
-			schemeId,
+			schemeID,
 		)
 		if err != nil {
 			return nil, err
@@ -206,7 +206,7 @@ func (e *SqliteEndorsementStore) getSoftwareEndorsements(schemeMeasMap map[int][
 
 		for rows.Next() {
 			se := new(common.SoftwareEndoresement)
-			err := rows.Scan(&se.Measurement, &se.Type, &se.Version, &se.SignerId)
+			err := rows.Scan(&se.Measurement, &se.Type, &se.Version, &se.SignerID)
 			if err != nil {
 				return nil, err
 			}
@@ -215,7 +215,7 @@ func (e *SqliteEndorsementStore) getSoftwareEndorsements(schemeMeasMap map[int][
 				"measurement":          se.Measurement,
 				"sw_component_type":    se.Type,
 				"sw_component_version": se.Version,
-				"signer_id":            se.SignerId,
+				"signer_id":            se.SignerID,
 			}
 
 			schemeEndorsements = append(schemeEndorsements, swMap)

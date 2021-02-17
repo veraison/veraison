@@ -38,7 +38,7 @@ func initDb(t *testing.T) error {
 	}
 	log.Printf("Starting Command = %s", CmdStartArango.String())
 	if err := CmdStartArango.Run(); err != nil {
-		return fmt.Errorf("Failed starting Arango: %v", err)
+		return fmt.Errorf("failed starting arango: %v", err)
 	}
 	return nil
 }
