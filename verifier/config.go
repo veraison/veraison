@@ -7,7 +7,7 @@ import (
 	"veraison/common"
 )
 
-type VerifierConfig struct {
+type Config struct {
 	PluginLocations        []string
 	PolicyStoreName        string
 	PolicyEngineName       string
