@@ -19,7 +19,7 @@ type TokenProcessor struct {
 	TrustAnchorStoreName string
 	TrustAnchorStore     common.ITrustAnchorStore
 	Client               *plugin.Client
-	RpcClient            plugin.ClientProtocol
+	RPCClient            plugin.ClientProtocol
 	PluginLocations      []string
 
 	extractors map[common.TokenFormat]LoadedExtractorPlugin
@@ -28,7 +28,7 @@ type TokenProcessor struct {
 type LoadedExtractorPlugin struct {
 	Extractor common.IEvidenceExtractor
 	Client    *plugin.Client
-	RpcClient plugin.ClientProtocol
+	RPCClient plugin.ClientProtocol
 }
 
 func (tp *TokenProcessor) Init(config TokenProcessorConfig) error {
@@ -39,7 +39,7 @@ func (tp *TokenProcessor) Init(config TokenProcessorConfig) error {
 	tp.TrustAnchorStoreName = config.TrustAnchorStoreName
 
 	tp.TrustAnchorStore = lp.Raw.(common.ITrustAnchorStore)
-	tp.RpcClient = lp.RpcClient
+	tp.RPCClient = lp.RPCClient
 	tp.Client = lp.PluginClient
 	tp.PluginLocations = config.PluginLocations
 	tp.extractors = make(map[common.TokenFormat]LoadedExtractorPlugin)
@@ -66,7 +66,7 @@ func (tp TokenProcessor) GetExtractor(format common.TokenFormat) (common.IEviden
 	loadedExtractor := LoadedExtractorPlugin{
 		Extractor: lp.Raw.(common.IEvidenceExtractor),
 		Client:    lp.PluginClient,
-		RpcClient: lp.RpcClient,
+		RPCClient: lp.RPCClient,
 	}
 
 	if err = loadedExtractor.Extractor.Init(common.EvidenceExtractorParams{}); err != nil {
@@ -80,7 +80,7 @@ func (tp TokenProcessor) GetExtractor(format common.TokenFormat) (common.IEviden
 }
 
 func (tp TokenProcessor) Process(
-	tenantId int,
+	tenantID int,
 	format common.TokenFormat,
 	token []byte,
 ) (*common.EvidenceContext, error) {
@@ -89,12 +89,12 @@ func (tp TokenProcessor) Process(
 		return nil, err
 	}
 
-	taId, err := extractor.GetTrustAnchorID(token)
+	taID, err := extractor.GetTrustAnchorID(token)
 	if err != nil {
 		return nil, err
 	}
 
-	trustAnchor, err := tp.TrustAnchorStore.GetTrustAnchor(tenantId, taId)
+	trustAnchor, err := tp.TrustAnchorStore.GetTrustAnchor(tenantID, taID)
 	if err != nil {
 		return nil, err
 	}
@@ -104,5 +104,5 @@ func (tp TokenProcessor) Process(
 		return nil, err
 	}
 
-	return &common.EvidenceContext{TenantID: tenantId, Format: format, Evidence: evidence}, nil
+	return &common.EvidenceContext{TenantID: tenantID, Format: format, Evidence: evidence}, nil
 }
