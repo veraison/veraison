@@ -216,31 +216,29 @@ func (e *ArangoEndorsementStore) ConnectToArangoDB(ctx context.Context, arangoCo
 
 	// Check if Database with a given name exists or not
 	ok, err = arangoConn.client.DatabaseExists(ctx, e.StoreName)
-	if err == nil {
-		if ok {
-			arangoConn.db, err = arangoConn.client.Database(ctx, e.StoreName)
-			if err != nil {
-				return fmt.Errorf("Failed to connect to the Endorsement database: %v", err)
-			}
-		}
-		// XXX(tho) -- what if !ok ?
-	} else {
+	if err != nil {
 		return fmt.Errorf("Failure while checking whether DB exists: %v", err)
 	}
+	if !ok {
+		return fmt.Errorf("Endorsement database %s does not exist", e.StoreName)
+	}
+	arangoConn.db, err = arangoConn.client.Database(ctx, e.StoreName)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to the Endorsement database: %v", err)
+	}
 
-	// Check if the Graph exists in the DB or not ?
+	// Check if the Graph exists in the DB
 	ok, err = arangoConn.db.GraphExists(ctx, e.GraphName)
-	if err == nil {
-		if ok {
-			// Connect to the Graph now to get the Graph
-			arangoConn.graph, err = arangoConn.db.Graph(ctx, e.GraphName)
-			if err != nil {
-				return fmt.Errorf("Failed to connect to %s: %v", e.GraphName, err)
-			}
-		}
-		// XXX(tho) -- what if !ok ?
-	} else {
-		return fmt.Errorf("Failure while checking whether DB exists: %v", err)
+	if err != nil {
+		return fmt.Errorf("Failure while checking whether graph exists: %v", err)
+	}
+	if !ok {
+		return fmt.Errorf("Endorsement graph %s does not exist", e.GraphName)
+	}
+	// Connect to the Graph
+	arangoConn.graph, err = arangoConn.db.Graph(ctx, e.GraphName)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to %s: %v", e.GraphName, err)
 	}
 
 	log.Printf("Connection DB and Graph succeeded!")
