@@ -7,8 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"reflect"
-
 	"github.com/hashicorp/go-plugin"
 	_ "github.com/mattn/go-sqlite3"
 
@@ -43,7 +41,7 @@ func (e *SqliteEndorsementStore) Init(args common.EndorsementStoreParams) error 
 	e.db = db
 	e.path = dbPath
 	e.Queries = map[string]common.Query{
-		"hardware_id":         e.GetHardwareId,
+		"hardware_id":         e.GetHardwareID,
 		"software_components": e.GetSoftwareComponents,
 	}
 
@@ -55,65 +53,65 @@ func (e *SqliteEndorsementStore) Close() error {
 	return e.db.Close()
 }
 
-func (e *SqliteEndorsementStore) GetHardwareId(args common.QueryArgs) (common.QueryResult, error) {
-	var platformId string
+// GetHardwareID returns the HardwareID for the platform
+func (e *SqliteEndorsementStore) GetHardwareID(args common.QueryArgs) (common.QueryResult, error) {
+	var platformID string
 	var result []interface{}
 
-	platformIdArg, ok := args["platform_id"]
+	platformIDArg, ok := args["platform_id"]
 	if !ok {
 		return nil, fmt.Errorf("Missing mandatory query argument 'platform_id'")
 	}
 
-	switch platformIdArg.(type) {
+	switch v := platformIDArg.(type) {
 	case string:
-		platformId = platformIdArg.(string)
+		platformID = v
 	case []interface{}:
-		platformId, ok = platformIdArg.([]interface{})[0].(string)
+		platformID, ok = v[0].(string)
 		if !ok {
 			return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string")
 		}
 	default:
-		t := reflect.TypeOf(platformIdArg)
-		return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %v", t)
+		return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %T", v)
 	}
 
-	rows, err := e.db.Query("select hw_id from hardware where platform_id = ?", platformId)
+	rows, err := e.db.Query("select hw_id from hardware where platform_id = ?", platformID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var hwId string
-		if err := rows.Scan(&hwId); err != nil {
+		var hwID string
+		if err := rows.Scan(&hwID); err != nil {
 			return nil, err
 		}
 
-		result = append(result, hwId)
+		result = append(result, hwID)
 	}
 
 	return result, nil
 }
 
+// GetSoftwareComponents returns the matching measurements
 func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
-	var platformId string
+	var platformID string
 	var measurements []string
 
-	platformIdArg, ok := args["platform_id"]
+	platformIDArg, ok := args["platform_id"]
 	if !ok {
 		return nil, fmt.Errorf("Missing mandatory query argument 'platform_id'")
 	}
-	switch platformIdArg.(type) {
+	switch v := platformIDArg.(type) {
 	case string:
-		platformId = platformIdArg.(string)
+		platformID = v
 	case []interface{}:
-		platformId, ok = platformIdArg.([]interface{})[0].(string)
+		platformID, ok = v[0].(string)
 		if !ok {
 			return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string")
 		}
 	default:
-		t := reflect.TypeOf(platformIdArg)
-		return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %v", t)
+		return nil, fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %T", v)
 	}
 
 	measurementsArg, ok := args["measurements"]
@@ -125,9 +123,9 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 		return common.QueryResult{[]interface{}{}}, nil
 	}
 
-	switch measurementsArg.(type) {
+	switch v := measurementsArg.(type) {
 	case []interface{}:
-		for _, elt := range measurementsArg.([]interface{}) {
+		for _, elt := range v {
 			measure, ok := elt.(string)
 			if !ok {
 				return nil, fmt.Errorf("Unexpected element type for 'measurements' slice; must be a string")
@@ -135,9 +133,9 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 			measurements = append(measurements, measure)
 		}
 	case []string:
-		measurements = measurementsArg.([]string)
+		measurements = v
 	default:
-		return nil, fmt.Errorf("Unexpected type for 'measurements'; must be a []string")
+		return nil, fmt.Errorf("Unexpected type for 'measurements'; must be a []string; found %T", v)
 	}
 
 	// If no measurements provided, we automatically "match" an empty set of components
@@ -145,7 +143,7 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 		return common.QueryResult{[]interface{}{}}, nil
 	}
 
-	schemeMeasMap, err := e.processSchemeMeasurements(measurements, platformId)
+	schemeMeasMap, err := e.processSchemeMeasurements(measurements, platformID)
 	if err != nil {
 		return nil, err
 	}

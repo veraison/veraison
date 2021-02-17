@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
 	"veraison/common"
 
 	driver "github.com/arangodb/go-driver"
@@ -51,13 +50,6 @@ type ArangoEndorsementStore struct {
 	SwCollection   string
 	EdgeCollection string
 	RelCollection  string
-}
-
-// PsaLinkObject represents an Edge Collection container in the DB
-type PsaLinkObject struct {
-	From     string `json:"_from"`
-	To       string `json:"_to"`
-	Relation string `json:"rel"`
 }
 
 //Resource describes the software information associated with a tag
@@ -194,23 +186,23 @@ func (e *ArangoEndorsementStore) Init(args common.EndorsementStoreParams) error 
 
 	arangoConn := new(ArangoDBConnParams)
 	ctx := context.Background()
-	res, err := e.ConnectToArangoDB(ctx, arangoConn)
-	if (err != nil) || (res != true) {
+	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
 		return fmt.Errorf("Arango DB Connection Failed %v", err)
 	}
 	return nil
 }
 
 // ConnectToArangoDB is responsible for making connection to the arangoDB
-func (e *ArangoEndorsementStore) ConnectToArangoDB(ctx context.Context, arangoConn *ArangoDBConnParams) (connStatus bool, err error) {
-	// Create an HTTP Connection First to the Client
+func (e *ArangoEndorsementStore) ConnectToArangoDB(ctx context.Context, arangoConn *ArangoDBConnParams) error {
+	var ok bool
+	var err error
 
-	ok := true
+	// Create an HTTP Connection First to the Client
 	arangoConn.conn, err = http.NewConnection(http.ConnectionConfig{
 		Endpoints: []string{"http://localhost:8529"},
 	})
 	if err != nil {
-		return false, fmt.Errorf("Failed to create HTTP connection: %v", err)
+		return fmt.Errorf("Failed to create HTTP connection: %v", err)
 	}
 
 	// Create a client
@@ -218,43 +210,56 @@ func (e *ArangoEndorsementStore) ConnectToArangoDB(ctx context.Context, arangoCo
 		Connection:     arangoConn.conn,
 		Authentication: driver.BasicAuthentication(e.Login, e.Password),
 	})
+	if err != nil {
+		return fmt.Errorf("Failed to create a client: %v", err)
+	}
 
-	// Check if Database with a given name exists or not?
+	// Check if Database with a given name exists or not
 	ok, err = arangoConn.client.DatabaseExists(ctx, e.StoreName)
-	if ok {
-		arangoConn.db, err = arangoConn.client.Database(ctx, e.StoreName)
-		if err != nil {
-			return false, fmt.Errorf("Failed to connect to Endorsement database: %v", err)
-		}
+	if err != nil {
+		return fmt.Errorf("Failure while checking whether DB exists: %v", err)
+	}
+	if !ok {
+		return fmt.Errorf("Endorsement database %s does not exist", e.StoreName)
+	}
+	arangoConn.db, err = arangoConn.client.Database(ctx, e.StoreName)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to the Endorsement database: %v", err)
 	}
 
-	// Check if the Graph exists in the DB or not ?
+	// Check if the Graph exists in the DB
 	ok, err = arangoConn.db.GraphExists(ctx, e.GraphName)
-	if ok {
-		// Connect to the Graph now to get the Graph
-		arangoConn.graph, err = arangoConn.db.Graph(ctx, e.GraphName)
-		if err != nil {
-			return false, fmt.Errorf("Failed to connect to Graph for Endorsement database: %v", err)
-		}
+	if err != nil {
+		return fmt.Errorf("Failure while checking whether graph exists: %v", err)
 	}
-	log.Printf("Connection DB and Graph Succeeded!")
+	if !ok {
+		return fmt.Errorf("Endorsement graph %s does not exist", e.GraphName)
+	}
+	// Connect to the Graph
+	arangoConn.graph, err = arangoConn.db.Graph(ctx, e.GraphName)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to %s: %v", e.GraphName, err)
+	}
+
+	log.Printf("Connection DB and Graph succeeded!")
 	arangoConn.paramValid = true
-	return arangoConn.paramValid, nil
+	return nil
 }
 
-// Close method is uses to Close the DB
-func (e *ArangoEndorsementStore) Close() (err error) {
+// Close shuts down the store
+func (e *ArangoEndorsementStore) Close() error {
 	ctx := context.Background()
 	arangoConn := new(ArangoDBConnParams)
-	e.ConnectToArangoDB(ctx, arangoConn)
+	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+		return err
+	}
 
 	if arangoConn.paramValid {
-		err := arangoConn.graph.Remove(ctx)
-		if err != nil {
+		if err := arangoConn.graph.Remove(ctx); err != nil {
 			return fmt.Errorf("Unable to remove the graph: %s", err)
 		}
 
-		if err = arangoConn.db.Remove(ctx); err != nil {
+		if err := arangoConn.db.Remove(ctx); err != nil {
 			return fmt.Errorf("Failed to remove database: %s", err)
 		}
 		arangoConn.paramValid = false
@@ -266,7 +271,11 @@ func (e *ArangoEndorsementStore) Close() (err error) {
 func (e *ArangoEndorsementStore) GetHwIDFromArangoDB(platformID string, HwID *HardwareIdentity) error {
 	ctx := context.Background()
 	arangoConn := new(ArangoDBConnParams)
-	e.ConnectToArangoDB(ctx, arangoConn)
+
+	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+		return err
+	}
+
 	var HardwareInstance HardwareIdentityWrapper
 
 	bindVars := map[string]interface{}{
@@ -302,7 +311,11 @@ func (e *ArangoEndorsementStore) GetHwIDFromArangoDB(platformID string, HwID *Ha
 func (e *ArangoEndorsementStore) GetSwIDTagsLinkedToHWTagFromDB(HwTag string) ([]SoftwareIdentity, error) {
 	ctx := context.Background()
 	arangoConn := new(ArangoDBConnParams)
-	e.ConnectToArangoDB(ctx, arangoConn)
+
+	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+		return nil, err
+	}
+
 	var swidList []SoftwareIdentity
 
 	HwColTag := e.HwCollection + "/" + HwTag
@@ -339,7 +352,10 @@ func (e *ArangoEndorsementStore) GetHardwareID(args common.QueryArgs) (common.Qu
 	}
 
 	ctx := context.Background()
-	e.ConnectToArangoDB(ctx, arangoConn)
+
+	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+		return nil, err
+	}
 
 	query := "FOR d IN " + e.HwCollection
 	query += " FILTER d.HardwareIdentity.`psa-hardware-rot`.`implementation-id` == @platformId RETURN d"
@@ -395,24 +411,23 @@ func IsMeasurementInList(measure string, measurements []string) (IsPresent bool,
 	return IsPresent, err
 }
 
-//ExtractPlatformID function extracts a given platform id from supplied query arguments
+// ExtractPlatformID extracts a given platform id from supplied query arguments
 func ExtractPlatformID(args common.QueryArgs) (string, error) {
 	var platformID string
 	platformIDArg, ok := args["platform_id"]
 	if !ok {
 		return "NULL", fmt.Errorf("Missing mandatory query argument 'platform_id'")
 	}
-	switch platformIDArg.(type) {
+	switch v := platformIDArg.(type) {
 	case string:
-		platformID = platformIDArg.(string)
+		platformID = v
 	case []interface{}:
-		platformID, ok = platformIDArg.([]interface{})[0].(string)
+		platformID, ok = v[0].(string)
 		if !ok {
 			return "NULL", fmt.Errorf("Unexpected type for 'platform_id'; must be a string")
 		}
 	default:
-		t := reflect.TypeOf(platformIDArg)
-		return "NULL", fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %v", t)
+		return "NULL", fmt.Errorf("Unexpected type for 'platform_id'; must be a string; found: %T", v)
 	}
 	return platformID, nil
 }
@@ -424,9 +439,9 @@ func ExtractSoftwareComponents(args common.QueryArgs) (meas []string, err error)
 	if !ok {
 		return nil, fmt.Errorf("Missing mandatory query argument 'measurements'")
 	}
-	switch measurementsArg.(type) {
+	switch v := measurementsArg.(type) {
 	case []interface{}:
-		for _, elt := range measurementsArg.([]interface{}) {
+		for _, elt := range v {
 			measure, ok := elt.(string)
 			if !ok {
 				return nil, fmt.Errorf("Unexpected type for 'measurements'; must be a []string")
@@ -434,9 +449,9 @@ func ExtractSoftwareComponents(args common.QueryArgs) (meas []string, err error)
 			measurements = append(measurements, measure)
 		}
 	case []string:
-		measurements = measurementsArg.([]string)
+		measurements = v
 	default:
-		return nil, fmt.Errorf("Unexpected type for 'measurements'; must be a []string")
+		return nil, fmt.Errorf("Unexpected type for 'measurements'; must be []string, found: %T", v)
 	}
 	return measurements, nil
 }
@@ -594,23 +609,17 @@ func (e *ArangoEndorsementStore) GetAltSoftwareComponents(args common.QueryArgs)
 	return result, nil
 }
 
-// InputSwidMatches checks whether a given SWID is present in a SWID list
-func InputSwidMatches(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 //GetSwIDTagsForQueryFromDB is the most generic function that is been used to fetch
 // SWID's based on given query as an argument to the function.
 //Please note returned swid list contains only naked nodes, it does not contain any links/relations among swid.
 func (e *ArangoEndorsementStore) GetSwIDTagsForQueryFromDB(query string) ([]SoftwareIdentity, error) {
 	ctx := context.Background()
 	arangoConn := new(ArangoDBConnParams)
-	e.ConnectToArangoDB(ctx, arangoConn)
+
+	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+		return nil, err
+	}
+
 	var swidList []SoftwareIdentity
 
 	log.Printf("Supplied Query = %s", query)
@@ -714,9 +723,7 @@ func (e *ArangoEndorsementStore) GetAllswidForPlatform(platformID string) ([][]S
 		if err != nil {
 			return nil, fmt.Errorf("Error occured while fetching relations %v", err)
 		}
-		for _, relswid := range relList {
-			indexSwidList = append(indexSwidList, relswid)
-		}
+		indexSwidList = append(indexSwidList, relList...)
 		finalList = append(finalList, indexSwidList)
 	}
 	return finalList, nil

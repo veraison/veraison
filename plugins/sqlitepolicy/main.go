@@ -44,20 +44,23 @@ func (ps *PolicyStore) Init(args common.PolicyStoreParams) error {
 	return nil
 }
 
-func (ps *PolicyStore) GetPolicy(tenantId int, tokenFormat common.TokenFormat) (*common.Policy, error) {
+// GetPolicy returns a policy matching a tenant and the Evidence format
+func (ps *PolicyStore) GetPolicy(tenantID int, tokenFormat common.TokenFormat) (*common.Policy, error) {
 	policy := common.NewPolicy()
 
 	policy.TokenFormat = tokenFormat
 
 	row := ps.db.QueryRow(
 		"select query_map, rules from policy where tenant_id = ? and token_format = ?",
-		tenantId, tokenFormat.String(),
+		tenantID, tokenFormat.String(),
 	)
 	if err := row.Err(); err != nil {
 		return nil, err
 	}
 	var queryMapBytes []byte
-	row.Scan(&queryMapBytes, &policy.Rules)
+	if err := row.Scan(&queryMapBytes, &policy.Rules); err != nil {
+		return nil, err
+	}
 
 	err := json.Unmarshal(queryMapBytes, &policy.QueryMap)
 	if err != nil {
@@ -67,7 +70,8 @@ func (ps *PolicyStore) GetPolicy(tenantId int, tokenFormat common.TokenFormat) (
 	return policy, nil
 }
 
-func (ps *PolicyStore) PutPolicy(tenantId int, policy *common.Policy) error {
+// PutPolicy stores a policy under the given tenant
+func (ps *PolicyStore) PutPolicy(tenantID int, policy *common.Policy) error {
 
 	QueryMapBytes, err := json.Marshal(policy.QueryMap)
 	if err != nil {
@@ -76,7 +80,7 @@ func (ps *PolicyStore) PutPolicy(tenantId int, policy *common.Policy) error {
 
 	_, err = ps.db.Exec(
 		"insert into policy (tenant_id, token_format, query_map, rules) values (?, ?, ?, ?)",
-		tenantId, policy.TokenFormat.String(), QueryMapBytes, policy.Rules,
+		tenantID, policy.TokenFormat.String(), QueryMapBytes, policy.Rules,
 	)
 
 	return err

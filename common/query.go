@@ -97,9 +97,9 @@ func ParseQueryDescriptors(claims map[string]interface{}, data []byte) ([]*Query
 
 	var querySpecs map[string]interface{}
 
-	switch unmarshaledData.(type) {
+	switch v := unmarshaledData.(type) {
 	case map[string]interface{}:
-		querySpecs = unmarshaledData.(map[string]interface{})
+		querySpecs = v
 	default:
 		return nil, fmt.Errorf("Unexped type for unmashaled query specs; must be a JSON object")
 	}
@@ -109,24 +109,26 @@ func ParseQueryDescriptors(claims map[string]interface{}, data []byte) ([]*Query
 		qd.Constraint = QcNone
 		var argsSpec map[string]string
 
-		switch unmarshaledArgsSpec.(type) {
+		switch v := unmarshaledArgsSpec.(type) {
 		case map[string]string:
-			argsSpec = unmarshaledArgsSpec.(map[string]string)
+			argsSpec = v
 		case map[string]interface{}:
 			argsSpec := make(map[string]string)
-			for k, v := range unmarshaledArgsSpec.(map[string]interface{}) {
-				switch v.(type) {
+			for key, val := range v {
+				switch v1 := val.(type) {
 				case string:
-					argsSpec[k] = v.(string)
+					argsSpec[key] = v1
 				default:
-					return nil, fmt.Errorf("Query arg spec value must be a string.")
+					return nil, fmt.Errorf("query arg spec value must be a string")
 				}
 			}
 		default:
-			return nil, fmt.Errorf("Unexped type for unmashaled query arg specs; must be a JSON object with string values")
+			return nil, fmt.Errorf("unexpected type for unmashaled query arg specs; must be a JSON object with string values")
 		}
 
-		PopulateQueryDescriptor(claims, queryName, argsSpec, qd)
+		if err := PopulateQueryDescriptor(claims, queryName, argsSpec, qd); err != nil {
+			return nil, err
+		}
 		qds = append(qds, qd)
 	}
 

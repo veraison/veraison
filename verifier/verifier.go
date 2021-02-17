@@ -5,6 +5,7 @@ package verifier
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/go-plugin"
 
 	"veraison/common"
@@ -29,9 +30,15 @@ func NewVerifier() (*Verifier, error) {
 	return v, nil
 }
 
+// Initialize bootstraps the verifier
 func (v *Verifier) Initialize(vc VerifierConfig) error {
-	v.em.InitializeStore(vc.PluginLocations, vc.EndorsementStoreName, vc.EndorsementStoreParams)
-	v.pm.InitializeStore(vc.PluginLocations, vc.PolicyStoreName, vc.PolicyStoreParams)
+	if err := v.em.InitializeStore(vc.PluginLocations, vc.EndorsementStoreName, vc.EndorsementStoreParams); err != nil {
+		return err
+	}
+
+	if err := v.pm.InitializeStore(vc.PluginLocations, vc.PolicyStoreName, vc.PolicyStoreParams); err != nil {
+		return err
+	}
 
 	engineName := common.Canonize(vc.PolicyEngineName)
 
@@ -57,6 +64,7 @@ func (v *Verifier) Initialize(vc VerifierConfig) error {
 	return nil
 }
 
+// Verify verifies the supplied Evidence
 func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.AttestationResult, error) {
 	policy, err := v.pm.GetPolicy(ec.TenantID, ec.Format)
 	if err != nil {
