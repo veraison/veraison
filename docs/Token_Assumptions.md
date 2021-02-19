@@ -3,7 +3,7 @@ The following captures what is assumed about the nature of the attestation token
 
 A token is presented as a single 'blob' (byte stream).
 
-Tokens are presented individually. If a batch mode submission is required, that is the responsibility of an API tier.
+Tokens are presented individually. If a batch mode submission is required, it is the responsibility of an API tier to pass them for verification one by one.
 
 Encoding in transit is the responsibility of the API tier, the verification pipeline works on a byte stream.
 
