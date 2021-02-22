@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := test
 
-GOPKG := verason/policymanager
+GOPKG := github.com/verason/policymanager
 
 include ../mk/common.mk
 include ../mk/pkg.mk

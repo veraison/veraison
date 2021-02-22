@@ -6,7 +6,7 @@ package endorsement
 import (
 	"github.com/hashicorp/go-plugin"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 // Manager handles interadctions with the endorsement store. It is responsible

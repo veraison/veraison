@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"veraison/common"
+	"github.com/veraison/common"
 
 	"github.com/stretchr/testify/assert"
 )

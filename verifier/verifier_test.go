@@ -16,7 +16,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 func getInput(path string, v interface{}) error {

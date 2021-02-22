@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/open-policy-agent/opa/rego"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 type OpaPolicyEngine struct {

@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := test
 
-GOPKG := veraison/common
+GOPKG := github.com/veraison/common
 
 include ../mk/common.mk
 include ../mk/pkg.mk

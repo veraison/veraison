@@ -1,4 +1,4 @@
-module veraison/common
+module github.com/veraison/common
 
 go 1.15
 

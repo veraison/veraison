@@ -1,8 +1,8 @@
-module verason/policymanager
+module github.com/verason/policymanager
 
 go 1.15
 
-replace veraison/common => ../common
+replace github.com/veraison/common => ../common
 
 require (
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
@@ -10,5 +10,5 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.3
 	github.com/ohler55/ojg v1.2.1 // indirect
 	github.com/stretchr/testify v1.6.1
-	veraison/common v0.0.0
+	github.com/veraison/common v0.0.0
 )

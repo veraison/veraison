@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := test
 
-GOPKG := veraison/endorsement
+GOPKG := github.com/veraison/endorsement
 
 include ../mk/common.mk
 include ../mk/pkg.mk

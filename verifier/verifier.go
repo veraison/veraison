@@ -8,9 +8,9 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 
-	"veraison/common"
-	"veraison/endorsement"
-	"veraison/policy"
+	"github.com/veraison/common"
+	"github.com/veraison/endorsement"
+	"github.com/veraison/policy"
 )
 
 type Verifier struct {

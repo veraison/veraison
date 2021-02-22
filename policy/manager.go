@@ -6,7 +6,7 @@ package policy
 import (
 	"github.com/hashicorp/go-plugin"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 type Manager struct {
