@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 func initDb(schemaFile string) (string, error) {

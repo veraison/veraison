@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	_ "github.com/mattn/go-sqlite3"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 var insertQueryText = "INSERT INTO trust_anchor(tenant_id, ta_type, ta_id, value) VALUES (?, ?, ?, ?)"

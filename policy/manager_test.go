@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"veraison/common"
+	"github.com/veraison/common"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"

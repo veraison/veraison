@@ -10,7 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
-	"veraison/common"
+
+	"github.com/veraison/common"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

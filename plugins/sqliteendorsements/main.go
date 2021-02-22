@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	_ "github.com/mattn/go-sqlite3"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 type SqliteEndorsementStore struct {

@@ -8,7 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"veraison/common"
+
+	"github.com/veraison/common"
 
 	driver "github.com/arangodb/go-driver"
 	"github.com/arangodb/go-driver/http"

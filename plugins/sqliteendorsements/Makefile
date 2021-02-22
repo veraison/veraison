@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 PLUGIN := ../bin/sqlite-endorsement-store
-GOPKG := veraison/sqliteendrosements
+GOPKG := github.com/veraison/sqliteendrosements
 SRCS := main.go
 
 include ../../mk/common.mk
