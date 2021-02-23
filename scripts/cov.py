@@ -7,7 +7,7 @@ import sys
 cover_report_lines = sys.stdin.read()
 
 if len(cover_report_lines) == 0:
-    sys.exit(1)
+    sys.exit(2)
 
 # extract min coverage from GITHUB_WORKFLOW, e.g., "60.4%"
 min_cover = float(re.findall(r'\d*\.\d+|\d+', os.environ['GITHUB_WORKFLOW'])[0])
