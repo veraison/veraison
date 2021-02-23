@@ -4,9 +4,9 @@ name: ci
 on: [push]
 jobs:
 
-  # Test on various OS with default Go version. 
+  # Test on Ubuntu latest with default Go version.
   tests:
-    name: Test on ${{matrix.os}}
+    name: Test on ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code

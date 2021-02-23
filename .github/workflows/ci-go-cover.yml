@@ -8,10 +8,10 @@
 # To help protect your privacy, this workflow avoids external services.
 # This workflow simply runs `go test -short -cover` --> grep --> python.
 # The python script is embedded and readable in this file.
-# 
+#
 # Steps to install and set minimum required coverage:
 # 0. Copy this file to github.com/OWNER_NAME/REPO_NAME/.github/workflows/ci-go-cover.yml
-# 1. Change workflow name from "cover 100%" to "cover ≥92.5%". Script will automatically use 92.5%.  
+# 1. Change workflow name from "cover 100%" to "cover ≥92.5%". Script will automatically use 92.5%.
 # 2. Update README.md to use the new path to badge.svg because the path includes the workflow name.
 
 # This is suboptimal and need to go up.
@@ -31,5 +31,5 @@ jobs:
     - name: Go Coverage
       run: |
         go version
-        make CI_PIPELINE=true TEST_ARGS="-short -cover" test | grep -o "coverage:.*of statements$" | python scripts/cov.py
+        make CI_PIPELINE=true TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
       shell: bash
