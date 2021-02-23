@@ -9,4 +9,21 @@ SUBDIR += token-dice
 SUBDIR += token-psa
 SUBDIR += trustanchorstore-sqlite
 
+ifeq ($(MAKECMDGOALS),test)
+ifdef CI_PIPELINE
+
+# At the moment, these tests need docker-in-docker or an arangogb instance
+# installed in the pipeline runner.  While we rethink the unit testing strategy
+# (see https://github.com/veraison/veraison/issues/16) these tests are not run
+# in the pipeline.
+SUBDIR := $(filter-out arangodbendorsements,$(SUBDIR))
+
+# At present, the policy engine built on OPA has no tests (see
+# https://github.com/veraison/veraison/issues/17).  We need to remove
+# it from the CI testing because it messes up the coverage collection filter.
+SUBDIR := $(filter-out opapolicyengine,$(SUBDIR))
+
+endif # test
+endif # in CI pipeline
+
 include ../mk/subdir.mk

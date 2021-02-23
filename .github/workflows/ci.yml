@@ -1,0 +1,19 @@
+# GitHub Actions - CI for Go to build & test.  See ci-go-cover.yml and linters.yml for code coverage and linters.
+# Taken from: https://github.com/fxamacker/cbor/workflows/ci.yml (thanks!)
+name: ci
+on: [push]
+jobs:
+
+  # Test on Ubuntu latest with default Go version.
+  tests:
+    name: Test on ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Build project
+      run: make
+    - name: Run tests
+      run: |
+        go version
+        make -w CI_PIPELINE=true test
