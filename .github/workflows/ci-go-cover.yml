@@ -1,0 +1,35 @@
+# Copyright 2020-present Montgomery Edwards⁴⁴⁸ (github.com/x448).
+# This file is licensed under the MIT License. See LICENSE at https://github.com/x448/workflows for the full text.
+#
+# CI Go Cover 2020.1.28.
+# This GitHub Actions workflow checks if Go (Golang) code coverage satisfies the required minimum.
+# The required minimum is specified in the workflow name to keep badge.svg and verified minimum in sync.
+#
+# To help protect your privacy, this workflow avoids external services.
+# This workflow simply runs `go test -short -cover` --> grep --> python.
+# The python script is embedded and readable in this file.
+# 
+# Steps to install and set minimum required coverage:
+# 0. Copy this file to github.com/OWNER_NAME/REPO_NAME/.github/workflows/ci-go-cover.yml
+# 1. Change workflow name from "cover 100%" to "cover ≥92.5%". Script will automatically use 92.5%.  
+# 2. Update README.md to use the new path to badge.svg because the path includes the workflow name.
+
+# This is suboptimal and need to go up.
+# (See https://github.com/veraison/veraison/issues/18)
+name: cover ≥13.9%
+on: [push]
+jobs:
+
+  # Verify minimum coverage is reached using `go test -short -cover` on latest-ubuntu with default version of Go.
+  # The grep expression can't be too strict, it needed to be relaxed to work with different versions of Go.
+  cover:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Go Coverage
+      run: |
+        go version
+        make CI_PIPELINE=true TEST_ARGS="-short -cover" test | grep -o "coverage:.*of statements$" | python ../scripts/cov.py
+      shell: bash

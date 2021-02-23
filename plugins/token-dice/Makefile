@@ -7,3 +7,5 @@ SRCS := main.go
 
 include ../../mk/common.mk
 include ../../mk/plugin.mk
+include ../../mk/lint.mk
+include ../../mk/test.mk

@@ -11,7 +11,6 @@
 # * all   - build $(PLUGIN) from $(SRCS) [DEFAULT]
 # * clean - remove $(PLUGIN)
 # * test  - run $(GOPKG) test
-# * lint  - run source code linter
 
 .DEFAULT_GOAL := all
 
@@ -32,9 +31,3 @@ all: $(PLUGIN)
 
 .PHONY: clean
 clean: ; $(RM) $(PLUGIN) $(CLEANFILES)
-
-.PHONY: test
-test: ; go test -v -cover -race $(GOPKG)
-
-.PHONY: lint
-lint: ; golangci-lint run
