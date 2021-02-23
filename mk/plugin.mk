@@ -4,13 +4,11 @@
 # variables:
 # * SRCS       - plugin source files
 # * PLUGIN     - plugin binary file
-# * GOPKG      - name of the go package
 # * DEBUG      - set this to true to compile with debug symbols
 # * CLEANFILES - any additional file to remove on clean
 # targets:
 # * all   - build $(PLUGIN) from $(SRCS) [DEFAULT]
 # * clean - remove $(PLUGIN)
-# * test  - run $(GOPKG) test
 
 .DEFAULT_GOAL := all
 
