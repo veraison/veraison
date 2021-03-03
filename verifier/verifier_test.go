@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/veraison/common"
+
+	"go.uber.org/zap"
 )
 
 func getInput(path string, v interface{}) error {
@@ -103,7 +105,7 @@ func TestVerifier(t *testing.T) {
 		},
 	}
 
-	v, err := NewVerifier()
+	v, err := NewVerifier(zap.NewDevelopment())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
