@@ -7,5 +7,6 @@ SUBDIR += endorsement
 SUBDIR += policy
 SUBDIR += tokenprocessor
 SUBDIR += verifier
+SUBDIR += frontend
 
 include mk/subdir.mk
