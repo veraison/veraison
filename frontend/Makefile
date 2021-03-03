@@ -1,9 +1,17 @@
+include ../mk/common.mk
+include ../mk/lint.mk
+include ../mk/test.mk
 
-build:
-	go build cmd/veraison/main.go
+.PHONY: all
+all: verifier
 
+verifier:
+	go build -o verifier cmd/veraison/main.go
+
+.PHONY: clean
 clean:
-	rm -f ./main
+	rm -f verifier
 
+.PHONY: run
 run: build
-	./main -p ../plugins/bin -d test/db
+	./verifier -p ../plugins/bin -d test/db

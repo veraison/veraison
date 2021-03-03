@@ -19,5 +19,5 @@ require (
 	github.com/veraison/policy v0.0.0
 	github.com/veraison/tokenprocessor v0.0.0-00010101000000-000000000000
 	github.com/veraison/verifier v0.0.0
-	go.uber.org/zap v1.13.0
+	go.uber.org/zap v1.16.0
 )

@@ -20,7 +20,7 @@ func main() {
 		fmt.Printf("Error: %v", err)
 		return
 	}
-	defer logger.Sync()
+	defer logger.Sync() //nolint:errcheck
 
 	tokenProcessor, err := frontend.NewTokenProcessor(pluginDir, dbPath)
 	if err != nil {
@@ -35,5 +35,8 @@ func main() {
 	}
 
 	router := frontend.NewRouter(logger, tokenProcessor, verifier)
-	router.Run()
+	err = router.Run()
+	if err != nil {
+		logger.Error("error runnig server", zap.Error(err))
+	}
 }

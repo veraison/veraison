@@ -40,13 +40,18 @@ func (c *Controller) Init(logger ILogger, tp *tokenprocessor.TokenProcessor, v *
 func (c Controller) NewSession(g *gin.Context) {
 	nonceSize, err := strconv.Atoi(g.Query("nonceSize"))
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err)
+		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
+		return
 	}
 
-	session := c.sessionManager.StartSession(nonceSize)
+	session, err := c.sessionManager.StartSession(nonceSize)
+	if err != nil {
+		g.AbortWithError(http.StatusInternalServerError, err) //nolint:errcheck
+		return
+	}
 
-	reqUrl := g.Request.URL
-	basePath := path.Dir(reqUrl.Path)
+	reqURL := g.Request.URL
+	basePath := path.Dir(reqURL.Path)
 	sessionPath := path.Join(basePath, "session", strconv.FormatInt(session.GetID(), 10))
 
 	g.Header("Content-Type", "application/rats-challenge-response-session+json")
@@ -62,40 +67,40 @@ func (c Controller) Verify(g *gin.Context) {
 	// TODO: parameterise verification mode.
 	simpleVerif := false
 
-	sessionId, err := strconv.Atoi(g.Param("sessionId"))
+	sessionID, err := strconv.Atoi(g.Param("sessionId"))
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err)
+		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
 		return
 	}
 
-	session := c.sessionManager.GetSession(int64(sessionId))
+	session := c.sessionManager.GetSession(int64(sessionID))
 	if session == nil {
-		g.AbortWithError(http.StatusBadRequest, fmt.Errorf("no session with id %d", sessionId))
+		g.AbortWithError(http.StatusBadRequest, fmt.Errorf("no session with id %d", sessionID)) //nolint:errcheck
 		return
 	}
 
 	contentTypes := g.Request.Header["Content-Type"]
 	if len(contentTypes) != 1 {
-		g.AbortWithError(http.StatusBadRequest, errors.New("must specify exactly one content type"))
+		g.AbortWithError(http.StatusBadRequest, errors.New("must specify exactly one content type")) //nolint:errcheck
 		return
 	}
 	tokenFormat := contentTypeToTokenFormat(contentTypes[0])
 
 	tokenData, err := ioutil.ReadAll(g.Request.Body)
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err)
+		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
 		return
 	}
 
 	evidenceContext, err := c.tokenProcessor.Process(tenantID, tokenFormat, tokenData)
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err)
+		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
 		return
 	}
 
 	attestationResult, err := c.verifier.Verify(evidenceContext, simpleVerif)
 	if err != nil {
-		g.AbortWithError(http.StatusInternalServerError, err)
+		g.AbortWithError(http.StatusInternalServerError, err) //nolint:errcheck
 		return
 	}
 
@@ -110,7 +115,11 @@ func (c Controller) Verify(g *gin.Context) {
 		Result: *attestationResult,
 	}
 
-	c.sessionManager.EndSession(session.GetID())
+	if err = c.sessionManager.EndSession(session.GetID()); err != nil {
+		g.AbortWithError(http.StatusInternalServerError, err) //nolint:errcheck
+		return
+	}
+
 	g.JSON(http.StatusOK, responseBody)
 }
 

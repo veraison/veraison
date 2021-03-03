@@ -12,7 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"veraison/common"
+
+	"github.com/veraison/common"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
@@ -87,7 +88,7 @@ func Test_TokenProcessor_ProcessDice(t *testing.T) {
 
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
-	config := TokenProcessorConfig{
+	config := Config{
 		PluginLocations:      []string{pluginDir},
 		TrustAnchorStoreName: "sqlite",
 		TrustAnchorStoreParams: common.TrustAnchorStoreParams{

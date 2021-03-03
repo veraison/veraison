@@ -12,7 +12,7 @@ func NewTokenProcessor(pluginDir string, dbPath string) (*tokenprocessor.TokenPr
 	trustAnchorDbPath := path.Join(dbPath, "trustanchors.sqlite3")
 
 	// TODO make processor params configurable
-	var config = tokenprocessor.TokenProcessorConfig{
+	var config = tokenprocessor.Config{
 		PluginLocations:      []string{pluginDir},
 		TrustAnchorStoreName: "sqlite",
 		TrustAnchorStoreParams: common.TrustAnchorStoreParams{

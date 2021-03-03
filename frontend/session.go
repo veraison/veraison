@@ -1,15 +1,15 @@
 package frontend
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 )
 
 type SessionManager struct {
-	lock        sync.Mutex // protects session
-	lastId      int64
+	lock        *sync.Mutex // protects session
+	lastID      int64
 	maxLifeTime int
 	sessions    map[int64]*Session
 }
@@ -17,16 +17,21 @@ type SessionManager struct {
 func NewSessionManager(maxlifetime int) *SessionManager {
 	manager := &SessionManager{maxLifeTime: maxlifetime}
 	manager.sessions = make(map[int64]*Session)
+	manager.lock = new(sync.Mutex)
 	return manager
 }
 
-func (m *SessionManager) StartSession(nonceSize int) *Session {
+func (m *SessionManager) StartSession(nonceSize int) (*Session, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	session := m.initNewSession(nonceSize)
+	session, err := m.initNewSession(nonceSize)
+	if err != nil {
+		return nil, err
+	}
+
 	m.sessions[session.GetID()] = session
-	return session
+	return session, nil
 }
 
 func (m SessionManager) GetSession(sessionID int64) *Session {
@@ -34,31 +39,34 @@ func (m SessionManager) GetSession(sessionID int64) *Session {
 	return session
 }
 
-func (m *SessionManager) EndSession(sessionId int64) error {
-	if _, ok := m.sessions[sessionId]; !ok {
-		fmt.Errorf("session with id \"%d\" does not exist", sessionId)
+func (m *SessionManager) EndSession(sessionID int64) error {
+	if _, ok := m.sessions[sessionID]; !ok {
+		return fmt.Errorf("session with id \"%d\" does not exist", sessionID)
 	}
 
-	delete(m.sessions, sessionId)
+	delete(m.sessions, sessionID)
 	return nil
 }
 
 func (m *SessionManager) generateSessionID() int64 {
-	m.lastId++
-	return m.lastId
+	m.lastID++
+	return m.lastID
 }
 
-func (m *SessionManager) initNewSession(nonceSize int) *Session {
+func (m *SessionManager) initNewSession(nonceSize int) (*Session, error) {
 	id := m.generateSessionID()
 	s := new(Session)
 
 	nonce := make([]byte, nonceSize)
-	rand.Read(nonce)
+	_, err := rand.Read(nonce)
+	if err != nil {
+		return nil, err
+	}
 
 	expiry := time.Now().Add(time.Second * time.Duration(m.maxLifeTime))
 
 	s.Init(id, nonce, expiry)
-	return s
+	return s, nil
 }
 
 type Session struct {
@@ -68,10 +76,10 @@ type Session struct {
 }
 
 type SessionInfo struct {
-	Nonce  []byte    `json:"nonce", binding:"required"`
-	Expiry time.Time `json:"expiry", binding:"required"`
-	Accept []string  `json:"accept", binding:"required"`
-	State  string    `json:"state", binding:"required"`
+	Nonce  []byte    `json:"nonce" binding:"required"`
+	Expiry time.Time `json:"expiry" binding:"required"`
+	Accept []string  `json:"accept" binding:"required"`
+	State  string    `json:"state" binding:"required"`
 }
 
 // Init initializes a new session with the specified ID

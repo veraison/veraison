@@ -105,7 +105,12 @@ func TestVerifier(t *testing.T) {
 		},
 	}
 
-	v, err := NewVerifier(zap.NewDevelopment())
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	v, err := NewVerifier(logger)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

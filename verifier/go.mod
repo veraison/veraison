@@ -16,5 +16,6 @@ require (
 	github.com/veraison/common v0.0.0
 	github.com/veraison/endorsement v0.0.0
 	github.com/veraison/policy v0.0.0
+	go.uber.org/zap v1.16.0
 	golang.org/x/tools/gopls v0.5.0 // indirect
 )
