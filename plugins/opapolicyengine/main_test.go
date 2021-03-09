@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/veraison/common"
@@ -26,43 +27,34 @@ func readJSONObjectFromFile(path string) (map[string]interface{}, error) {
 
 func Test_Validate(t *testing.T) {
 	require := require.New(t)
+	assert := assert.New(t)
 
 	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	require.Nil(err)
 
 	endorsementsPath := filepath.Join(wd, "test", "endorsements.json")
 	evidencePath := filepath.Join(wd, "test", "evidence.json")
 	policyPath := filepath.Join(wd, "test", "policy.rego")
 
 	endorsements, err := readJSONObjectFromFile(endorsementsPath)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	require.Nil(err)
 
 	evidence, err := readJSONObjectFromFile(evidencePath)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	require.Nil(err)
 
 	policyData, err := ioutil.ReadFile(policyPath)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	require.Nil(err)
 
 	var pe OpaPolicyEngine
 	var peParams common.PolicyEngineParams
 
-	if err = pe.Init(peParams); err != nil {
-		t.Fatalf("%v", err)
-	}
+	err = pe.Init(peParams)
+	require.Nil(err)
 
-	if err = pe.LoadPolicy(policyData); err != nil {
-		t.Fatalf("%v", err)
-	}
+	err = pe.LoadPolicy(policyData)
+	require.Nil(err)
 
 	isValid, err := pe.CheckValid(evidence, endorsements)
-	require.Nil(err)
-	require.True(isValid)
+	assert.Nil(err)
+	assert.True(isValid)
 }

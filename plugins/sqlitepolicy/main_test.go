@@ -14,8 +14,9 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 func initDb(schemaFile string) (string, error) {
@@ -56,30 +57,23 @@ func finiDb(path string) {
 }
 
 func TestSqliteGetPolicy(t *testing.T) {
+	require := require.New(t)
 	assert := assert.New(t)
 
 	wd, err := os.Getwd()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+	require.Nil(err)
 
 	schemaFile := filepath.Join(wd, "test", "iat-policy.sqlite")
 	dbPath, err := initDb(schemaFile)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+	require.Nil(err)
 	defer finiDb(dbPath)
 
 	var pm PolicyStore
 	err = pm.Init(common.PolicyStoreParams{"dbPath": dbPath})
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+	require.Nil(err)
 
 	policy, err := pm.GetPolicy(1, common.PsaIatToken)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+	require.Nil(err)
 
 	assert.Equal(common.PsaIatToken, policy.TokenFormat)
 	assert.Equal("$.implementation_id", policy.QueryMap["hardware_id"]["platform_id"])

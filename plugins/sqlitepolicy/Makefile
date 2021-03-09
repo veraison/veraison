@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 PLUGIN := ../bin/sqlite-policy-store
-GOPKG := veraison/sqlitepolicy
+GOPKG := github.com/veraison/sqlitepolicy
 SRCS := main.go
 
 include ../../mk/common.mk
