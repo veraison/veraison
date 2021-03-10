@@ -8,9 +8,11 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 
-	"veraison/common"
-	"veraison/endorsement"
-	"veraison/policy"
+	"github.com/veraison/common"
+	"github.com/veraison/endorsement"
+	"github.com/veraison/policy"
+
+	"go.uber.org/zap"
 )
 
 type Verifier struct {
@@ -19,11 +21,13 @@ type Verifier struct {
 	pe        common.IPolicyEngine
 	rpcClient plugin.ClientProtocol
 	client    *plugin.Client
+	logger    *zap.Logger
 }
 
-func NewVerifier() (*Verifier, error) {
+func NewVerifier(logger *zap.Logger) (*Verifier, error) {
 	v := new(Verifier)
 
+	v.logger = logger
 	v.pm = policy.NewManager()
 	v.em = endorsement.NewManager()
 
@@ -66,6 +70,7 @@ func (v *Verifier) Initialize(vc Config) error {
 
 // Verify verifies the supplied Evidence
 func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.AttestationResult, error) {
+	v.logger.Debug("verify params", zap.Reflect("evidence context", ec), zap.Bool("simple", simple))
 	policy, err := v.pm.GetPolicy(ec.TenantID, ec.Format)
 	if err != nil {
 		return nil, err
@@ -98,10 +103,14 @@ func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.Atte
 
 	result := new(common.AttestationResult)
 
+	v.logger.Debug("fetched endorsements", zap.Reflect("endorsements", endorsements))
+	v.logger.Debug("extracted evidence", zap.Reflect("evidence", ec.Evidence))
+
 	if err := v.pe.GetAttetationResult(ec.Evidence, endorsements, simple, result); err != nil {
 		return nil, err
 	}
 
+	v.logger.Debug("attestation result", zap.Reflect("result", result))
 	return result, nil
 }
 

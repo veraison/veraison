@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/veraison/psatoken"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 type EvidenceExtractor struct {

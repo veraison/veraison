@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/veraison/dice"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 var altNameID = asn1.ObjectIdentifier{2, 5, 29, 17}

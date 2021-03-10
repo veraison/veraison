@@ -5,6 +5,7 @@ package common
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,7 +18,7 @@ type TokenFormat int
 func (tf TokenFormat) String() string {
 	switch tf {
 	case PsaIatToken:
-		return "psa_iat"
+		return "psa"
 	case DiceToken:
 		return "dice"
 	default:
@@ -33,6 +34,10 @@ const (
 	// DiceToken is a token based on the TCG DICE specification
 	// https://trustedcomputinggroup.org/wp-content/uploads/TCG_DICE_Attestation_Architecture_r22_02dec2020.pdf
 	DiceToken
+
+	// UnknownToken is used to indicate that the format of the token could
+	// not be established.
+	UnknownToken = TokenFormat(math.MaxInt64)
 )
 
 var tokenRegex = regexp.MustCompile(`token\((\d+)\)`)
@@ -41,7 +46,7 @@ var tokenRegex = regexp.MustCompile(`token\((\d+)\)`)
 func TokenFormatFromString(value string) (TokenFormat, error) {
 	value = strings.ToLower(value)
 
-	if value == "psa_iat" || value == "psa-iat" {
+	if value == "psa_iat" || value == "psa-iat" || value == "psa" {
 		return PsaIatToken, nil
 	} else if matched := tokenRegex.FindSubmatch([]byte(value)); len(matched) != 0 {
 		i, err := strconv.Atoi(string(matched[1]))

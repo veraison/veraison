@@ -1,15 +1,15 @@
 // Copyright 2021 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package evidence
+package tokenprocessor
 
 import (
 	"github.com/hashicorp/go-plugin"
 
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
-type TokenProcessorConfig struct {
+type Config struct {
 	PluginLocations        []string
 	TrustAnchorStoreName   string
 	TrustAnchorStoreParams common.TrustAnchorStoreParams
@@ -31,7 +31,7 @@ type LoadedExtractorPlugin struct {
 	RPCClient plugin.ClientProtocol
 }
 
-func (tp *TokenProcessor) Init(config TokenProcessorConfig) error {
+func (tp *TokenProcessor) Init(config Config) error {
 	lp, err := common.LoadPlugin(config.PluginLocations, "trustanchorstore", config.TrustAnchorStoreName)
 	if err != nil {
 		return err

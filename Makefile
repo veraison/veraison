@@ -7,5 +7,10 @@ SUBDIR += endorsement
 SUBDIR += policy
 SUBDIR += tokenprocessor
 SUBDIR += verifier
+SUBDIR += frontend
+
+# At present, the frontentd has no tests We need to remove it from the CI
+# testing because it messes up the coverage collection filter.
+SUBDIR := $(filter-out frontend,$(SUBDIR))
 
 include mk/subdir.mk

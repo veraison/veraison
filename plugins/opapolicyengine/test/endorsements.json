@@ -1,0 +1,29 @@
+{
+    "hardware_id": "1234567890123",
+    "software_components": [
+        {
+            "measurement": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRY=",
+            "signer_id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "sw_component_type": "BL",
+            "sw_component_version": "3.4.2"
+        },
+        {
+            "measurement": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRc=",
+            "signer_id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "sw_component_type": "M1",
+            "sw_component_version": "1.2.0"
+        },
+        {
+            "measurement": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "signer_id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "sw_component_type": "M2",
+            "sw_component_version": "1.2.3"
+        },
+        {
+            "measurement": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRk=",
+            "signer_id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "sw_component_type": "M3",
+            "sw_component_version": "1.0.0"
+        }
+    ]
+}

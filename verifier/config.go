@@ -4,7 +4,7 @@
 package verifier
 
 import (
-	"veraison/common"
+	"github.com/veraison/common"
 )
 
 type Config struct {

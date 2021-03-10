@@ -1,7 +1,7 @@
 // Copyright 2021 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package evidence
+package tokenprocessor
 
 import (
 	"database/sql"
@@ -12,7 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"veraison/common"
+
+	"github.com/veraison/common"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
@@ -87,7 +88,7 @@ func Test_TokenProcessor_ProcessDice(t *testing.T) {
 
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
-	config := TokenProcessorConfig{
+	config := Config{
 		PluginLocations:      []string{pluginDir},
 		TrustAnchorStoreName: "sqlite",
 		TrustAnchorStoreParams: common.TrustAnchorStoreParams{

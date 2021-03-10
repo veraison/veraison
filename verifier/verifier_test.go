@@ -16,7 +16,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 
-	"veraison/common"
+	"github.com/veraison/common"
+
+	"go.uber.org/zap"
 )
 
 func getInput(path string, v interface{}) error {
@@ -103,7 +105,12 @@ func TestVerifier(t *testing.T) {
 		},
 	}
 
-	v, err := NewVerifier()
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	v, err := NewVerifier(logger)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

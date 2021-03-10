@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := test
 
-GOPKG := veraison/tokenprocessor
+GOPKG := github.com/veraison/tokenprocessor
 
 include ../mk/common.mk
 include ../mk/pkg.mk
