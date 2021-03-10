@@ -1,14 +1,17 @@
 package frontend
 
 import (
-	"errors"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/moogar0880/problems"
 
 	"github.com/veraison/common"
 	"github.com/veraison/tokenprocessor"
@@ -16,6 +19,18 @@ import (
 )
 
 var defaultMaxLifetime = 120
+var defaultNonceSize = 32
+
+func reportProblem(g *gin.Context, status int, details ...string) {
+	prob := problems.NewStatusProblem(status)
+
+	if len(details) > 0 {
+		prob.Detail = strings.Join(details, ", ")
+	}
+
+	g.Header("Content-Type", "application/problem+json")
+	g.AbortWithStatusJSON(status, prob)
+}
 
 type Controller struct {
 	logger         ILogger
@@ -25,7 +40,7 @@ type Controller struct {
 }
 
 func NewController(logger ILogger, tp *tokenprocessor.TokenProcessor, v *verifier.Verifier) *Controller {
-	c := new(Controller)
+	c := &Controller{}
 	c.Init(logger, tp, v)
 	return c
 }
@@ -38,15 +53,47 @@ func (c *Controller) Init(logger ILogger, tp *tokenprocessor.TokenProcessor, v *
 }
 
 func (c Controller) NewSession(g *gin.Context) {
-	nonceSize, err := strconv.Atoi(g.Query("nonceSize"))
-	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
+	nonceSizeString := g.Query("nonceSize")
+	nonceString := g.Query("nonce")
+
+	var nonce []byte
+	var err error
+
+	if nonceSizeString != "" && nonceString != "" {
+		reportProblem(g, http.StatusBadRequest, "only one of \"nonce\" or \"nonceSize\" must be specified; found both")
 		return
 	}
 
-	session, err := c.sessionManager.StartSession(nonceSize)
+	if nonceString != "" {
+		nonce, err = base64.StdEncoding.DecodeString(nonceString)
+		if err != nil {
+			reportProblem(g, http.StatusBadRequest, "could not decode nonce", err.Error())
+			return
+		}
+	} else { // generate nonce of specific size
+		var nonceSize int
+
+		if nonceSizeString != "" {
+			nonceSize, err = strconv.Atoi(nonceSizeString)
+			if err != nil {
+				reportProblem(g, http.StatusBadRequest, err.Error()) //nolint:errcheck
+				return
+			}
+		} else {
+			nonceSize = defaultNonceSize
+		}
+
+		nonce = make([]byte, nonceSize)
+		_, err := rand.Read(nonce)
+		if err != nil {
+			reportProblem(g, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	session, err := c.sessionManager.StartSession(nonce)
 	if err != nil {
-		g.AbortWithError(http.StatusInternalServerError, err) //nolint:errcheck
+		reportProblem(g, http.StatusInternalServerError, err.Error()) //nolint:errcheck
 		return
 	}
 
@@ -75,32 +122,32 @@ func (c Controller) Verify(g *gin.Context) {
 
 	session := c.sessionManager.GetSession(int64(sessionID))
 	if session == nil {
-		g.AbortWithError(http.StatusBadRequest, fmt.Errorf("no session with id %d", sessionID)) //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, fmt.Sprintf("no session with id %d", sessionID)) //nolint:errcheck
 		return
 	}
 
 	contentTypes := g.Request.Header["Content-Type"]
 	if len(contentTypes) != 1 {
-		g.AbortWithError(http.StatusBadRequest, errors.New("must specify exactly one content type")) //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, "must specify exactly one content type") //nolint:errcheck
 		return
 	}
 	tokenFormat := contentTypeToTokenFormat(contentTypes[0])
 
 	tokenData, err := ioutil.ReadAll(g.Request.Body)
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, err.Error()) //nolint:errcheck
 		return
 	}
 
 	evidenceContext, err := c.tokenProcessor.Process(tenantID, tokenFormat, tokenData)
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, err.Error()) //nolint:errcheck
 		return
 	}
 
 	attestationResult, err := c.verifier.Verify(evidenceContext, simpleVerif)
 	if err != nil {
-		g.AbortWithError(http.StatusInternalServerError, err) //nolint:errcheck
+		reportProblem(g, http.StatusInternalServerError, err.Error()) //nolint:errcheck
 		return
 	}
 
@@ -116,7 +163,7 @@ func (c Controller) Verify(g *gin.Context) {
 	}
 
 	if err = c.sessionManager.EndSession(session.GetID()); err != nil {
-		g.AbortWithError(http.StatusInternalServerError, err) //nolint:errcheck
+		reportProblem(g, http.StatusInternalServerError, err.Error()) //nolint:errcheck
 		return
 	}
 

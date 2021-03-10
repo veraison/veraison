@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"crypto/rand"
 	"fmt"
 	"sync"
 	"time"
@@ -21,11 +20,11 @@ func NewSessionManager(maxlifetime int) *SessionManager {
 	return manager
 }
 
-func (m *SessionManager) StartSession(nonceSize int) (*Session, error) {
+func (m *SessionManager) StartSession(nonce []byte) (*Session, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	session, err := m.initNewSession(nonceSize)
+	session, err := m.initNewSession(nonce)
 	if err != nil {
 		return nil, err
 	}
@@ -53,15 +52,9 @@ func (m *SessionManager) generateSessionID() int64 {
 	return m.lastID
 }
 
-func (m *SessionManager) initNewSession(nonceSize int) (*Session, error) {
+func (m *SessionManager) initNewSession(nonce []byte) (*Session, error) {
 	id := m.generateSessionID()
-	s := new(Session)
-
-	nonce := make([]byte, nonceSize)
-	_, err := rand.Read(nonce)
-	if err != nil {
-		return nil, err
-	}
+	s := &Session{}
 
 	expiry := time.Now().Add(time.Second * time.Duration(m.maxLifeTime))
 

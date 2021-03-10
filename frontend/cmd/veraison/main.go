@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/veraison/frontend"
 	"go.uber.org/zap"
@@ -17,26 +16,23 @@ func main() {
 
 	logger, err := zap.NewDevelopment() // TODO configurable
 	if err != nil {
-		fmt.Printf("Error: %v", err)
-		return
+		logger.Fatal("Error: %v", zap.Error(err))
 	}
 	defer logger.Sync() //nolint:errcheck
 
 	tokenProcessor, err := frontend.NewTokenProcessor(pluginDir, dbPath)
 	if err != nil {
-		logger.Error("Could not init token processor", zap.Error(err))
-		return
+		logger.Fatal("Could not init token processor", zap.Error(err))
 	}
 
 	verifier, err := frontend.NewVerifier(pluginDir, dbPath, logger)
 	if err != nil {
-		logger.Error("Could not init verifier", zap.Error(err))
-		return
+		logger.Fatal("Could not init verifier", zap.Error(err))
 	}
 
 	router := frontend.NewRouter(logger, tokenProcessor, verifier)
 	err = router.Run()
 	if err != nil {
-		logger.Error("error runnig server", zap.Error(err))
+		logger.Error("error running server", zap.Error(err))
 	}
 }
