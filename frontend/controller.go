@@ -76,7 +76,7 @@ func (c Controller) NewSession(g *gin.Context) {
 		if nonceSizeString != "" {
 			nonceSize, err = strconv.Atoi(nonceSizeString)
 			if err != nil {
-				reportProblem(g, http.StatusBadRequest, err.Error()) //nolint:errcheck
+				reportProblem(g, http.StatusBadRequest, err.Error())
 				return
 			}
 		} else {
@@ -93,7 +93,7 @@ func (c Controller) NewSession(g *gin.Context) {
 
 	session, err := c.sessionManager.StartSession(nonce)
 	if err != nil {
-		reportProblem(g, http.StatusInternalServerError, err.Error()) //nolint:errcheck
+		reportProblem(g, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -116,38 +116,38 @@ func (c Controller) Verify(g *gin.Context) {
 
 	sessionID, err := strconv.Atoi(g.Param("sessionId"))
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err) //nolint:errcheck
+		g.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	session := c.sessionManager.GetSession(int64(sessionID))
 	if session == nil {
-		reportProblem(g, http.StatusBadRequest, fmt.Sprintf("no session with id %d", sessionID)) //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, fmt.Sprintf("no session with id %d", sessionID))
 		return
 	}
 
 	contentTypes := g.Request.Header["Content-Type"]
 	if len(contentTypes) != 1 {
-		reportProblem(g, http.StatusBadRequest, "must specify exactly one content type") //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, "must specify exactly one content type")
 		return
 	}
 	tokenFormat := contentTypeToTokenFormat(contentTypes[0])
 
 	tokenData, err := ioutil.ReadAll(g.Request.Body)
 	if err != nil {
-		reportProblem(g, http.StatusBadRequest, err.Error()) //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	evidenceContext, err := c.tokenProcessor.Process(tenantID, tokenFormat, tokenData)
 	if err != nil {
-		reportProblem(g, http.StatusBadRequest, err.Error()) //nolint:errcheck
+		reportProblem(g, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	attestationResult, err := c.verifier.Verify(evidenceContext, simpleVerif)
 	if err != nil {
-		reportProblem(g, http.StatusInternalServerError, err.Error()) //nolint:errcheck
+		reportProblem(g, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -163,7 +163,7 @@ func (c Controller) Verify(g *gin.Context) {
 	}
 
 	if err = c.sessionManager.EndSession(session.GetID()); err != nil {
-		reportProblem(g, http.StatusInternalServerError, err.Error()) //nolint:errcheck
+		reportProblem(g, http.StatusInternalServerError, err.Error())
 		return
 	}
 
