@@ -30,17 +30,29 @@ Veraison ("ver-ayy-son") is a term used in winemaking to indicate the point at w
 It was chosen for this project mainly because it could fit into the project intent (verification of attestation) and because it didn't clash with any other project name.
 There is also an allegorical aspect about good/bad verifications being reflected by ripe / unripe states or even common uses of green / red colours, but musing on such interpretations is left to the reader! 
 
-
-
 # Maintainers
 
-VERAISON is a collaborative project. The current list of the individuals and organizations who maintain this project can be found [**here**](./MAINTAINERS.toml).
+VERAISON is a collaborative project. The current list of the individuals and organizations who maintain this project can be found [**here**](./MAINTAINERS.toml). 
+
+# Contributing
+We welcome contributions to Veraison. See [Contributing](./CONTRIBUTING.md) for more details. 
+
+# Code of Conduct
+The project applies a Code of Conduct adapted from the Contributor Covenent. See [Code of Conduct](./CODE_OF_CONDUCT.md) for further details.
 
 # Community
 
-The VERAISON community is just starting to evolve. We will start to hold open meetings soon. In the meantime, to contact the project team, contact us at https://veraison.zulipchat.com
+The VERAISON community is just starting to evolve. A public meeting is held weekly to discuss the project progress and plans. All are welcome.
+The meetings are held at 16:00 UK GMT/BST every Tuesday.
+
+The Meetings are held on Zoom: [Click on this meeting link to join](https://armltd.zoom.us/j/93024860563?pwd=dVpVcFRtSVFmV29HV3dHWENrZk5WQT09)
+Meeting ID: 930 2486 0563
+Passcode: 535948
+
+To start a conversation on any topic to do with the project, visit https://veraison.zulipchat.com
 
 
 # License
 
 The software is provided under Apache-2.0. Contributions to this project are accepted under the same license.
+
