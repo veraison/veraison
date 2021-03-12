@@ -1,4 +1,8 @@
 # Do not delete linter settings. Linters like gocritic can be enabled on the command line.
+# enable codeanalysis by default to all files, used for selective disabling of codeanalysis on a file basis
+run:
+  build-tags:
+    - codeanalysis
 
 linters-settings:
   dupl:

@@ -10,7 +10,7 @@ import (
 // EndorsementStoreParams encapsulates parameters used to initialize the
 // endorsement store. What parameters are required and values supported depends
 // on the specific IEndorsementStore implementation.
-type EndorsementStoreParams map[string]string
+type EndorsementStoreParams map[string]interface{}
 
 // SoftwareEndoresement encapsulates an endorsed measurement value associated
 // with a particular version of a software component. It represents a know good
