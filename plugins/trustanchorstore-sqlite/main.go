@@ -34,9 +34,9 @@ func (s SqliteTrustAnchorStore) GetName() string {
 // Expected parameters:
 //    dbPath -- the path to the database file.
 func (s *SqliteTrustAnchorStore) Init(params common.TrustAnchorStoreParams) error {
-	dbPath, found := params["dbPath"]
+	dbPath, found := params["dbpath"]
 	if !found {
-		return errors.New("dbPath not specified in TrustAnchorStoreParams")
+		return errors.New("\"dbpath\" trust anchor parameter not specified")
 	}
 
 	dbConfig := fmt.Sprintf("file:%s?cache=shared", dbPath)

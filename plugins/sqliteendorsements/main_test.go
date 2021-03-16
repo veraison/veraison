@@ -182,7 +182,7 @@ func TestSqliteEndorsementStore(t *testing.T) {
 
 	fetcher := new(SqliteEndorsementStore)
 
-	err = fetcher.Init(common.EndorsementStoreParams{"dbPath": dbPath})
+	err = fetcher.Init(common.EndorsementStoreParams{"dbpath": dbPath})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

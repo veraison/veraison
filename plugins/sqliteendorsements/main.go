@@ -24,7 +24,7 @@ func (e *SqliteEndorsementStore) GetName() string {
 }
 
 func retrieveDbPath(args common.EndorsementStoreParams) string {
-	i, found := args["dbPath"]
+	i, found := args["dbpath"]
 	if !found {
 		return ""
 	}

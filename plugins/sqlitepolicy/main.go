@@ -27,9 +27,9 @@ func (ps *PolicyStore) GetName() string {
 // Expected parameters:
 //    dbPath -- the path to the database file.
 func (ps *PolicyStore) Init(args common.PolicyStoreParams) error {
-	dbPath, found := args["dbPath"]
+	dbPath, found := args["dbpath"]
 	if !found {
-		return fmt.Errorf("dbPath not specified inside FetcherParams")
+		return fmt.Errorf("\"dbpath\" policy store parameter not specified")
 	}
 
 	dbConfig := fmt.Sprintf("file:%s?cache=shared", dbPath)
