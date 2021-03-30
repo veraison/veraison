@@ -8,11 +8,15 @@ jobs:
   tests:
     name: Test on ubuntu-latest
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Build project
-      run: make
+      run: |
+        go get github.com/golang/mock/mockgen@v1.5.0
+        make 
     - name: Run tests
       run: |
         go version

@@ -23,15 +23,26 @@ func (e *SqliteEndorsementStore) GetName() string {
 	return "sqlite"
 }
 
+func retrieveDbPath(args common.EndorsementStoreParams) string {
+	i, found := args["dbPath"]
+	if !found {
+		return ""
+	}
+	v, ok := i.(string)
+	if !ok {
+		return ""
+	}
+	return v
+}
+
 // Init opens the database connection.
 // Expected parameters:
-//    dbPath -- the path to the database file.
+//    args -- the input parameters to Init.
 func (e *SqliteEndorsementStore) Init(args common.EndorsementStoreParams) error {
-	dbPath, found := args["dbPath"]
-	if !found {
+	dbPath := retrieveDbPath(args)
+	if dbPath == "" {
 		return fmt.Errorf("dbPath not specified inside FetcherParams")
 	}
-
 	dbConfig := fmt.Sprintf("file:%s?cache=shared", dbPath)
 	db, err := sql.Open("sqlite3", dbConfig)
 	if err != nil {
@@ -40,6 +51,7 @@ func (e *SqliteEndorsementStore) Init(args common.EndorsementStoreParams) error 
 
 	e.db = db
 	e.path = dbPath
+
 	e.Queries = map[string]common.Query{
 		"hardware_id":         e.GetHardwareID,
 		"software_components": e.GetSoftwareComponents,

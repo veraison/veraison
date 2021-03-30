@@ -4,10 +4,26 @@
 # variables:
 # * GOPKG - name of the package to test
 # * TEST_ARGS - command line arguments to go test
+# * INTERFACES - interface files to be mocked
+# * MOCKPKG - name of the mock package
 # targets:
 # * test - run $(GOPKG) unit tests
 
 TEST_ARGS ?= -v -cover -race
+MOCKGEN := $(shell go env GOPATH)/bin/mockgen
 
+define MOCK_template
+mock_$(1): $(1)
+	$$(MOCKGEN) -source=$$< -destination=$$@ -package=$$(MOCKPKG)
+endef
+
+$(foreach m,$(INTERFACES),$(eval $(call MOCK_template,$(m))))
+MOCK_FILES := $(foreach m,$(INTERFACES),$(join mock_,$(m)))
+
+_mocks: $(MOCK_FILES)
+.PHONY: _mocks
+
+test: _mocks; go test $(TEST_ARGS) $(GOPKG)
 .PHONY: test
-test: ; go test $(TEST_ARGS) $(GOPKG)
+
+CLEANFILES += $(MOCK_FILES)

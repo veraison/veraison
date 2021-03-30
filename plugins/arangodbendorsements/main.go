@@ -9,48 +9,37 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/veraison/common"
-
-	driver "github.com/arangodb/go-driver"
-	"github.com/arangodb/go-driver/http"
 	"github.com/hashicorp/go-plugin"
+	"github.com/veraison/common"
 )
+
+// CollectionType is an abstraction of DB Collections
+type CollectionType int
 
 const (
-	mindepth = "1"
-	maxdepth = "10"
-	to       = ".."
-	space    = " "
-	newline  = "\n"
+	// HW Collection
+	HW CollectionType = iota
+	// SW Collection
+	SW
+	// Edge Collection
+	Edge
+	// Rel Collection
+	Rel
+)
+const (
+	mindepth      = "1"
+	maxdepth      = "10"
+	to            = ".."
+	space         = " "
+	newline       = "\n"
+	filterPatches = "FILTER link.rel == 'patches' "
+	filterUpdates = "FILTER link.rel == 'updates' "
 )
 
-// ArangoDBConnParams holds the dynamic connection information for arangoDB
-type ArangoDBConnParams struct {
-	paramValid bool
-	// HTTP Connection to the Data Base
-	conn driver.Connection
-
-	// Client
-	client driver.Client
-
-	// DB
-	db driver.Database
-
-	// Graph inside the DB
-	graph driver.Graph
-}
-
-// ArangoEndorsementStore holds the DB specific details
-type ArangoEndorsementStore struct {
+// EndorsementStore is the abstraction of Endorsement store
+type EndorsementStore struct {
 	common.BaseEndorsementStore
-	StoreName      string
-	GraphName      string
-	Login          string
-	Password       string
-	HwCollection   string
-	SwCollection   string
-	EdgeCollection string
-	RelCollection  string
+	store Store
 }
 
 // Resource describes the software information associated with a tag
@@ -97,13 +86,13 @@ type HardwareIdentity struct {
 	HardwareRot PsaHardwareRot `json:"psa-hardware-rot"`
 }
 
-// HardwareIdentityWrapper is the top lavel wrapper for fetching from arangoDB
+// HardwareIdentityWrapper is the top lavel wrapper for fetching from DB
 type HardwareIdentityWrapper struct {
 	ID      HardwareIdentity `json:"HardwareIdentity"`
 	RawData json.RawMessage
 }
 
-// SoftwareIdentityWrapper is the top lavel wrapper for fetching from arangoDB
+// SoftwareIdentityWrapper is the top lavel wrapper for fetching from DB
 type SoftwareIdentityWrapper struct {
 	ID      SoftwareIdentity `json:"SoftwareIdentity"`
 	Rawdata json.RawMessage
@@ -113,63 +102,12 @@ type SoftwareIdentityWrapper struct {
 const FirstIndex = 0
 
 // GetName method returns the Arango Store name
-func (e *ArangoEndorsementStore) GetName() string {
+func (e *EndorsementStore) GetName() string {
 	return "arangodb"
 }
 
-// Init is invoked to initialize the Arango Store params
-func (e *ArangoEndorsementStore) Init(args common.EndorsementStoreParams) error {
-	storeName, found := args["storeName"]
-	if !found {
-		return fmt.Errorf("arangoDB store name is not specified inside FetcherParams")
-	}
-	e.StoreName = storeName
-
-	graphName, found := args["graphName"]
-	if !found {
-		return fmt.Errorf("arangoDB graph name is not specified inside FetcherParams")
-	}
-	e.GraphName = graphName
-
-	login, found := args["login"]
-	if !found {
-		return fmt.Errorf("arangoDB login name is not specified inside FetcherParams")
-	}
-	e.Login = login
-
-	password, found := args["password"]
-	if !found {
-		return fmt.Errorf("arangoDB password is not specified inside FetcherParams")
-	}
-	e.Password = password
-
-	// HW Collection below
-	hwCollection, found := args["hwCollection"]
-	if !found {
-		return fmt.Errorf("arangoDB HWID collection is not specified inside FetcherParams")
-	}
-	e.HwCollection = hwCollection
-
-	// SW Collection below
-	swCollection, found := args["swCollection"]
-	if !found {
-		return fmt.Errorf("arangoDB SWID collection is not specified inside FetcherParams")
-	}
-	e.SwCollection = swCollection
-
-	// Edge Collection Below
-	edgeCollection, found := args["edgeCollection"]
-	if !found {
-		return fmt.Errorf("arangoDB Edge Collection is not specified inside FetcherParams")
-	}
-	e.EdgeCollection = edgeCollection
-
-	// Patch Collection Below
-	relCollection, found := args["relCollection"]
-	if !found {
-		log.Printf("arangoDB patch collection is not specified inside FetcherParams")
-	}
-	e.RelCollection = relCollection
+// Init is invoked to initialize the store params
+func (e *EndorsementStore) Init(args common.EndorsementStoreParams) error {
 
 	e.Queries = map[string]common.Query{
 		"hardware_id":           e.GetHardwareID,
@@ -180,213 +118,107 @@ func (e *ArangoEndorsementStore) Init(args common.EndorsementStoreParams) error 
 	}
 
 	// Patch Collection Below
-	_, found = args["AltAlgorithm"]
+	_, found := args["AltAlgorithm"]
 	if found {
 		e.Queries["software_components"] = e.GetAltSoftwareComponents
 	}
 
-	arangoConn := new(ArangoDBConnParams)
+	store, found := args["storeInstance"]
+	if !found {
+		return fmt.Errorf("DB store instance is not provided inside FetcherParams")
+	}
+	e.store = store.(Store)
+	if !e.store.IsInitialised() {
+		return fmt.Errorf("uninitialized DB store provided in FetcherParams")
+	}
 	ctx := context.Background()
-	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
-		return fmt.Errorf("arangoDB connection failed %v", err)
+	if err := e.store.Connect(ctx); err != nil {
+		return fmt.Errorf("DB connection failed: %w", err)
 	}
-	return nil
-}
-
-// ConnectToArangoDB is responsible for making connection to the arangoDB
-func (e *ArangoEndorsementStore) ConnectToArangoDB(ctx context.Context, arangoConn *ArangoDBConnParams) error {
-	var ok bool
-	var err error
-
-	// Create an HTTP Connection First to the Client
-	arangoConn.conn, err = http.NewConnection(http.ConnectionConfig{
-		Endpoints: []string{"http://localhost:8529"},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP connection: %v", err)
-	}
-
-	// Create a client
-	arangoConn.client, err = driver.NewClient(driver.ClientConfig{
-		Connection:     arangoConn.conn,
-		Authentication: driver.BasicAuthentication(e.Login, e.Password),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create a client: %v", err)
-	}
-
-	// Check if Database with a given name exists or not
-	ok, err = arangoConn.client.DatabaseExists(ctx, e.StoreName)
-	if err != nil {
-		return fmt.Errorf("failure while checking whether DB exists: %v", err)
-	}
-	if !ok {
-		return fmt.Errorf("endorsement database %s does not exist", e.StoreName)
-	}
-	arangoConn.db, err = arangoConn.client.Database(ctx, e.StoreName)
-	if err != nil {
-		return fmt.Errorf("failed to connect to the Endorsement database: %v", err)
-	}
-
-	// Check if the Graph exists in the DB
-	ok, err = arangoConn.db.GraphExists(ctx, e.GraphName)
-	if err != nil {
-		return fmt.Errorf("failure while checking whether graph exists: %v", err)
-	}
-	if !ok {
-		return fmt.Errorf("endorsement graph %s does not exist", e.GraphName)
-	}
-	// Connect to the Graph
-	arangoConn.graph, err = arangoConn.db.Graph(ctx, e.GraphName)
-	if err != nil {
-		return fmt.Errorf("failed to connect to %s: %v", e.GraphName, err)
-	}
-
-	log.Printf("connection to DB and graph succeeded!")
-	arangoConn.paramValid = true
 	return nil
 }
 
 // Close shuts down the store
-func (e *ArangoEndorsementStore) Close() error {
+func (e *EndorsementStore) Close() error {
 	ctx := context.Background()
-	arangoConn := new(ArangoDBConnParams)
-	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+	if err := e.store.Connect(ctx); err != nil {
 		return err
 	}
-
-	if arangoConn.paramValid {
-		if err := arangoConn.graph.Remove(ctx); err != nil {
-			return fmt.Errorf("unable to remove the graph: %s", err)
-		}
-
-		if err := arangoConn.db.Remove(ctx); err != nil {
-			return fmt.Errorf("failed to remove database: %s", err)
-		}
-		arangoConn.paramValid = false
+	if err := e.store.Close(ctx); err != nil {
+		return err
 	}
 	return nil
 }
 
-// GetHwIDFromArangoDB queries the ArangoDB to get the correct HWID Container for a given platform id
-func (e *ArangoEndorsementStore) GetHwIDFromArangoDB(platformID string, HwID *HardwareIdentity) error {
+// GetHwIDFromDB queries the DB to get the correct HWID Container for a given platform id
+func (e *EndorsementStore) GetHwIDFromDB(platformID string, hwID *HardwareIdentity) error {
+	var hardwareInstance HardwareIdentityWrapper
 	ctx := context.Background()
-	arangoConn := new(ArangoDBConnParams)
-
-	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+	if err := e.store.Connect(ctx); err != nil {
 		return err
 	}
 
-	var HardwareInstance HardwareIdentityWrapper
-
-	bindVars := map[string]interface{}{
+	queryArgs := map[string]interface{}{
 		"platformId": platformID,
 	}
-	query := "FOR d IN " + e.HwCollection
+
+	hwCollection, _ := e.store.GetQueryParam(HW)
+	query := "FOR d IN " + hwCollection
 	query += " FILTER d.HardwareIdentity.`psa-hardware-rot`.`implementation-id` == @platformId RETURN d"
 	log.Printf("input query = %s", query)
-
-	cursor, err := arangoConn.db.Query(ctx, query, bindVars)
+	resultList, err := e.store.RunQuery(ctx, query, queryArgs, &hardwareInstance)
 	if err != nil {
-		return fmt.Errorf("query failed with reason %v", err)
+		return fmt.Errorf("query failed: %w", err)
 	}
-	defer cursor.Close()
 
-	for {
-		meta, err := cursor.ReadDocument(ctx, &HardwareInstance)
-		log.Printf("returned from readDocument %v ", err)
-
-		if driver.IsNoMoreDocuments(err) {
-			log.Printf("no more documents Left")
-			break
-		} else {
-			*HwID = HardwareInstance.ID
-		}
-
-		log.Printf("got doc with key '%s' from query\n", meta.Key)
+	for _, resultValue := range resultList {
+		hardwareInstance = resultValue.(HardwareIdentityWrapper)
+		break
 	}
+	*hwID = hardwareInstance.ID
 	return nil
 }
 
 // GetSwIDTagsLinkedToHWTagFromDB fetches a list of SWID's linked to a pltform identified by its unqie HwTag
-func (e *ArangoEndorsementStore) GetSwIDTagsLinkedToHWTagFromDB(HwTag string) ([]SoftwareIdentity, error) {
-	ctx := context.Background()
-	arangoConn := new(ArangoDBConnParams)
-
-	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
-		return nil, err
-	}
-
-	var swidList []SoftwareIdentity
-
-	HwColTag := e.HwCollection + "/" + HwTag
-	HwColTag = "'" + HwColTag + "'"
+func (e *EndorsementStore) GetSwIDTagsLinkedToHWTagFromDB(hwTag string) ([]SoftwareIdentity, error) {
+	hwCollection, _ := e.store.GetQueryParam(HW)
+	hwColTag := hwCollection + "/" + hwTag
+	hwColTag = "'" + hwColTag + "'"
 
 	// no need to specify depth as only default depth 1 is required for SWID's linked to HW platform
-	query := "FOR swid, link IN INBOUND " + HwColTag + space + e.EdgeCollection
+	edgeCollection, _ := e.store.GetQueryParam(Edge)
+	query := "FOR swid, link IN INBOUND " + hwColTag + space + edgeCollection
 	query += newline + " FILTER link.rel == 'psa-rot-compound' RETURN swid"
 
 	// Fetch the SWID List associated linked this tag
 	swidList, err := e.GetSwIDTagsForQueryFromDB(query)
 	if err != nil {
-		return nil, fmt.Errorf("query GetSwIDTagsForQueryFromDB failed %v", err)
+		return nil, fmt.Errorf("query GetSwIDTagsForQueryFromDB failed: %w", err)
 	}
 	return swidList, nil
 }
 
 // GetHardwareID is the query function to fetch the Hardware Id associated to a platform
-func (e *ArangoEndorsementStore) GetHardwareID(args common.QueryArgs) (common.QueryResult, error) {
+func (e *EndorsementStore) GetHardwareID(args common.QueryArgs) (common.QueryResult, error) {
 	var platformID string
 	var result []interface{}
-	var HardwareInstance HardwareIdentityWrapper
-	arangoConn := new(ArangoDBConnParams)
+	var hwID HardwareIdentity
+	hwMap := make(map[string]string)
 
 	platformID, err := ExtractPlatformID(args)
 	if err != nil {
 		// Handle Platform Id Error
-		return nil, fmt.Errorf("failed to extract platform_id from query params %v", err)
+		return nil, fmt.Errorf("failed to extract platform_id from query params: %w", err)
 	}
-	log.Printf("received platform Id=%s", platformID)
-
-	bindVars := map[string]interface{}{
-		"platformId": platformID,
-	}
-
-	ctx := context.Background()
-
-	if err = e.ConnectToArangoDB(ctx, arangoConn); err != nil {
-		return nil, err
-	}
-
-	query := "FOR d IN " + e.HwCollection
-	query += " FILTER d.HardwareIdentity.`psa-hardware-rot`.`implementation-id` == @platformId RETURN d"
-	log.Printf("input query = %s", query)
-
-	cursor, err := arangoConn.db.Query(ctx, query, bindVars)
+	// Fetch the HW ID container from the DB associated to this platform
+	err = e.GetHwIDFromDB(platformID, &hwID)
 	if err != nil {
-		return nil, fmt.Errorf("query failed with reason %v", err)
+		return nil, fmt.Errorf("for given platform id=%s, failed to fetch the hwID from DB: %w", platformID, err)
 	}
-	defer cursor.Close()
+	hwMap["hw_id"] = hwID.HardwareRot.HwVer
 
-	hwMap := make(map[string]string)
-	for {
-		meta, err := cursor.ReadDocument(ctx, &HardwareInstance)
-		log.Printf("returned from readDocument %v ", err)
-
-		if driver.IsNoMoreDocuments(err) {
-			log.Printf("no more documents Left")
-			break
-		} else {
-			hwMap["hw_id"] = HardwareInstance.ID.HardwareRot.HwVer
-			log.Printf("detected HW  Id %s", HardwareInstance.ID.HardwareRot.HwVer)
-		}
-
-		log.Printf("got doc with key '%s' from query\n", meta.Key)
-	}
 	// Everything went ok
-	log.Printf("returned Hardware ID = %s", hwMap["hw_id"])
 	result = append(result, hwMap["hw_id"])
-
 	return result, nil
 }
 
@@ -455,21 +287,21 @@ func ExtractSoftwareComponents(args common.QueryArgs) ([]string, error) {
 }
 
 // GetSoftwareComponents implements the query function to fetch the Software Components
-func (e *ArangoEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
+func (e *EndorsementStore) GetSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
 	var platformID string
 	var result []interface{}
 	var finalList [][]SoftwareIdentity
 	var schemeEndorsements []map[string]string
-
+	matched := false
 	platformID, err := ExtractPlatformID(args)
 	if err != nil {
 		// Handle Platform Id Error
-		return nil, fmt.Errorf("failed to extract platform_id from query params %v", err)
+		return nil, fmt.Errorf("failed to extract platform_id from query params: %w", err)
 	}
 	measurements, err := ExtractSoftwareComponents(args)
 	if err != nil {
 		// Handle Measurement Error
-		return nil, fmt.Errorf("failed to extract software components from query params %v", err)
+		return nil, fmt.Errorf("failed to extract software components from query params: %w", err)
 	}
 	// If no measurements provided, we automatically "match" an empty set of components
 	if len(measurements) == 0 {
@@ -479,23 +311,23 @@ func (e *ArangoEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 	finalList, err = e.GetAllswidForPlatform(platformID)
 	if err != nil {
 		// Handle Error
-		return nil, fmt.Errorf("failed to extract software components for the platform Id %v", err)
+		return nil, fmt.Errorf("failed to extract swIDs for platform Id=%s %w", platformID, err)
 	}
 	// Now we have the PSA SWID List associated to this platform
 	for _, swidList := range finalList {
-		matched := false
+		matched = false
 		for _, swid := range swidList {
 			log.Printf("got SWID with tag = %s", swid.TagID)
-			SwMeasurement := swid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
-			matched, err = IsMeasurementInList(SwMeasurement, measurements)
+			swMeasurement := swid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
+			matched, err = IsMeasurementInList(swMeasurement, measurements)
 			if err != nil {
-				return nil, fmt.Errorf("error happened while matching measurements %v ", err)
+				return nil, fmt.Errorf("error happened while matching measurements: %w ", err)
 			}
 			if matched {
 				// We have the successful swid structure
 				// Generate software map from the swid
 				swMap := map[string]string{
-					"measurement":          SwMeasurement,
+					"measurement":          swMeasurement,
 					"sw_component_type":    swid.Payload[FirstIndex].Resources[FirstIndex].MeasType,
 					"sw_component_version": swid.SoftwareVersion,
 					"signer_id":            swid.Payload[FirstIndex].Resources[FirstIndex].SignerID,
@@ -506,7 +338,11 @@ func (e *ArangoEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 		}
 		if !matched {
 			log.Printf("no matched component for platform linked swid = %s", swidList[FirstIndex].TagID)
+			break
 		}
+	}
+	if !matched {
+		return nil, fmt.Errorf("no matched component for platform linked swid")
 	}
 	result = append(result, schemeEndorsements)
 	return result, nil
@@ -517,22 +353,22 @@ func (e *ArangoEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 // for those SWID's whose measurements were not matched to SWID's linked to platform.
 // SWID's which have already matched are excluded from querying as one measurement match per
 // SW component is expected.
-func (e *ArangoEndorsementStore) GetAltSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
+func (e *EndorsementStore) GetAltSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
 	var platformID string
 	var result []interface{}
 	var swidList []SoftwareIdentity
 	var schemeEndorsements []map[string]string
-	var HwID HardwareIdentity
+	var hwID HardwareIdentity
 
 	platformID, err := ExtractPlatformID(args)
 	if err != nil {
 		// Handle Platform Id Error
-		return nil, fmt.Errorf("failed to extract platform_id from query params %v", err)
+		return nil, fmt.Errorf("failed to extract platform_id from query params: %w", err)
 	}
 	measurements, err := ExtractSoftwareComponents(args)
 	if err != nil {
 		// Handle Measurement Error
-		return nil, fmt.Errorf("failed to extract software components from query params %v", err)
+		return nil, fmt.Errorf("failed to extract software components from query params: %w", err)
 	}
 	// If no measurements provided, we automatically "match" an empty set of components
 	if len(measurements) == 0 {
@@ -540,32 +376,32 @@ func (e *ArangoEndorsementStore) GetAltSoftwareComponents(args common.QueryArgs)
 	}
 
 	// Fetch the HW ID container from the DB associated to this platform
-	err = e.GetHwIDFromArangoDB(platformID, &HwID)
+	err = e.GetHwIDFromDB(platformID, &hwID)
 	if err != nil {
-		return nil, fmt.Errorf("given platform identity failed %v", err)
+		return nil, fmt.Errorf("for given platform id=%s, failed to fetch the hwID from DB: %w", platformID, err)
 	}
 
-	HwTag := HwID.TagID
+	hwTag := hwID.TagID
 	// Fetch the SWID List linked to this tag
-	swidList, err = e.GetSwIDTagsLinkedToHWTagFromDB(HwTag)
+	swidList, err = e.GetSwIDTagsLinkedToHWTagFromDB(hwTag)
 	if err != nil {
-		return nil, fmt.Errorf("query GetAllSoftwareComponents failed %v", err)
+		return nil, fmt.Errorf("query GetAllSoftwareComponents failed: %w", err)
 	}
 	var unmatchedSwid []SoftwareIdentity
 
 	// Now we have the PSA SWID List associated to this platform
 	for _, swid := range swidList {
 		log.Printf("got SWID with tag = %s", swid.TagID)
-		SwMeasurement := swid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
-		matched, err := IsMeasurementInList(SwMeasurement, measurements)
+		swMeasurement := swid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
+		matched, err := IsMeasurementInList(swMeasurement, measurements)
 		if err != nil {
-			return nil, fmt.Errorf("error happened while matching measurements %v ", err)
+			return nil, fmt.Errorf("error happened while matching measurements: %w ", err)
 		}
 		if matched {
 			// We have the successful swid structure
 			// Generate following map from swid
 			swMap := map[string]string{
-				"measurement":          SwMeasurement,
+				"measurement":          swMeasurement,
 				"sw_component_type":    swid.Payload[FirstIndex].Resources[FirstIndex].MeasType,
 				"sw_component_version": swid.SoftwareVersion,
 				"signer_id":            swid.Payload[FirstIndex].Resources[FirstIndex].SignerID,
@@ -581,20 +417,20 @@ func (e *ArangoEndorsementStore) GetAltSoftwareComponents(args common.QueryArgs)
 		log.Printf("umatched SWID = %s", swid.TagID)
 		relList, err := e.GetAllSwRelForBaseTag(swid.TagID)
 		if err != nil {
-			return nil, fmt.Errorf("error occurred while fetching relations %v", err)
+			return nil, fmt.Errorf("error occurred while fetching relations: %w", err)
 		}
 		for _, relswid := range relList {
 			log.Printf("got linked SWID with tag = %s", relswid.TagID)
-			SwMeasurement := relswid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
-			matched, err := IsMeasurementInList(SwMeasurement, measurements)
+			swMeasurement := relswid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
+			matched, err := IsMeasurementInList(swMeasurement, measurements)
 			if err != nil {
-				return nil, fmt.Errorf("error happened while matching measurements %v ", err)
+				return nil, fmt.Errorf("error happened while matching measurements: %w", err)
 			}
 			if matched {
 				// We have the successful swid structure here
 				// Generate following map from swid
 				swMap := map[string]string{
-					"measurement":          SwMeasurement,
+					"measurement":          swMeasurement,
 					"sw_component_type":    relswid.Payload[FirstIndex].Resources[FirstIndex].MeasType,
 					"sw_component_version": relswid.SoftwareVersion,
 					"signer_id":            relswid.Payload[FirstIndex].Resources[FirstIndex].SignerID,
@@ -610,45 +446,25 @@ func (e *ArangoEndorsementStore) GetAltSoftwareComponents(args common.QueryArgs)
 // GetSwIDTagsForQueryFromDB is the most generic function that is been used to fetch
 // SWID's based on given query as an argument to the function.
 // Please note returned swid list contains only naked nodes, it does not contain any links/relations among swid.
-func (e *ArangoEndorsementStore) GetSwIDTagsForQueryFromDB(query string) ([]SoftwareIdentity, error) {
+func (e *EndorsementStore) GetSwIDTagsForQueryFromDB(query string) ([]SoftwareIdentity, error) {
+	var swidList []SoftwareIdentity
+	var swDocWrap SoftwareIdentityWrapper
 	ctx := context.Background()
-	arangoConn := new(ArangoDBConnParams)
 
-	if err := e.ConnectToArangoDB(ctx, arangoConn); err != nil {
+	if err := e.store.Connect(ctx); err != nil {
 		return nil, err
 	}
 
-	var swidList []SoftwareIdentity
-
 	log.Printf("supplied query = %s", query)
-	cursor, err := arangoConn.db.Query(ctx, query, nil)
+
+	swDocWrapList, err := e.store.RunQuery(ctx, query, nil, &swDocWrap)
 	if err != nil {
-		// handle error
-		return nil, fmt.Errorf("database query failed with reason =: %v", err)
+		return nil, fmt.Errorf("query failed to fetch swIDs: %w", err)
 	}
-	defer cursor.Close()
-	for {
-		var Swdocwrap SoftwareIdentityWrapper
-		var Swdoc SoftwareIdentity
 
-		// Please note below API, ReadDocument, will return an Empty ' ' meta if the query does not yield any thing
-		meta, err := cursor.ReadDocument(ctx, &Swdocwrap)
-
-		// Please note that returned err could also be no more document cause.
-		if driver.IsNoMoreDocuments(err) {
-			log.Printf("no more documents Left")
-			break
-		} else if err != nil {
-			// handle other errors
-			return nil, fmt.Errorf("document reading failed with reason =: %v", err)
-		}
-
-		if meta.Key == "" {
-			log.Printf("query did not returned any result for the links")
-			return nil, fmt.Errorf("no results for the links detected")
-		}
-		Swdoc = Swdocwrap.ID
-		swidList = append(swidList, Swdoc)
+	for _, swDocWrap := range swDocWrapList {
+		softwareInstance := swDocWrap.(SoftwareIdentityWrapper)
+		swidList = append(swidList, softwareInstance.ID)
 	}
 	return swidList, nil
 }
@@ -657,7 +473,7 @@ func (e *ArangoEndorsementStore) GetSwIDTagsForQueryFromDB(query string) ([]Soft
 // to a platform.  What ALL means is that include software components which are linked to
 // platform id and for each of these linked softwarecomponents, fetch associated patches and software
 // updates presentin the DB.
-func (e *ArangoEndorsementStore) GetAllSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
+func (e *EndorsementStore) GetAllSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
 	var platformID string
 	var result []interface{}
 	var finalList [][]SoftwareIdentity
@@ -666,21 +482,21 @@ func (e *ArangoEndorsementStore) GetAllSoftwareComponents(args common.QueryArgs)
 	platformID, err := ExtractPlatformID(args)
 	if err != nil {
 		// Handle Platform Id Error
-		return nil, fmt.Errorf("failed to extract platform_id from query params %v", err)
+		return nil, fmt.Errorf("failed to extract platform_id from query params: %w", err)
 	}
 	finalList, err = e.GetAllswidForPlatform(platformID)
 	if err != nil {
 		// Handle Platform Id Error
-		return nil, fmt.Errorf("failed to extract swid list for a platform Id %v", err)
+		return nil, fmt.Errorf("failed to extract swid list for a platform Id=%s %w", platformID, err)
 	}
 
 	for _, swidList := range finalList {
 		// Give me Every SWID linked to this SWID in the DB
 		for _, swid := range swidList {
 			log.Printf("fetched SWID = %s", swid.TagID)
-			SwMeasurement := swid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
+			swMeasurement := swid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
 			swMap := map[string]string{
-				"measurement":          SwMeasurement,
+				"measurement":          swMeasurement,
 				"sw_component_type":    swid.Payload[FirstIndex].Resources[FirstIndex].MeasType,
 				"sw_component_version": swid.SoftwareVersion,
 				"signer_id":            swid.Payload[FirstIndex].Resources[FirstIndex].SignerID,
@@ -693,21 +509,21 @@ func (e *ArangoEndorsementStore) GetAllSoftwareComponents(args common.QueryArgs)
 }
 
 // GetAllswidForPlatform fetches all the SWID's for a given platformID
-func (e *ArangoEndorsementStore) GetAllswidForPlatform(platformID string) ([][]SoftwareIdentity, error) {
-	var HwID HardwareIdentity
+func (e *EndorsementStore) GetAllswidForPlatform(platformID string) ([][]SoftwareIdentity, error) {
+	var hwID HardwareIdentity
 	var finalList [][]SoftwareIdentity
 
 	// Fetch the HW ID container from the DB associated to this platform
-	err := e.GetHwIDFromArangoDB(platformID, &HwID)
+	err := e.GetHwIDFromDB(platformID, &hwID)
 	if err != nil {
-		return nil, fmt.Errorf("given platform identity failed %v", err)
+		return nil, fmt.Errorf("for given platform id=%s, failed to fetch the hwID from DB: %w", platformID, err)
 	}
 
-	HwTag := HwID.TagID
+	hwTag := hwID.TagID
 	// Fetch the SWID List linked to this HW tag, based on Verif scheme
-	swidList, err := e.GetSwIDTagsLinkedToHWTagFromDB(HwTag)
+	swidList, err := e.GetSwIDTagsLinkedToHWTagFromDB(hwTag)
 	if err != nil {
-		return nil, fmt.Errorf("query GetAllSoftwareComponents failed %v", err)
+		return nil, fmt.Errorf("failed to fetch swIDs linked to hwTag=%s reason: %w", hwTag, err)
 	}
 	for _, swid := range swidList {
 		log.Printf("fetched SWID = %s", swid.TagID)
@@ -719,7 +535,7 @@ func (e *ArangoEndorsementStore) GetAllswidForPlatform(platformID string) ([][]S
 		// Get every SWID linked to the base SWID in the DB
 		relList, err := e.GetAllSwRelForBaseTag(swid.TagID)
 		if err != nil {
-			return nil, fmt.Errorf("error occurred while fetching relations %v", err)
+			return nil, fmt.Errorf("could not fetch all sw relations for base sw tag=%s: %w", swid.TagID, err)
 		}
 		indexSwidList = append(indexSwidList, relList...)
 		finalList = append(finalList, indexSwidList)
@@ -728,96 +544,105 @@ func (e *ArangoEndorsementStore) GetAllswidForPlatform(platformID string) ([][]S
 }
 
 // GetAllSwRelForBaseTag fetches all sw patches and updates for a given SWID
-func (e *ArangoEndorsementStore) GetAllSwRelForBaseTag(SwIDTag string) ([]SoftwareIdentity, error) {
+func (e *EndorsementStore) GetAllSwRelForBaseTag(swIDTag string) ([]SoftwareIdentity, error) {
 	var swidList []SoftwareIdentity
-	SwColTag := e.SwCollection + "/" + SwIDTag
-	SwColTag = "'" + SwColTag + "'"
+	swCollection, _ := e.store.GetQueryParam(SW)
+	swColTag := swCollection + "/" + swIDTag
+	swColTag = "'" + swColTag + "'"
 
-	query := "FOR swid IN " + mindepth + to + maxdepth + " ANY " + SwColTag + space
-	query += e.RelCollection + newline + " RETURN swid"
+	query := "FOR swid IN " + mindepth + to + maxdepth + " ANY " + swColTag + space
+	relCollection, _ := e.store.GetQueryParam(Rel)
+	query += relCollection + newline + " RETURN swid"
 	log.Printf("constructed query = %s", query)
 
 	// Fetch the SWID List associated linked this tag
 	swidList, err := e.GetSwIDTagsForQueryFromDB(query)
 	if err != nil {
-		return nil, fmt.Errorf("query GetAllSwRelForBaseTag failed %v", err)
+		return nil, fmt.Errorf("query GetAllSwRelForBaseTag=%s failed: %w", query, err)
 	}
 	return swidList, nil
 }
 
 // GetAllSwPatchesForSwIDTag fetches all sw patches for a given SWID
-func (e *ArangoEndorsementStore) GetAllSwPatchesForSwIDTag(SwIDTag string) ([]SoftwareIdentity, error) {
+func (e *EndorsementStore) GetAllSwPatchesForSwIDTag(swIDTag string) ([]SoftwareIdentity, error) {
 	var swidList []SoftwareIdentity
-	SwColTag := e.SwCollection + "/" + SwIDTag
-	SwColTag = "'" + SwColTag + "'"
+	swCollection, _ := e.store.GetQueryParam(SW)
+	relCollection, _ := e.store.GetQueryParam(Rel)
+	swColTag := swCollection + "/" + swIDTag
+	swColTag = "'" + swColTag + "'"
 
-	query := "FOR swid, link IN " + mindepth + to + maxdepth + " ANY " + SwColTag + space
-	query += e.RelCollection + newline + "FILTER link.rel == 'patches' RETURN swid"
+	query := "FOR swid, link IN " + mindepth + to + maxdepth + " ANY " + swColTag + space
+	query += relCollection + newline + filterPatches + "RETURN swid"
 	log.Printf("constructed query = %s", query)
 
 	// Fetch the SWID List associated linked this tag
 	swidList, err := e.GetSwIDTagsForQueryFromDB(query)
 	if err != nil {
-		return nil, fmt.Errorf("query GetAllSwPatchesForSwIDTag failed %v", err)
+		return nil, fmt.Errorf("query GetAllSwPatchesForSwIDTag=%s failed: %w", query, err)
 	}
 	return swidList, nil
 }
 
 // GetAllSwUpdatesForSwIDTag fetches all sw updates for a given SWID
-func (e *ArangoEndorsementStore) GetAllSwUpdatesForSwIDTag(SwIDTag string) ([]SoftwareIdentity, error) {
+func (e *EndorsementStore) GetAllSwUpdatesForSwIDTag(swIDTag string) ([]SoftwareIdentity, error) {
 	var swidList []SoftwareIdentity
-	SwColTag := e.SwCollection + "/" + SwIDTag
-	SwColTag = "'" + SwColTag + "'"
+	swCollection, _ := e.store.GetQueryParam(SW)
+	swColTag := swCollection + "/" + swIDTag
+	swColTag = "'" + swColTag + "'"
 
-	query := "FOR swid, link IN " + mindepth + to + maxdepth + " ANY " + SwColTag + space
-	query += e.EdgeCollection + newline + "FILTER link.rel == 'updates' RETURN swid"
+	relCollection, _ := e.store.GetQueryParam(Rel)
+	query := "FOR swid, link IN " + mindepth + to + maxdepth + " ANY " + swColTag + space
+	query += relCollection + newline + filterUpdates + "RETURN swid"
 	log.Printf("constructed query = %s", query)
 
 	// Fetch the SWID List associated linked this tag
 	swidList, err := e.GetSwIDTagsForQueryFromDB(query)
 	if err != nil {
-		return nil, fmt.Errorf("query GetAllSwUpdatesForSwIDTag failed %v", err)
+		return nil, fmt.Errorf("query GetAllSwUpdatesForSwIDTag=%s failed: %w", query, err)
 	}
 	return swidList, nil
 }
 
 // GetPatchListForBaseSwVersion fetches only the list of forward patches for a specific base revision of SWID
-func (e *ArangoEndorsementStore) GetPatchListForBaseSwVersion(SwTag string) ([]SoftwareIdentity, error) {
-	SwColTag := e.SwCollection + "/" + SwTag
-	SwColTag = "'" + SwColTag + "'"
+func (e *EndorsementStore) GetPatchListForBaseSwVersion(SwTag string) ([]SoftwareIdentity, error) {
+	swCollection, _ := e.store.GetQueryParam(SW)
+	relCollection, _ := e.store.GetQueryParam(Rel)
+	swColTag := swCollection + "/" + SwTag
+	swColTag = "'" + swColTag + "'"
 	// SWID(C) --patches--> SWID(B) --patches--> SWID(A), returns B, C for A passed in
 	query := "FOR swid, link IN " + mindepth + to + maxdepth + " INBOUND "
-	query += SwColTag + space + e.RelCollection + newline
+	query += swColTag + space + relCollection + newline
 	query += "PRUNE link.rel == 'updates'" + newline
-	query += "FILTER link.rel == 'patches' RETURN swid"
+	query += filterPatches + "RETURN swid"
 	log.Printf("Constructed Query = %s", query)
 
 	// Fetch the SWID List associated linked this tag
 	PatchList, err := e.GetSwIDTagsForQueryFromDB(query)
 	if err != nil {
-		return nil, fmt.Errorf("query GetPatchListForBaseSwVersion failed %v", err)
+		return nil, fmt.Errorf("query GetPatchListForBaseSwVersion=%s failed: %w", query, err)
 	}
 	return PatchList, nil
 }
 
 // GetBaseSwVersionFromPatch fetches only the Base SWID associated to this patch version
-func (e *ArangoEndorsementStore) GetBaseSwVersionFromPatch(Patchswid SoftwareIdentity) (SoftwareIdentity, error) {
+func (e *EndorsementStore) GetBaseSwVersionFromPatch(Patchswid SoftwareIdentity) (SoftwareIdentity, error) {
 	var baseswid SoftwareIdentity
 	var swidList []SoftwareIdentity
-
-	SwColTag := e.SwCollection + "/" + Patchswid.TagID
-	SwColTag = "'" + SwColTag + "'"
+	swCollection, _ := e.store.GetQueryParam(SW)
+	relCollection, _ := e.store.GetQueryParam(Rel)
+	swColTag := swCollection + "/" + Patchswid.TagID
+	swColTag = "'" + swColTag + "'"
 	// SWID(C) --patches--> SWID(B) --patches--> SWID(A), returns A when C or B supplied in
 	query := "FOR swid, link IN " + mindepth + to + maxdepth + " OUTBOUND "
-	query += SwColTag + space + e.RelCollection + newline
+	query += swColTag + space + relCollection + newline
 	query += "PRUNE link.rel == 'updates'" + newline
-	query += "FILTER link.rel == 'patches' RETURN swid"
+	query += filterPatches + "RETURN swid"
 	log.Printf("constructed query = %s", query)
 
 	// Fetch the SWID List associated linked this tag
 	swidList, err := e.GetSwIDTagsForQueryFromDB(query)
 	if err != nil {
-		return baseswid, fmt.Errorf("query GetBaseSwVersionFromPatch failed %v", err)
+		return baseswid, fmt.Errorf("query GetBaseSwVersionFromPatch=%s failed: %w", query, err)
 	}
 	if len(swidList) == 0 {
 		// No base to the Input SWID, hence the patch itself is the Base
@@ -828,21 +653,23 @@ func (e *ArangoEndorsementStore) GetBaseSwVersionFromPatch(Patchswid SoftwareIde
 }
 
 // GetUpdatesListForBaseSwVersion fetches only the list of forward updates for a specific base revision of SWID
-func (e *ArangoEndorsementStore) GetUpdatesListForBaseSwVersion(Baseswid SoftwareIdentity) ([]SoftwareIdentity, error) {
-	SwColTag := e.SwCollection + "/" + Baseswid.TagID
-	SwColTag = "'" + SwColTag + "'"
+func (e *EndorsementStore) GetUpdatesListForBaseSwVersion(Baseswid SoftwareIdentity) ([]SoftwareIdentity, error) {
+	swCollection, _ := e.store.GetQueryParam(SW)
+	relCollection, _ := e.store.GetQueryParam(Rel)
+	swColTag := swCollection + "/" + Baseswid.TagID
+	swColTag = "'" + swColTag + "'"
 	// SWID(C) --updates--> SWID(B) --updates--> SWID(A), returns B, C for A passed in
 	query := "FOR swid, link IN " + mindepth + to + maxdepth + " INBOUND "
-	query += SwColTag + space + e.RelCollection + newline
+	query += swColTag + space + relCollection + newline
 	query += "PRUNE link.rel == 'patches'" + newline
-	query += "FILTER link.rel == 'updates' RETURN swid"
+	query += filterUpdates + "RETURN swid"
 
 	log.Printf("constructed query = %s", query)
 
 	// Fetch the SWID List associated linked this tag
 	UpdateList, err := e.GetSwIDTagsForQueryFromDB(query)
 	if err != nil {
-		return nil, fmt.Errorf("query GetUpdatesListForBaseSwVersion failed %v", err)
+		return nil, fmt.Errorf("query GetUpdatesListForBaseSwVersion=%s failed: %w", query, err)
 	}
 	if len(UpdateList) == 0 {
 		// No update list to the Input SWID, hence the given update is most recent
@@ -854,53 +681,53 @@ func (e *ArangoEndorsementStore) GetUpdatesListForBaseSwVersion(Baseswid Softwar
 // GetMostRecentSwVerOfLinkedComp for a given Platform ID and
 // measurement for a SW Component, linked to HW Platform
 // fetch most recent SW version to a System.
-func (e *ArangoEndorsementStore) GetMostRecentSwVerOfLinkedComp(args common.QueryArgs) (common.QueryResult, error) {
+func (e *EndorsementStore) GetMostRecentSwVerOfLinkedComp(args common.QueryArgs) (common.QueryResult, error) {
 	var platformID string
 	var measurements []string
 	var result []interface{}
 	var schemeEndorsements []map[string]string
 	var swidList []SoftwareIdentity
-	var HwID HardwareIdentity
+	var hwID HardwareIdentity
 
 	platformID, err := ExtractPlatformID(args)
 	if err != nil {
 		// Handle Platform Id Error
-		return nil, fmt.Errorf("failed to extract platform_id from query params %v", err)
+		return nil, fmt.Errorf("failed to extract platform_id from query params: %w", err)
 	}
 	measurements, err = ExtractSoftwareComponents(args)
 	if err != nil {
 		// Handle Measurement Error
-		return nil, fmt.Errorf("failed to extract software compoenents from query params %v", err)
+		return nil, fmt.Errorf("failed to extract software components from query params: %w", err)
 	}
 	// If no measurements provided, we automatically "match" an empty set of components
 	if len(measurements) == 0 {
 		return common.QueryResult{[]interface{}{}}, nil
 	}
 
-	err = e.GetHwIDFromArangoDB(platformID, &HwID)
+	err = e.GetHwIDFromDB(platformID, &hwID)
 	if err != nil {
-		return nil, fmt.Errorf("given platform identity failed %v", err)
+		return nil, fmt.Errorf("for given platform id=%s, failed to fetch the hwID from DB %w", platformID, err)
 	}
 
-	HwTag := HwID.TagID
-	// Fetch the SWID List linked to this tag
-	swidList, err = e.GetSwIDTagsLinkedToHWTagFromDB(HwTag)
+	hwTag := hwID.TagID
+	// Fetch the swid list linked to this tag
+	swidList, err = e.GetSwIDTagsLinkedToHWTagFromDB(hwTag)
 	if err != nil {
-		return nil, fmt.Errorf("query GetMostRecentSwVerOfLinkedComp failed %v", err)
+		return nil, fmt.Errorf("failed to fetch swid list for hwTag=%s,  %w", hwTag, err)
 	}
 	// Only fetch the first measurement
 	meas := measurements[0]
 	requiredswid, matched := checkMeasMatchInSwIDList(swidList, meas)
 	if !matched {
-		return nil, fmt.Errorf("query failed given platform identity has no matching measurements %v", err)
+		return nil, fmt.Errorf("query failed platform identity=%s, has no matching measurements", platformID)
 	}
-	// Now we have the required swid, use it to find the best SW version to return
 
+	// Now we have the required swid, use it to find the best SW version to return
 	// Note by design it is assured that linked SW component (to platform) is always the base.
 	latestSwid := requiredswid
 	updateList, err := e.GetUpdatesListForBaseSwVersion(latestSwid)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fecth queries from arangoDB %v", err)
+		return nil, fmt.Errorf("query failed as unable to fetch update list for base sw version tag %s, %w", latestSwid.TagID, err)
 	}
 	if (len(updateList)) != 0 {
 		latestSwid = updateList[len(updateList)-1]
@@ -909,17 +736,17 @@ func (e *ArangoEndorsementStore) GetMostRecentSwVerOfLinkedComp(args common.Quer
 	// get the best patch on this list
 	patchList, err := e.GetPatchListForBaseSwVersion(latestSwid.TagID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fecth queries from arangoDB %v", err)
+		return nil, fmt.Errorf("query failed as unable to fetch patch list for base sw version tag %s, %w", latestSwid.TagID, err)
 	}
 	if (len(patchList)) != 0 {
 		latestSwid = patchList[len(patchList)-1]
 	}
-	SwMeasurement := latestSwid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
+	swMeasurement := latestSwid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
 
 	// We have the successful SWID structure here
 	// Generate the map for the given swid
 	swMap := map[string]string{
-		"measurement":          SwMeasurement,
+		"measurement":          swMeasurement,
 		"sw_component_type":    latestSwid.Payload[FirstIndex].Resources[FirstIndex].MeasType,
 		"sw_component_version": latestSwid.SoftwareVersion,
 		"signer_id":            latestSwid.Payload[FirstIndex].Resources[FirstIndex].SignerID,
@@ -946,41 +773,41 @@ func checkMeasMatchInSwIDList(swidList []SoftwareIdentity, meas string) (Softwar
 // GetMostRecentSwVerOfAnySWComp is the Master Blaster
 // For a given Platform ID and measurement for a SW Component, which itself could be
 // any patch or an update, fetch most recent SW version (recent patch on recent update branch)
-func (e *ArangoEndorsementStore) GetMostRecentSwVerOfAnySWComp(args common.QueryArgs) (common.QueryResult, error) {
+func (e *EndorsementStore) GetMostRecentSwVerOfAnySWComp(args common.QueryArgs) (common.QueryResult, error) {
 	var platformID string
 	var measurements []string
 	var result []interface{}
 	var schemeEndorsements []map[string]string
 	var swidList []SoftwareIdentity
 	var relList []SoftwareIdentity
-	var HwID HardwareIdentity
+	var hwID HardwareIdentity
 	var matched, patchmatched bool
 
 	platformID, err := ExtractPlatformID(args)
 	if err != nil {
 		// Handle Platform Id Error
-		return nil, fmt.Errorf("failed to extract platform_id from query params %v", err)
+		return nil, fmt.Errorf("failed to extract platform_id from query params: %w", err)
 	}
 	measurements, err = ExtractSoftwareComponents(args)
 	if err != nil {
 		// Handle Measurement Error
-		return nil, fmt.Errorf("failed to extract software compoenents from query params %v", err)
+		return nil, fmt.Errorf("failed to extract software components from query params: %w", err)
 	}
 	// If no measurements provided, we automatically "match" an empty set of components
 	if len(measurements) == 0 {
 		return common.QueryResult{[]interface{}{}}, nil
 	}
 
-	err = e.GetHwIDFromArangoDB(platformID, &HwID)
+	err = e.GetHwIDFromDB(platformID, &hwID)
 	if err != nil {
-		return nil, fmt.Errorf("given platform identity failed %v", err)
+		return nil, fmt.Errorf("for given platform id=%s, failed to fetch the hwID from DB: %w", platformID, err)
 	}
 
-	HwTag := HwID.TagID
+	hwTag := hwID.TagID
 	// Fetch the SWID List linked to this tag
-	swidList, err = e.GetSwIDTagsLinkedToHWTagFromDB(HwTag)
+	swidList, err = e.GetSwIDTagsLinkedToHWTagFromDB(hwTag)
 	if err != nil {
-		return nil, fmt.Errorf("query GetMostRecentSwVerOfLinkedComp failed %v", err)
+		return nil, fmt.Errorf("query failed unable to fetch swid tags linked to hwTag for hwTag=%s: %w", hwTag, err)
 	}
 	// Only fetch the first measurement
 	meas := measurements[0]
@@ -991,7 +818,7 @@ func (e *ArangoEndorsementStore) GetMostRecentSwVerOfAnySWComp(args common.Query
 		for _, swid := range swidList {
 			relList, err = e.GetAllSwPatchesForSwIDTag(swid.TagID)
 			if err != nil {
-				return nil, fmt.Errorf("query GetMostRecentSwVerOfAnySWComp failed %v", err)
+				return nil, fmt.Errorf("query failed unable to fetch all sw patches for swTag=%s: %w", swid.TagID, err)
 			}
 			requiredswid, patchmatched = checkMeasMatchInSwIDList(relList, meas)
 			matched = patchmatched
@@ -1000,27 +827,30 @@ func (e *ArangoEndorsementStore) GetMostRecentSwVerOfAnySWComp(args common.Query
 			} else { /* Given measurement does not match patches, check the updates */
 				relList, err = e.GetAllSwUpdatesForSwIDTag(swid.TagID)
 				if err != nil {
-					return nil, fmt.Errorf("query GetMostRecentSwVerOfAnySWComp failed %v", err)
+					return nil, fmt.Errorf("query failed unable to fetch all sw updates for swTag=%s: %w", swid.TagID, err)
 				}
 				requiredswid, matched = checkMeasMatchInSwIDList(relList, meas)
+				if matched {
+					break
+				}
 			}
 		}
 	}
 	if !matched {
-		return nil, fmt.Errorf("query failed for given platform identity, supplied measurement not in DB %v", err)
+		return nil, fmt.Errorf("query failed for platform identity = %s, supplied measurement not in DB: ", platformID)
 	}
 	// Now we have the required swid, use it to find the best SW version to return
 	if patchmatched { // for a patch walk to its base
 		requiredswid, err = e.GetBaseSwVersionFromPatch(requiredswid)
 		if err != nil {
-			return nil, fmt.Errorf("query GetMostRecentSwVerOfAnySWComp failed %v", err)
+			return nil, fmt.Errorf("query failed as unable to locate base sw version for patch swid tag %s: %w", requiredswid.TagID, err)
 		}
 	}
 	latestSwid := requiredswid
 	// fetch the most recent update on this base
 	updateList, err := e.GetUpdatesListForBaseSwVersion(latestSwid)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fecth queries from arangoDB %v", err)
+		return nil, fmt.Errorf("query failed as unable to fetch update list for base sw version tag %s: %w", latestSwid.TagID, err)
 	}
 	if (len(updateList)) != 0 {
 		latestSwid = updateList[len(updateList)-1]
@@ -1029,14 +859,14 @@ func (e *ArangoEndorsementStore) GetMostRecentSwVerOfAnySWComp(args common.Query
 	// get the best patch on this list
 	patchList, err := e.GetPatchListForBaseSwVersion(latestSwid.TagID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fecth queries from arangoDB %v", err)
+		return nil, fmt.Errorf("query failed as unable to fetch patch list for base sw version tag %s, %w", latestSwid.TagID, err)
 	}
 	if (len(patchList)) != 0 {
 		latestSwid = patchList[len(patchList)-1]
 	}
-	SwMeasurement := latestSwid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
+	swMeasurement := latestSwid.Payload[FirstIndex].Resources[FirstIndex].MeasurementValue
 	swMap := map[string]string{
-		"measurement":          SwMeasurement,
+		"measurement":          swMeasurement,
 		"sw_component_type":    latestSwid.Payload[FirstIndex].Resources[FirstIndex].MeasType,
 		"sw_component_version": latestSwid.SoftwareVersion,
 		"signer_id":            latestSwid.Payload[FirstIndex].Resources[FirstIndex].SignerID,
@@ -1045,7 +875,6 @@ func (e *ArangoEndorsementStore) GetMostRecentSwVerOfAnySWComp(args common.Query
 	result = append(result, schemeEndorsements)
 	return result, nil
 }
-
 func main() {
 	var handshakeConfig = plugin.HandshakeConfig{
 		ProtocolVersion:  1,
@@ -1055,7 +884,7 @@ func main() {
 
 	var pluginMap = map[string]plugin.Plugin{
 		"endorsementstore": &common.EndorsementStorePlugin{
-			Impl: &ArangoEndorsementStore{},
+			Impl: &EndorsementStore{},
 		},
 	}
 

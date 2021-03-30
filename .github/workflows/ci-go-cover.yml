@@ -25,11 +25,14 @@ jobs:
   cover:
     name: Coverage
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Go Coverage
       run: |
         go version
+        go get github.com/golang/mock/mockgen@v1.5.0
         make CI_PIPELINE=true TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
       shell: bash
