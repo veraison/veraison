@@ -11,7 +11,7 @@ type Store interface {
 	Connect(ctx context.Context) error
 
 	// GetQueryParam returns the desired query parameter
-	GetQueryParam(input interface{}) (string, error)
+	GetQueryParam(input string) (string, error)
 
 	// RunQuery executes a query on the store and returns a list of documents
 	RunQuery(ctx context.Context, query string, queryArgs map[string]interface{}, document interface{}) ([]interface{}, error)

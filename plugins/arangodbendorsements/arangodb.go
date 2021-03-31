@@ -143,8 +143,8 @@ func (e *ArangoStore) IsInitialised() bool {
 }
 
 // GetQueryParam returns a suitable query parameter based on supplied input
-func (e *ArangoStore) GetQueryParam(input interface{}) (string, error) {
-	switch input.(CollectionType) {
+func (e *ArangoStore) GetQueryParam(input string) (string, error) {
+	switch input {
 	case HW:
 		return e.dbparams.HwCollection, nil
 	case SW:
