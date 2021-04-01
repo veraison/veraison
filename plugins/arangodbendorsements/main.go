@@ -13,18 +13,15 @@ import (
 	"github.com/veraison/common"
 )
 
-// CollectionType is an abstraction of DB Collections
-type CollectionType int
-
 const (
 	// HW Collection
-	HW CollectionType = iota
+	HW = "HW"
 	// SW Collection
-	SW
+	SW = "SW"
 	// Edge Collection
-	Edge
+	Edge = "Edge"
 	// Rel Collection
-	Rel
+	Rel = "Rel"
 )
 const (
 	mindepth      = "1"
