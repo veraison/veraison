@@ -142,9 +142,9 @@ func (e *ArangoStore) IsInitialised() bool {
 	return e.isInitialised
 }
 
-// GetQueryParam returns a suitable query parameter based on supplied input
-func (e *ArangoStore) GetQueryParam(input string) (string, error) {
-	switch input {
+// GetQueryParam returns a suitable query parameter based on supplied qParamID
+func (e *ArangoStore) GetQueryParam(qParamID string) (string, error) {
+	switch qParamID {
 	case HW:
 		return e.dbparams.HwCollection, nil
 	case SW:
@@ -154,7 +154,7 @@ func (e *ArangoStore) GetQueryParam(input string) (string, error) {
 	case Rel:
 		return e.dbparams.RelCollection, nil
 	default:
-		return "", fmt.Errorf("invalid input to GetQueryParam")
+		return "", fmt.Errorf("invalid input to GetQueryParam: %s", qParamID)
 	}
 }
 
