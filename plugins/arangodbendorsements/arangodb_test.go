@@ -240,6 +240,7 @@ func testQueryLatestSwComp(t *testing.T, fetcher common.IEndorsementStore) {
 	assert.NotEmpty(qr["sw_component_latest"], "Did not match software components")
 }
 
+// TestArangoDBStoreParams_OK checks for valid ArangoStore Params
 func TestArangoDBStoreParams_OK(t *testing.T) {
 	dbParam := ArangoDBparams{
 		ConEndPoint:    "http://psaverifier.org:2829",
@@ -258,6 +259,7 @@ func TestArangoDBStoreParams_OK(t *testing.T) {
 	}
 }
 
+// TestArangoDBStoreParams_NOK checks for invalid ArangoStore Params
 func TestArangoDBStoreParams_NOK(t *testing.T) {
 	dbParam := ArangoDBparams{
 		ConEndPoint:    "psaverifier.org",
