@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	dEndPoint = "http://localhost:8529"
+	defaultEP = "http://localhost:8529"
 )
 
 // ArangoDBparams are the DB parameters required for smooth operation of ArangoDB
@@ -62,9 +62,9 @@ func NewArangoStore(dbparams ArangoDBparams) (*ArangoStore, error) {
 func checkEndPoint(ep string) error {
 	u, err := url.Parse(ep)
 	if err != nil {
-		return fmt.Errorf("failed to parse url: %w", err)
+		return fmt.Errorf("failed to parse URL %s: %w", ep, err)
 	} else if !u.IsAbs() {
-		return fmt.Errorf("supplied URL is not absolute")
+		return fmt.Errorf("supplied URL %s is not absolute", ep)
 	}
 
 	return nil
@@ -73,9 +73,9 @@ func checkEndPoint(ep string) error {
 func (e *ArangoStore) init(dbparams ArangoDBparams) error {
 	e.dbparams = dbparams
 	if dbparams.ConEndPoint == "" {
-		e.dbparams.ConEndPoint = dEndPoint
+		e.dbparams.ConEndPoint = defaultEP
 	} else if err := checkEndPoint(dbparams.ConEndPoint); err != nil {
-		return fmt.Errorf("init failed no valid connection endpoint: %w", err)
+		return fmt.Errorf("init failed, no valid connection endpoint: %w", err)
 	} else {
 		e.dbparams.ConEndPoint = dbparams.ConEndPoint
 	}
