@@ -240,6 +240,43 @@ func testQueryLatestSwComp(t *testing.T, fetcher common.IEndorsementStore) {
 	assert.NotEmpty(qr["sw_component_latest"], "Did not match software components")
 }
 
+func TestArangoDBStoreParams_OK(t *testing.T) {
+	dbParam := ArangoDBparams{
+		ConEndPoint:    "http://psaverifier.org:2829",
+		StoreName:      "ArangoGraphDB",
+		GraphName:      "psa-endorsements",
+		Login:          "root",
+		Password:       "rootpassword",
+		HwCollection:   "hwid_collection",
+		SwCollection:   "swid_collection",
+		EdgeCollection: "edge_verif_scheme",
+		RelCollection:  "edge_rel_scheme",
+	}
+	_, err := NewArangoStore(dbParam)
+	if err != nil {
+		assert.Nil(t, err)
+	}
+}
+
+func TestArangoDBStoreParams_NOK(t *testing.T) {
+	dbParam := ArangoDBparams{
+		ConEndPoint:    "psaverifier.org",
+		StoreName:      "ArangoGraphDB",
+		GraphName:      "psa-endorsements",
+		Login:          "root",
+		Password:       "rootpassword",
+		HwCollection:   "hwid_collection",
+		SwCollection:   "swid_collection",
+		EdgeCollection: "edge_verif_scheme",
+		RelCollection:  "edge_rel_scheme",
+	}
+	_, err := NewArangoStore(dbParam)
+	wantErr := "init failed no valid connection endpoint: supplied URL is not absolute"
+	if err != nil {
+		assert.EqualErrorf(t, err, wantErr, "received error got != want (%s, %s)", err.Error(), wantErr)
+	}
+}
+
 // TestArangoDbEndorsementStore is the main test case, which checks for
 // the required steps of ArangoDB Endoresements
 func TestArangoDbEndorsementStore(t *testing.T) {

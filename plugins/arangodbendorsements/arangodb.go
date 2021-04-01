@@ -4,13 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 
 	driver "github.com/arangodb/go-driver"
 	"github.com/arangodb/go-driver/http"
 )
 
+const (
+	dEndPoint = "http://localhost:8529"
+)
+
 // ArangoDBparams are the DB parameters required for smooth operation of ArangoDB
 type ArangoDBparams struct {
+	ConEndPoint    string
 	StoreName      string
 	GraphName      string
 	Login          string
@@ -53,8 +59,26 @@ func NewArangoStore(dbparams ArangoDBparams) (*ArangoStore, error) {
 	return as, nil
 }
 
+func checkEndPoint(ep string) error {
+	u, err := url.Parse(ep)
+	if err != nil {
+		return fmt.Errorf("failed to parse url: %w", err)
+	} else if !u.IsAbs() {
+		return fmt.Errorf("supplied URL is not absolute")
+	}
+
+	return nil
+}
+
 func (e *ArangoStore) init(dbparams ArangoDBparams) error {
 	e.dbparams = dbparams
+	if dbparams.ConEndPoint == "" {
+		e.dbparams.ConEndPoint = dEndPoint
+	} else if err := checkEndPoint(dbparams.ConEndPoint); err != nil {
+		return fmt.Errorf("init failed no valid connection endpoint: %w", err)
+	} else {
+		e.dbparams.ConEndPoint = dbparams.ConEndPoint
+	}
 	e.isInitialised = true
 	return nil
 }
@@ -66,7 +90,7 @@ func (e *ArangoStore) Connect(ctx context.Context) error {
 
 	// Create an HTTP Connection First to the Client
 	e.connvars.conn, err = http.NewConnection(http.ConnectionConfig{
-		Endpoints: []string{"http://localhost:8529"},
+		Endpoints: []string{e.dbparams.ConEndPoint},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP connection: %w", err)
