@@ -6,7 +6,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// A set of default paths that can be specified for Config.Init().
+// DefaultConfigPaths is a set of default paths that can be specified for
+// Config.Init().
 var DefaultConfigPaths = []string{
 	"$HOME/veraison",
 	".",

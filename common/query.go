@@ -6,12 +6,103 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/ohler55/ojg/jp"
 )
 
 // QueryArgs is a map of key-value pairs of arguments for a query
 type QueryArgs map[string]interface{}
+
+func (a *QueryArgs) AddFromText(text string) error {
+	parts := strings.SplitN(text, "=", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("\"=\" not found in \"%s\"", text)
+	}
+
+	name, value := parts[0], parts[1]
+	(*a)[name] = value
+	return nil
+}
+
+// GetString returns the value for the specified name as a string, or an error
+// if the value could not be interpreted as such.
+func (a QueryArgs) GetString(name string) (string, error) {
+	argVal, ok := a[name]
+	if !ok {
+		return "", fmt.Errorf("missing argument '%s'", name)
+	}
+
+	var result string
+	switch v := argVal.(type) {
+	case string:
+		result = v
+	case []interface{}:
+		result, ok = v[0].(string)
+		if !ok {
+			return "", fmt.Errorf("unexpected type for %q; must be a string", name)
+		}
+	default:
+		return "", fmt.Errorf("unexpected type for %q; must be a string; found: %T", name, v)
+	}
+
+	return result, nil
+}
+
+// GetStringSlice returns the value for the specified name as a string slice,
+// or an error if the value could not be interpreted as such.
+// Note: in the case that nil is passed as input value, nil will be returned as
+//       output without an error.
+func (a QueryArgs) GetStringSlice(name string) ([]string, error) {
+	argVal, ok := a[name]
+	if !ok {
+		return nil, fmt.Errorf("missing argument %q", name)
+	}
+
+	var result []string
+
+	switch v := argVal.(type) {
+	case []interface{}:
+		for _, elt := range v {
+			eltString, ok := elt.(string)
+			if !ok {
+				return nil, fmt.Errorf(
+					"unexpected element type for %q slice; must be a string",
+					name,
+				)
+			}
+			result = append(result, eltString)
+		}
+	case []string:
+		result = v
+	case nil:
+		result = nil
+	default:
+		return nil, fmt.Errorf("unexpected type for %q; must be a []string; found %T", name, v)
+	}
+
+	return result, nil
+}
+
+func (a QueryArgs) UnmarshalJSONObject(name string, v interface{}) error {
+	argVal, ok := a[name]
+	if !ok {
+		return fmt.Errorf("missing argument %q", name)
+	}
+
+	var buffer []byte
+
+	switch a := argVal.(type) {
+	case []byte:
+		buffer = a
+	case string:
+		buffer = []byte(a)
+	default:
+		return fmt.Errorf("invalid type %T for %q", argVal, name)
+	}
+
+	return json.Unmarshal(buffer, v)
+}
 
 // QueryResult is a slice of all matching results
 type QueryResult []interface{}
@@ -20,6 +111,11 @@ type QueryResult []interface{}
 // QueryArgs as a parameter and returns a QueryResult and/or an error. The
 // QueryResult contain the query's matches.
 type Query func(QueryArgs) (QueryResult, error)
+
+// QueryAdder defines the adder function signature. These functions are used to
+// add ensorsements to the store from the provided QueryArgs, or alternatively,
+// to update existing endrosements, if the boolean flag is set to true.
+type QueryAdder func(QueryArgs, bool) error
 
 // QueryConstraint defines a constraint on the number of expected matches in
 // the QueryResult.

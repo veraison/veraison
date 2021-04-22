@@ -62,6 +62,10 @@ func (em *Manager) InitializeStore(
 	return nil
 }
 
+func (em *Manager) GetName() string {
+	return em.Store.GetName()
+}
+
 func (em *Manager) GetSupportedQueries() []string {
 	return em.Store.GetSupportedQueries()
 }
@@ -72,6 +76,10 @@ func (em *Manager) RunQuery(name string, args common.QueryArgs) (common.QueryRes
 
 func (em *Manager) GetEndorsements(qds ...common.QueryDescriptor) (common.EndorsementMatches, error) {
 	return em.Store.GetEndorsements(qds...)
+}
+
+func (em *Manager) AddEndorsement(name string, args common.QueryArgs, update bool) error {
+	return em.Store.AddEndorsement(name, args, update)
 }
 
 func (em *Manager) Close() {

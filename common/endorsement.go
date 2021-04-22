@@ -18,11 +18,11 @@ type EndorsementStoreParams map[string]interface{}
 // endorsement scheme dependant, but it is typically a hash of the code and/or
 // read only memory layout of the process associated with the software
 // component.
-type SoftwareEndoresement struct {
-	Measurement string
-	Type        string
-	Version     string
-	SignerID    string
+type SoftwareEndorsement struct {
+	Measurement string `json:"measurement_value"`
+	Type        string `json:"sw_component_type"`
+	Version     string `json:"sw_component_version"`
+	SignerID    string `json:"signer_id"`
 }
 
 // EndorsementMatches maps query name onto the corresponding QueryResult. This
@@ -53,6 +53,12 @@ type IEndorsementStore interface {
 	// EndorsementMatches.
 	GetEndorsements(qds ...QueryDescriptor) (EndorsementMatches, error)
 
+	// AddEndorsement adds endorsment data of the type specified by name.
+	// The endorsement data is interpreted from args based on the name. If
+	// update flag is set to true, and existing endrsement (identified from
+	// the args) is updated instead.
+	AddEndorsement(name string, args QueryArgs, update bool) error
+
 	// RunQuery executes the query with the specified name against the
 	// parameter values specified by the provided QueryArgs and return the
 	// corresponding QueryResult. The name must be of a query supported by
@@ -80,11 +86,25 @@ type IEndorsementStore interface {
 // cross all IEndorsementStore implementations.
 type BaseEndorsementStore struct {
 
-	// Queries a map of names to Query functions populated by a particular
-	// IEndorsementStore implementation. Each implementation defines a
-	// Query function for every type of query it supports and "registers"
-	// them under a name here.
+	// Queries is a map of names to Query functions populated by a
+	// particular IEndorsementStore implementation. Each implementation
+	// defines a Query function for every type of query it supports and
+	// "registers" them under a name here.
 	Queries map[string]Query
+
+	// Adders is a map of names of endorsement types to the Adder function
+	// used to add/update those endorsements. Each IEndorsementStore
+	// implementation defines its own adders and registers them here.
+	Adders map[string]QueryAdder
+}
+
+func (e *BaseEndorsementStore) AddEndorsement(name string, args QueryArgs, update bool) error {
+	adderFunc, ok := e.Adders[name]
+	if !ok {
+		return fmt.Errorf("no adder specified for %q", name)
+	}
+
+	return adderFunc(args, update)
 }
 
 // GetEndorsements invokes RunQuery for each of the specified QueryDescriptor's
@@ -99,7 +119,7 @@ func (e *BaseEndorsementStore) GetEndorsements(qds ...QueryDescriptor) (Endorsem
 		}
 
 		if !checkConstraintHolds(qr, qd.Constraint) {
-			return nil, fmt.Errorf("result for query '%v' failed to satisfy constraint", qd.Name)
+			return nil, fmt.Errorf("result for query %q failed to satisfy constraint", qd.Name)
 		}
 
 		matches[qd.Name] = qr
@@ -113,7 +133,7 @@ func (e *BaseEndorsementStore) GetEndorsements(qds ...QueryDescriptor) (Endorsem
 func (e *BaseEndorsementStore) RunQuery(name string, args QueryArgs) (QueryResult, error) {
 	queryFunc, ok := e.Queries[name]
 	if !ok {
-		return nil, fmt.Errorf("query '%v' not implemented", name)
+		return nil, fmt.Errorf("query %q not implemented", name)
 	}
 
 	result, err := queryFunc(args)
