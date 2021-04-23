@@ -73,7 +73,7 @@ func Test_Cert_RoundTrip(t *testing.T) {
 	defer finiDb(dbPath)
 
 	var taStore SqliteTrustAnchorStore
-	err = taStore.Init(common.TrustAnchorStoreParams{"dbPath": dbPath})
+	err = taStore.Init(common.TrustAnchorStoreParams{"dbpath": dbPath})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -129,7 +129,7 @@ func Test_Key_RoundTrip(t *testing.T) {
 	defer finiDb(dbPath)
 
 	var taStore SqliteTrustAnchorStore
-	err = taStore.Init(common.TrustAnchorStoreParams{"dbPath": dbPath})
+	err = taStore.Init(common.TrustAnchorStoreParams{"dbpath": dbPath})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

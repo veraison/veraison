@@ -27,7 +27,7 @@ func initDb(schemaFile string) (string, error) {
 		return "", err
 	}
 
-	dbf, err := ioutil.TempFile(os.TempDir(), "fetcher-db-")
+	dbf, err := ioutil.TempFile(os.TempDir(), "store-db-")
 	if err != nil {
 		return "", err
 	}
@@ -180,67 +180,51 @@ func TestSqliteEndorsementStore(t *testing.T) {
 	}
 	defer finiDb(dbPath)
 
-	fetcher := new(SqliteEndorsementStore)
+	store := new(SqliteEndorsementStore)
 
-	err = fetcher.Init(common.EndorsementStoreParams{"dbPath": dbPath})
+	err = store.Init(common.EndorsementStoreParams{"dbpath": dbPath})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	testGetSupportedQueries(t, fetcher)
-	testSupportsQuery(t, fetcher)
-	testQueryHardwareID(t, fetcher)
-	testQuerySoftwareComponents(t, fetcher)
+	testGetSupportedQueries(t, store)
+	testSupportsQuery(t, store)
+	testQueryHardwareID(t, store)
+	testQuerySoftwareComponents(t, store)
+	testAddHardwareID(t, store)
+	testAddSoftwareComponents(t, store)
 }
 
-func testGetSupportedQueries(t *testing.T, fetcher common.IEndorsementStore) {
+func testGetSupportedQueries(t *testing.T, store common.IEndorsementStore) {
 	assert := assert.New(t)
 
 	var expected = map[string]bool{"hardware_id": true, "software_components": true}
 
-	fetcherSupported := fetcher.GetSupportedQueries()
+	storeSupported := store.GetSupportedQueries()
 
-	assert.Equal(len(expected), len(fetcherSupported),
+	assert.Equal(len(expected), len(storeSupported),
 		"Did not retrieve the right number of supported queries")
 
-	for _, q := range fetcherSupported {
+	for _, q := range storeSupported {
 		_, ok := expected[q]
 		assert.Truef(ok, "Retrieved unexpected query '%s'", q)
 	}
 }
 
-func testSupportsQuery(t *testing.T, fetcher common.IEndorsementStore) {
+func testSupportsQuery(t *testing.T, store common.IEndorsementStore) {
 	assert := assert.New(t)
 
-	assert.True(fetcher.SupportsQuery("hardware_id"),
-		"fetcher does not support expected query 'hardware_id'")
-	assert.False(fetcher.SupportsQuery("fake_query"),
-		"fetcher claims to support a non-existing query")
+	assert.True(store.SupportsQuery("hardware_id"),
+		"store does not support expected query 'hardware_id'")
+	assert.False(store.SupportsQuery("fake_query"),
+		"store claims to support a non-existing query")
 }
 
-func testQueryHardwareID(t *testing.T, fetcher common.IEndorsementStore) {
-	assert := assert.New(t)
-
-	qd := common.QueryDescriptor{
-		Name: "hardware_id",
-		Args: map[string]interface{}{
-			"platform_id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
-		},
-		Constraint: common.QcOne,
-	}
-
-	qr, err := fetcher.GetEndorsements(qd)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	assert.Equal(1, len(qr["hardware_id"]),
-		"hardware_id constraint of exactly 1 match was not met")
-	assert.Equal("acme-rr-trap", qr["hardware_id"][0],
-		"hardware_id failed to match")
+func testQueryHardwareID(t *testing.T, store common.IEndorsementStore) {
+	runHwIDQuery(t, store, "76543210fedcba9817161514131211101f1e1d1c1b1a1918", "acme-rr-trap")
 }
 
-func testQuerySoftwareComponents(t *testing.T, fetcher common.IEndorsementStore) {
+func testQuerySoftwareComponents(t *testing.T, store common.IEndorsementStore) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -256,7 +240,145 @@ func testQuerySoftwareComponents(t *testing.T, fetcher common.IEndorsementStore)
 		},
 	}
 
-	qr, err := fetcher.GetEndorsements(qd)
+	qr, err := store.GetEndorsements(qd)
 	assert.Nil(err)
 	assert.NotEmpty(qr["software_components"], "Did not match software components")
+}
+
+func testAddHardwareID(t *testing.T, store common.IEndorsementStore) {
+	assert := assert.New(t)
+
+	err := store.AddEndorsement(
+		"hardware_id",
+		common.QueryArgs{
+			"platform_id": "123456789abcdef123456789abcdef123456789abcdef123",
+			"hardware_id": "test-hardware",
+		},
+		false,
+	)
+	assert.Nil(err)
+
+	err = store.AddEndorsement(
+		"hardware_id",
+		common.QueryArgs{
+			"platform_id": "123456789abcdef123456789abcdef123456789abcdef123",
+			"hardware_id": "test-hardware",
+		},
+		false,
+	)
+	assert.Equal("UNIQUE constraint failed: hardware.platform_id", err.Error())
+
+	runHwIDQuery(t, store, "123456789abcdef123456789abcdef123456789abcdef123", "test-hardware")
+
+	// test update
+	err = store.AddEndorsement(
+		"hardware_id",
+		common.QueryArgs{
+			"platform_id": "123456789abcdef123456789abcdef123456789abcdef123",
+			"hardware_id": "production-hardware",
+		},
+		true,
+	)
+	assert.Nil(err)
+
+	runHwIDQuery(t, store, "123456789abcdef123456789abcdef123456789abcdef123", "production-hardware")
+}
+
+func runHwIDQuery(t *testing.T, store common.IEndorsementStore, platID string, expected string) {
+	assert := assert.New(t)
+
+	qd := common.QueryDescriptor{
+		Name: "hardware_id",
+		Args: map[string]interface{}{
+			"platform_id": platID,
+		},
+		Constraint: common.QcOne,
+	}
+
+	qr, err := store.GetEndorsements(qd)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	assert.Equal(1, len(qr["hardware_id"]),
+		"hardware_id constraint of exactly 1 match was not met")
+	assert.Equal(expected, qr["hardware_id"][0],
+		"hardware_id failed to match")
+}
+
+func testAddSoftwareComponents(t *testing.T, store common.IEndorsementStore) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	scs := []common.SoftwareEndorsement{
+		common.SoftwareEndorsement{
+			Type:        "M4",
+			SignerID:    "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+			Version:     "1.0.1",
+			Measurement: "76543210fedcba9817161514131211101f1e1d1c1b1a1920",
+		},
+		common.SoftwareEndorsement{
+			Type:        "M5",
+			SignerID:    "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+			Version:     "1.0.2",
+			Measurement: "76543210fedcba9817161514131211101f1e1d1c1b1a1921",
+		},
+	}
+	scsArg, err := json.Marshal(scs)
+	require.Nil(err)
+
+	args := common.QueryArgs{
+		"platform_id":         "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+		"software_components": scsArg,
+	}
+
+	err = store.AddEndorsement("software_components", args, false)
+	assert.Nil(err)
+
+	// Adding an exact duplicate should succeed
+	scs = []common.SoftwareEndorsement{
+		common.SoftwareEndorsement{
+			Type:        "M5",
+			SignerID:    "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+			Version:     "1.0.2",
+			Measurement: "76543210fedcba9817161514131211101f1e1d1c1b1a1921",
+		},
+	}
+	scsArg, err = json.Marshal(scs)
+	require.Nil(err)
+
+	args = common.QueryArgs{
+		"platform_id":         "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+		"software_components": scsArg,
+	}
+
+	err = store.AddEndorsement("software_components", args, false)
+	assert.Nil(err)
+
+	// Adding a different component for the same measurement should fail...
+	scs = []common.SoftwareEndorsement{
+		common.SoftwareEndorsement{
+			Type:        "M5",
+			SignerID:    "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+			Version:     "2.0.0", // version updated
+			Measurement: "76543210fedcba9817161514131211101f1e1d1c1b1a1921",
+		},
+	}
+	scsArg, err = json.Marshal(scs)
+	require.Nil(err)
+
+	args = common.QueryArgs{
+		"platform_id":         "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+		"software_components": scsArg,
+	}
+
+	err = store.AddEndorsement("software_components", args, false)
+	assert.Equal(
+		"component with measurement \"76543210fedcba9817161514131211101f1e1d1c1b1a1921\" is already registered",
+		err.Error(),
+	)
+
+	// ...unless it is being updated.
+	err = store.AddEndorsement("software_components", args, true)
+	assert.Nil(err)
 }

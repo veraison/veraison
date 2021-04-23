@@ -1,0 +1,36 @@
+{
+    "instance_id": "176543210fedcba9817161514131211101f1e1d1c1b1a1918",
+    "implementation_id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+    "challenge": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+    "client_id": 2,
+    "security_lifecycle": "sl_secured",
+    "profile_id": "http://example.com",
+    "boot_seed": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+    "sw_components": [
+        {
+            "sw_component_type": "BL",
+            "signer_id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+            "sw_component_version": "3.4.2",
+            "measurement_value": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+            "measurement_description": "TF-M_SHA256MemPreXIP"
+        },
+        {
+            "sw_component_type": "M1",
+            "signer_id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+            "sw_component_version": "1.2",
+            "measurement_value": "76543210fedcba9817161514131211101f1e1d1c1b1a1918"
+        },
+        {
+            "sw_component_type": "M2",
+            "signer_id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+            "sw_component_version": "1.2.3",
+            "measurement_value": "76543210fedcba9817161514131211101f1e1d1c1b1a1918"
+        },
+        {
+            "sw_component_type": "M3",
+            "signer_id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+            "sw_component_version": "1",
+            "measurement_value": "76543210fedcba9817161514131211101f1e1d1c1b1a1918"
+        }
+    ]
+}

@@ -15,7 +15,7 @@ VALUES
     (4, "M3", "76543210fedcba9817161514131211101f1e1d1c1b1a1918", "1", "", "76543210fedcba9817161514131211101f1e1d1c1b1a1919");
 
 CREATE TABLE hardware(
-    platform_id text primary key,
+    platform_id text,
     hw_id text
 );
 

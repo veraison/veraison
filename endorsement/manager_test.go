@@ -75,7 +75,7 @@ func TestLoadStore(t *testing.T) {
 
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
-	params := common.EndorsementStoreParams{"dbPath": dbPath}
+	params := common.EndorsementStoreParams{"dbpath": dbPath}
 	err = pm.InitializeStore([]string{pluginDir}, "sqlite", params)
 	if err != nil {
 		t.Fatalf("%v", err)

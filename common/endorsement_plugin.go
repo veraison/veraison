@@ -12,6 +12,12 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
+type EndorsementAddArg struct {
+	Name   string
+	Args   QueryArgs
+	Update bool
+}
+
 // EndorsementStorePlugin defines the plugin interface for an IEndorsementStore implementation.
 type EndorsementStorePlugin struct {
 
@@ -67,6 +73,18 @@ func (s *EndorsementStoreServer) RunQuery(qdBlob []byte, resp *[]byte) error {
 
 	*resp, err = json.Marshal(qresult)
 	return err
+}
+
+func (s *EndorsementStoreServer) AddEndorsement(argBlob []byte, resp *[]byte) error {
+	var arg EndorsementAddArg
+	// NOTE: encoding/gob used to serialize objects by net/rpc cannot handle []interface{}, which
+	//       necessitates pre-serialing any objects that may contain arbitrary JSON decodings.
+	err := json.Unmarshal(argBlob, &arg)
+	if err != nil {
+		return err
+	}
+
+	return s.Impl.AddEndorsement(arg.Name, arg.Args, arg.Update)
 }
 
 func (s *EndorsementStoreServer) GetSupportedQueries(args interface{}, resp *[]string) error {
@@ -148,6 +166,21 @@ func (e *EndorsementStoreRPC) RunQuery(name string, args QueryArgs) (QueryResult
 
 	err = json.Unmarshal(resBlob, &resp)
 	return resp, err
+}
+
+func (e *EndorsementStoreRPC) AddEndorsement(name string, args QueryArgs, update bool) error {
+	arg := EndorsementAddArg{Name: name, Args: args, Update: update}
+
+	// NOTE: encoding/gob used to serialize objects by net/rpc cannot handle []interface{}, which
+	//       necessitates pre-serialing any objects that may contain arbitrary JSON decodings.
+	argBlob, err := json.Marshal(arg)
+	if err != nil {
+		return err
+	}
+
+	var resBlob []byte
+
+	return e.client.Call("Plugin.AddEndorsement", argBlob, &resBlob)
 }
 
 func (e *EndorsementStoreRPC) GetEndorsements(qds ...QueryDescriptor) (EndorsementMatches, error) {

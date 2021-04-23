@@ -69,7 +69,7 @@ func TestSqliteGetPolicy(t *testing.T) {
 	defer finiDb(dbPath)
 
 	var pm PolicyStore
-	err = pm.Init(common.PolicyStoreParams{"dbPath": dbPath})
+	err = pm.Init(common.PolicyStoreParams{"dbpath": dbPath})
 	require.Nil(err)
 
 	policy, err := pm.GetPolicy(1, common.PsaIatToken)

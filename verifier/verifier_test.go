@@ -98,10 +98,10 @@ func TestVerifier(t *testing.T) {
 		PolicyStoreName:      "sqlite",
 		EndorsementStoreName: "sqlite",
 		PolicyStoreParams: common.PolicyStoreParams{
-			"dbPath": policyDbPath,
+			"dbpath": policyDbPath,
 		},
 		EndorsementStoreParams: common.EndorsementStoreParams{
-			"dbPath": endorsementDbPath,
+			"dbpath": endorsementDbPath,
 		},
 	}
 

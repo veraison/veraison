@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -24,15 +25,18 @@ func (e *SqliteEndorsementStore) GetName() string {
 }
 
 func retrieveDbPath(args common.EndorsementStoreParams) string {
-	i, found := args["dbPath"]
+	i, found := args["dbpath"]
 	if !found {
 		return ""
 	}
-	v, ok := i.(string)
-	if !ok {
+	switch v := i.(type) {
+	case string:
+		return v
+	case []byte:
+		return string(v)
+	default:
 		return ""
 	}
-	return v
 }
 
 // Init opens the database connection.
@@ -57,6 +61,11 @@ func (e *SqliteEndorsementStore) Init(args common.EndorsementStoreParams) error 
 		"software_components": e.GetSoftwareComponents,
 	}
 
+	e.Adders = map[string]common.QueryAdder{
+		"hardware_id":         e.AddHardwareID,
+		"software_components": e.AddSoftwareComponents,
+	}
+
 	return nil
 }
 
@@ -67,24 +76,11 @@ func (e *SqliteEndorsementStore) Close() error {
 
 // GetHardwareID returns the HardwareID for the platform
 func (e *SqliteEndorsementStore) GetHardwareID(args common.QueryArgs) (common.QueryResult, error) {
-	var platformID string
 	var result []interface{}
 
-	platformIDArg, ok := args["platform_id"]
-	if !ok {
-		return nil, fmt.Errorf("missing mandatory query argument 'platform_id'")
-	}
-
-	switch v := platformIDArg.(type) {
-	case string:
-		platformID = v
-	case []interface{}:
-		platformID, ok = v[0].(string)
-		if !ok {
-			return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string")
-		}
-	default:
-		return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string; found: %T", v)
+	platformID, err := args.GetString("platform_id")
+	if err != nil {
+		return nil, fmt.Errorf("error getting mandatory argument \"platform_id\": %s", err.Error())
 	}
 
 	rows, err := e.db.Query("select hw_id from hardware where platform_id = ?", platformID)
@@ -105,49 +101,44 @@ func (e *SqliteEndorsementStore) GetHardwareID(args common.QueryArgs) (common.Qu
 	return result, nil
 }
 
+func (e *SqliteEndorsementStore) AddHardwareID(args common.QueryArgs, update bool) error {
+	platformID, err := args.GetString("platform_id")
+	if err != nil {
+		return fmt.Errorf("error getting mandatory argument \"platform_id\": %s", err.Error())
+	}
+
+	hardwareID, err := args.GetString("hardware_id")
+	if err != nil {
+		return fmt.Errorf("error getting mandatory argument \"hardware_id\": %s", err.Error())
+	}
+
+	if update {
+		_, err = e.db.Exec(
+			"update hardware set hw_id = ? where platform_id = ?",
+			hardwareID,
+			platformID,
+		)
+	} else {
+		_, err = e.db.Exec(
+			"insert into hardware(platform_id, hw_id) values (?, ?)",
+			platformID,
+			hardwareID,
+		)
+	}
+
+	return err
+}
+
 // GetSoftwareComponents returns the matching measurements
 func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (common.QueryResult, error) {
-	var platformID string
-	var measurements []string
-
-	platformIDArg, ok := args["platform_id"]
-	if !ok {
-		return nil, fmt.Errorf("missing mandatory query argument 'platform_id'")
-	}
-	switch v := platformIDArg.(type) {
-	case string:
-		platformID = v
-	case []interface{}:
-		platformID, ok = v[0].(string)
-		if !ok {
-			return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string")
-		}
-	default:
-		return nil, fmt.Errorf("unexpected type for 'platform_id'; must be a string; found: %T", v)
+	platformID, err := args.GetString("platform_id")
+	if err != nil {
+		return nil, fmt.Errorf("error getting mandatory argument \"platform_id\": %s", err.Error())
 	}
 
-	measurementsArg, ok := args["measurements"]
-	if !ok {
-		return nil, fmt.Errorf("missing mandatory query argument 'platform_id'")
-	}
-
-	if measurementsArg == nil {
-		return common.QueryResult{[]interface{}{}}, nil
-	}
-
-	switch v := measurementsArg.(type) {
-	case []interface{}:
-		for _, elt := range v {
-			measure, ok := elt.(string)
-			if !ok {
-				return nil, fmt.Errorf("unexpected element type for 'measurements' slice; must be a string")
-			}
-			measurements = append(measurements, measure)
-		}
-	case []string:
-		measurements = v
-	default:
-		return nil, fmt.Errorf("unexpected type for 'measurements'; must be a []string; found %T", v)
+	measurements, err := args.GetStringSlice("measurements")
+	if err != nil {
+		return nil, fmt.Errorf("error getting mandatory argument \"measurements\": %s", err.Error())
 	}
 
 	// If no measurements provided, we automatically "match" an empty set of components
@@ -163,7 +154,136 @@ func (e *SqliteEndorsementStore) GetSoftwareComponents(args common.QueryArgs) (c
 	return e.getSoftwareEndorsements(schemeMeasMap, len(measurements))
 }
 
-func (e *SqliteEndorsementStore) processSchemeMeasurements(measurements []string, platformID string) (map[int][]string, error) {
+func (e *SqliteEndorsementStore) AddSoftwareComponents(args common.QueryArgs, update bool) error {
+	platformID, err := args.GetString("platform_id")
+	if err != nil {
+		return fmt.Errorf("error getting mandatory argument \"platform_id\": %s", err.Error())
+	}
+
+	var components []common.SoftwareEndorsement
+	if err = args.UnmarshalJSONObject("software_components", &components); err != nil {
+		return err
+	}
+
+	tx, err := e.db.BeginTx(context.Background(), &sql.TxOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, component := range components {
+		if update {
+			err = e.updatePlatformSoftwareComponent(tx, platformID, component)
+		} else {
+			err = e.addPlatformSoftwareComponent(tx, platformID, component)
+		}
+
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (e *SqliteEndorsementStore) addPlatformSoftwareComponent(
+	tx *sql.Tx,
+	platformID string,
+	component common.SoftwareEndorsement,
+) error {
+	row := tx.QueryRow(
+		"SELECT type, signer_id, version FROM sw_components WHERE measurement = ?",
+		component.Measurement,
+	)
+
+	var typ, signerID, version string
+	err := row.Scan(&typ, &signerID, &version)
+	if err == nil {
+		if typ != component.Type || signerID != component.SignerID || version != component.Version {
+			return fmt.Errorf(
+				"component with measurement \"%s\" is already registered",
+				component.Measurement,
+			)
+		}
+
+		// This exact component entry already exists; short-circuit here, indicating success.
+		return nil
+	} else if err != sql.ErrNoRows {
+		return err
+	}
+
+	return e.doAddNewSoftwareComponent(tx, platformID, component)
+}
+
+func (e *SqliteEndorsementStore) updatePlatformSoftwareComponent(
+	tx *sql.Tx,
+	platformID string,
+	component common.SoftwareEndorsement,
+) error {
+	row := tx.QueryRow(
+		"SELECT sw_id from sw_components WHERE measurement = ?",
+		component.Measurement,
+	)
+
+	var swID int
+	if err := row.Scan(&swID); err != nil {
+		if err == sql.ErrNoRows {
+			return e.doAddNewSoftwareComponent(tx, platformID, component)
+		}
+
+		return err
+	}
+
+	// Found existing component for measurement
+	_, err := tx.Exec(
+		"UPDATE sw_components SET signer_id = ? , version = ? WHERE sw_id = ?",
+		component.SignerID,
+		component.Version,
+		swID,
+	)
+
+	return err
+}
+
+func (e *SqliteEndorsementStore) doAddNewSoftwareComponent(
+	tx *sql.Tx,
+	platformID string,
+	component common.SoftwareEndorsement,
+) error {
+	var swID int
+	row := tx.QueryRow("SELECT MAX(sw_id) FROM sw_components")
+	if err := row.Scan(&swID); err != nil {
+		return err
+	}
+	swID++
+
+	_, err := tx.Exec(
+		"INSERT INTO sw_components(sw_id, type, signer_id, version, measurement) VALUES (?, ?, ?, ?, ?)",
+		swID,
+		component.Type,
+		component.SignerID,
+		component.Version,
+		component.Measurement,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(
+		"INSERT INTO verif_scheme(scheme_id, platform_id, sw_id) VALUES (?, ?, ?)",
+		1, // TODO: verification scheme has not been defined in the current implementation
+		platformID,
+		swID,
+	)
+
+	return err
+}
+
+func (e *SqliteEndorsementStore) processSchemeMeasurements(
+	measurements []string,
+	platformID string,
+) (map[int][]string, error) {
 	var schemeMeasMap = make(map[int][]string)
 
 	for _, measure := range measurements {
@@ -195,7 +315,10 @@ func (e *SqliteEndorsementStore) processSchemeMeasurements(measurements []string
 	return schemeMeasMap, nil
 }
 
-func (e *SqliteEndorsementStore) getSoftwareEndorsements(schemeMeasMap map[int][]string, numMeasurements int) ([]interface{}, error) {
+func (e *SqliteEndorsementStore) getSoftwareEndorsements(
+	schemeMeasMap map[int][]string,
+	numMeasurements int,
+) ([]interface{}, error) {
 	var result []interface{}
 
 	for schemeID, schemeMeasures := range schemeMeasMap {
@@ -217,7 +340,7 @@ func (e *SqliteEndorsementStore) getSoftwareEndorsements(schemeMeasMap map[int][
 		defer rows.Close()
 
 		for rows.Next() {
-			se := new(common.SoftwareEndoresement)
+			se := new(common.SoftwareEndorsement)
 			err := rows.Scan(&se.Measurement, &se.Type, &se.Version, &se.SignerID)
 			if err != nil {
 				return nil, err

@@ -92,7 +92,7 @@ func Test_TokenProcessor_ProcessDice(t *testing.T) {
 		PluginLocations:      []string{pluginDir},
 		TrustAnchorStoreName: "sqlite",
 		TrustAnchorStoreParams: common.TrustAnchorStoreParams{
-			"dbPath": dbPath,
+			"dbpath": dbPath,
 		},
 	}
 
