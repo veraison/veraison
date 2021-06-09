@@ -2,6 +2,8 @@
 # Taken from: https://github.com/fxamacker/cbor/workflows/ci.yml (thanks!)
 name: ci
 on: [push]
+paths-ignore:
+  - 'community/**'
 jobs:
 
   # Test on Ubuntu latest with default Go version.
