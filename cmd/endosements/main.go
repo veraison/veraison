@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 
+	"github.com/dolmen-go/flagx"
 	"go.uber.org/zap"
 
 	"github.com/veraison/common"
@@ -21,7 +22,7 @@ func runQueryCommand(
 ) error {
 	var queryParams = make(common.QueryArgs)
 	queryFlags := flag.NewFlagSet("run_query", flag.ExitOnError)
-	queryFlags.Func("a", "Additional argument in the form KEY=VALUE.", queryParams.AddFromText)
+	queryFlags.Var(flagx.Func(queryParams.AddFromText), "a", "Additional argument in the form KEY=VALUE.")
 
 	if err := queryFlags.Parse(args); err != nil {
 		return err
@@ -58,7 +59,7 @@ func runAddCommand(
 	var update bool
 
 	queryFlags := flag.NewFlagSet("run_query", flag.ExitOnError)
-	queryFlags.Func("a", "Additional argument in the form KEY=VALUE.", queryParams.AddFromText)
+	queryFlags.Var(flagx.Func(queryParams.AddFromText), "a", "Additional argument in the form KEY=VALUE.")
 	queryFlags.BoolVar(&update, "u", false, "Update existing endorsements with new values.")
 
 	if err := queryFlags.Parse(args); err != nil {
