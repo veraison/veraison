@@ -44,6 +44,40 @@ func (ps *PolicyStore) Init(args common.PolicyStoreParams) error {
 	return nil
 }
 
+// ListPolicies returns a list of entries for policies within the store. If
+// porvided tenantID is greater than zero, only etries for that tenant will be
+// returned. Otherwise, all entries will be returned.
+func (ps *PolicyStore) ListPolicies(tenantID int) ([]common.PolicyListEntry, error) {
+	var result []common.PolicyListEntry
+	var rows *sql.Rows
+	var err error
+
+	if tenantID > 0 {
+		rows, err = ps.db.Query(
+			"select tenant_id, token_format from policy where tenant_id = ?",
+			tenantID,
+		)
+	} else {
+		rows, err = ps.db.Query("select tenant_id, token_format from policy")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var entry common.PolicyListEntry
+		if err := rows.Scan(&entry.TenantID, &entry.TokenFormatName); err != nil {
+			return nil, err
+		}
+		result = append(result, entry)
+	}
+
+	return result, nil
+}
+
 // GetPolicy returns a policy matching a tenant and the Evidence format
 func (ps *PolicyStore) GetPolicy(tenantID int, tokenFormat common.TokenFormat) (*common.Policy, error) {
 	policy := common.NewPolicy()
@@ -81,6 +115,33 @@ func (ps *PolicyStore) PutPolicy(tenantID int, policy *common.Policy) error {
 	_, err = ps.db.Exec(
 		"insert into policy (tenant_id, token_format, query_map, rules) values (?, ?, ?, ?)",
 		tenantID, policy.TokenFormat.String(), QueryMapBytes, policy.Rules,
+	)
+
+	return err
+}
+
+// DeletePolicy removes the policy identified by the tenantID and tokenFormat
+func (ps *PolicyStore) DeletePolicy(tenantID int, tokenFormat common.TokenFormat) error {
+	// Make sure the policy is present before deleting
+	row := ps.db.QueryRow(
+		"select query_map, rules from policy where tenant_id = ? and token_format = ?",
+		tenantID, tokenFormat.String(),
+	)
+
+	// NOTE: row.Err() does not seem to return ErrNoRows when no matches
+	// where found, and just claims the query was run successfully, so a
+	// Scan() is needed to check for that.
+	var queryMap []byte
+	var rules []byte
+
+	err := row.Scan(&queryMap, &rules)
+	if err != nil {
+		return err
+	}
+
+	_, err = ps.db.Exec(
+		"delete from policy where tenant_id = ? and token_format = ?",
+		tenantID, tokenFormat.String(),
 	)
 
 	return err

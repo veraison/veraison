@@ -13,6 +13,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/hashicorp/go-plugin"
 )
 
 // Policy encapsulates the information that indicates how a particular token
@@ -115,6 +117,77 @@ func ReadPoliciesFromPath(path string) ([]*Policy, error) {
 	}
 	defer rc.Close()
 	return doReadPolicies(&rc.Reader)
+}
+
+// WritePoliciesToPath creates a zip archive with the specified path and
+// serializes the specfied policies into it. Each policy is serialized as a
+// directory with the name matching the token format of the policy. The
+// directory contains two files: query_map.json and rules, that contain the
+// corresponding parts of the policy.
+// NOTE: each policy must be for a different token format, and it is assumed
+// that the policies are for the same tenant.
+func WritePoliciesToPath(policies []*Policy, path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("could not open/create %q: %v", path, err)
+	}
+	defer file.Close()
+
+	writer := zip.NewWriter(file)
+
+	if err = doWritePolicies(writer, policies); err != nil {
+		return fmt.Errorf("could not write policies: %v", err)
+	}
+
+	if err = writer.Close(); err != nil {
+		return fmt.Errorf("could not finalize zip archive: %v", err)
+	}
+
+	return nil
+}
+
+func doWritePolicies(writer *zip.Writer, policies []*Policy) error {
+	seenFormats := make(map[TokenFormat]bool)
+
+	for _, policy := range policies {
+
+		if _, ok := seenFormats[policy.TokenFormat]; ok {
+			return fmt.Errorf("found multiple polcies with format %q", policy.TokenFormat.String())
+		}
+
+		queryMapData, err := json.Marshal(policy.QueryMap)
+		if err != nil {
+			return fmt.Errorf(
+				"could not serialize query map for %q: %v",
+				policy.TokenFormat.String(),
+				err,
+			)
+		}
+
+		queryMapPath := filepath.Join(policy.TokenFormat.String(), "query_map.json")
+		file, err := writer.Create(queryMapPath)
+		if err != nil {
+			return fmt.Errorf("could not create %q: %v", queryMapPath, err)
+		}
+
+		if _, err = file.Write(queryMapData); err != nil {
+			return fmt.Errorf("could not write %q: %v", queryMapPath, err)
+		}
+
+		rulesPath := filepath.Join(policy.TokenFormat.String(), "rules")
+		file, err = writer.Create(rulesPath)
+		if err != nil {
+			return fmt.Errorf("could not create %q: %v", rulesPath, err)
+		}
+
+		if _, err := file.Write(policy.Rules); err != nil {
+			return fmt.Errorf("could not write %q: %v", rulesPath, err)
+		}
+
+		seenFormats[policy.TokenFormat] = true
+	}
+
+	return nil
 }
 
 // GetQueryDesriptors returns GetQueryDesriptor's for running queries against
@@ -234,6 +307,12 @@ type IPolicyStore interface {
 	// Init initializes the policy store, creating the necessary database connections, etc.
 	Init(args PolicyStoreParams) error
 
+	// ListPolicies returns a list of entries for policies within the
+	// store. If porvided tenantID is greater than zero, only etries for
+	// that tenant will be returned. Otherwise, all entries will be
+	// returned.
+	ListPolicies(tenantID int) ([]PolicyListEntry, error)
+
 	// GetPolicy returns the Policy stored for the specified tenant and
 	// token format. If such a policy is not found, an error will be
 	// returned.
@@ -241,6 +320,11 @@ type IPolicyStore interface {
 
 	// PutPolicy adds a Policy for the specified tenant.
 	PutPolicy(tenantID int, policy *Policy) error
+
+	// DeletePolicy removes the policy identified by the specfied TenantID
+	// and TokenFormat from the store. If such a policy does not exist or,
+	// for whatever reason, could not be removed, an error is returned.
+	DeletePolicy(tenantID int, tokenFormat TokenFormat) error
 
 	// Close ensures a clean shut down of the policy store, closing the
 	// underlying database connections, etc.
@@ -297,6 +381,45 @@ type IPolicyEngine interface {
 
 	// Stop cleanly terminates the policy engine.
 	Stop() error
+}
+
+func LoadAndInitializePolicyEngine(
+	locations []string,
+	name string,
+	params PolicyEngineParams,
+) (IPolicyEngine, *plugin.Client, plugin.ClientProtocol, error) {
+	engineName := Canonize(name)
+
+	lp, err := LoadPlugin(locations, "policyengine", engineName)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	pe := lp.Raw.(IPolicyEngine)
+	client := lp.PluginClient
+	rpcClient := lp.RPCClient
+
+	if client == nil {
+		return nil, nil, nil, fmt.Errorf("failed to find policy engine with name '%v'", engineName)
+	}
+
+	err = pe.Init(params)
+	if err != nil {
+		client.Kill()
+		return nil, nil, nil, err
+	}
+
+	return pe, client, rpcClient, nil
+}
+
+// PolicyListEntry contains the listing for a policy inside an IPolicyStore.
+type PolicyListEntry struct {
+
+	// TenantID is the ID of the tenant to whom the policy belongs
+	TenantID int `json:"tenant_id"`
+
+	//  TokenFormatName the name of the token format to which the policy applies.
+	TokenFormatName string `json:"token_format_name"`
 }
 
 type policyEntry struct {
