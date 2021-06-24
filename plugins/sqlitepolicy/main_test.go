@@ -79,4 +79,33 @@ func TestSqliteGetPolicy(t *testing.T) {
 	assert.Equal("$.implementation_id", policy.QueryMap["hardware_id"]["platform_id"])
 	assert.Equal("$.sw_components[*].measurement_value",
 		policy.QueryMap["software_components"]["measurements"])
+
+	policy, err = pm.GetPolicy(1, common.TokenFormat(123))
+	require.NotNil(err)
+	assert.Contains(err.Error(), "no rows")
+	assert.Nil(policy)
+}
+
+func TestSqliteDeletePolicy(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	wd, err := os.Getwd()
+	require.Nil(err)
+
+	schemaFile := filepath.Join(wd, "test", "iat-policy.sqlite")
+	dbPath, err := initDb(schemaFile)
+	require.Nil(err)
+	defer finiDb(dbPath)
+
+	var pm PolicyStore
+	err = pm.Init(common.PolicyStoreParams{"dbpath": dbPath})
+	require.Nil(err)
+
+	err = pm.DeletePolicy(1, common.PsaIatToken)
+	assert.Nil(err)
+
+	err = pm.DeletePolicy(1, common.PsaIatToken)
+	require.NotNil(err)
+	assert.Contains(err.Error(), "no rows")
 }

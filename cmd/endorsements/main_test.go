@@ -85,7 +85,7 @@ func doRunCommand(command string, args []string) error {
 	return nil
 }
 
-func Example_RunQueryCommand() {
+func Example_runQueryCommand() {
 	queryParams := []string{
 		"-a", "platform_id=76543210fedcba9817161514131211101f1e1d1c1b1a1918", "hardware_id",
 	}
@@ -98,7 +98,7 @@ func Example_RunQueryCommand() {
 	// Output: ["acme-rr-trap"]
 }
 
-func Example_RunListQueriesCommand() {
+func Example_runListQueriesCommand() {
 	queryParams := []string{}
 
 	err := doRunCommand("list-queries", queryParams)
@@ -112,8 +112,8 @@ func Example_RunListQueriesCommand() {
 	//	software_components
 }
 
-func Example_RunAddCommand() {
-	var sw_comps = `
+func Example_runAddCommand() {
+	var swComps = `
 	[{
 		"sw_component_type": "M4",
 		"signer_id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
@@ -124,7 +124,7 @@ func Example_RunAddCommand() {
 
 	queryParams := []string{
 		"-a", "platform_id=76543210fedcba9817161514131211101f1e1d1c1b1a1918",
-		"-a", fmt.Sprintf("software_components=%s", sw_comps),
+		"-a", fmt.Sprintf("software_components=%s", swComps),
 		"software_components",
 	}
 
@@ -133,5 +133,5 @@ func Example_RunAddCommand() {
 		fmt.Printf("%v", err)
 	}
 
-	// Output: Succesfully added software_components endorsement.
+	// Output: Successfully added software_components endorsement.
 }

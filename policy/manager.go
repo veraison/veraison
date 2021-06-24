@@ -46,6 +46,10 @@ func (pm *Manager) InitializeStore(
 	return nil
 }
 
+func (pm *Manager) ListPolicies(tenantID int) ([]common.PolicyListEntry, error) {
+	return pm.Store.ListPolicies(tenantID)
+}
+
 func (pm *Manager) GetPolicy(tenantID int, tokenFormat common.TokenFormat) (*common.Policy, error) {
 	return pm.Store.GetPolicy(tenantID, tokenFormat)
 }
@@ -69,6 +73,10 @@ func (pm *Manager) PutPolicyBytes(tenantID int, policyBytes []byte) error {
 	}
 
 	return nil
+}
+
+func (pm *Manager) DeletePolicy(tenantID int, tokenFormat common.TokenFormat) error {
+	return pm.Store.DeletePolicy(tenantID, tokenFormat)
 }
 
 func (pm *Manager) Close() {

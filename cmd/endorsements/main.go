@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 
+	"github.com/dolmen-go/flagx"
 	"go.uber.org/zap"
 
 	"github.com/veraison/common"
@@ -21,7 +22,7 @@ func runQueryCommand(
 ) error {
 	var queryParams = make(common.QueryArgs)
 	queryFlags := flag.NewFlagSet("run_query", flag.ExitOnError)
-	queryFlags.Func("a", "Additional argument in the form KEY=VALUE.", queryParams.AddFromText)
+	queryFlags.Var(flagx.Func(queryParams.AddFromText), "a", "Additional argument in the form KEY=VALUE.")
 
 	if err := queryFlags.Parse(args); err != nil {
 		return err
@@ -29,7 +30,7 @@ func runQueryCommand(
 
 	argsRest := queryFlags.Args()
 	if len(argsRest) != 1 {
-		return fmt.Errorf("unexpected arguments (exepected one query name): %v", argsRest)
+		return fmt.Errorf("unexpected arguments (expected one query name): %v", argsRest)
 	}
 
 	queryName := argsRest[0]
@@ -58,8 +59,8 @@ func runAddCommand(
 	var update bool
 
 	queryFlags := flag.NewFlagSet("run_query", flag.ExitOnError)
-	queryFlags.Func("a", "Additional argument in the form KEY=VALUE.", queryParams.AddFromText)
-	queryFlags.BoolVar(&update, "u", false, "Update existing endrsement with new values.")
+	queryFlags.Var(flagx.Func(queryParams.AddFromText), "a", "Additional argument in the form KEY=VALUE.")
+	queryFlags.BoolVar(&update, "u", false, "Update existing endorsements with new values.")
 
 	if err := queryFlags.Parse(args); err != nil {
 		return err
@@ -67,7 +68,7 @@ func runAddCommand(
 
 	argsRest := queryFlags.Args()
 	if len(argsRest) != 1 {
-		return fmt.Errorf("unexpected arguments (exepected one query name): %v", argsRest)
+		return fmt.Errorf("unexpected arguments (expected one query name): %v", argsRest)
 	}
 
 	endorsementName := argsRest[0]
@@ -81,7 +82,7 @@ func runAddCommand(
 			verb = "added"
 		}
 
-		fmt.Printf("Succesfully %s %s endorsement.", verb, endorsementName)
+		fmt.Printf("Successfully %s %s endorsement.", verb, endorsementName)
 	}
 
 	return err
@@ -113,7 +114,7 @@ func runCommand(config *common.Config, command string, args []string, logger *za
 		if logger, err = zap.NewDevelopment(); err != nil {
 			return err
 		}
-		defer logger.Sync()
+		defer logger.Sync() //nolint
 	}
 
 	em := endorsement.NewManager()
@@ -133,8 +134,6 @@ func runCommand(config *common.Config, command string, args []string, logger *za
 	default:
 		return fmt.Errorf("unexpected command: \"%s\"", command)
 	}
-
-	return nil
 }
 
 var usageString = `
@@ -167,7 +166,7 @@ func main() {
 		fmt.Printf("ERROR initializing logger: %v", err)
 		os.Exit(1)
 	}
-	defer logger.Sync()
+	defer logger.Sync() //nolint
 
 	flag.StringVar(&configPath, "c", "", "Path to the directory containing the config file.")
 	flag.BoolVar(&debug, "d", false, "Enable debug output.")

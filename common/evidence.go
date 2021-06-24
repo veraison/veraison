@@ -8,19 +8,19 @@ type EvidenceContext struct {
 
 	// TenantID identifies the tenant on multi-tenancy deployment for
 	// which the evidence should be evaluated.
-	TenantID int
+	TenantID int `json:"tenant_id"`
 
 	// Format indicates the format of the token from which evidence was
 	// extracted. This is used to specify how the Evidence structure should
 	// be interpreted, and to identify which endorsements will be necessary
 	// for verification.
-	Format TokenFormat
+	Format TokenFormat `json:"token_format"`
 
 	// Evidence contains the evidence claims extracted from the token.
 	// Claims can be simple key-value pairs or more complicated nested
 	// structures. This is specific to the TokenFormat. The only constraint
 	// is that the resulting structure must be serializable as JSON.
-	Evidence map[string]interface{}
+	Evidence map[string]interface{} `json:"evidence"`
 }
 
 // EvidenceExtractorParams is a map of key-value pairs of parameters used to
