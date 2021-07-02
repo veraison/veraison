@@ -23,4 +23,8 @@ ar.hw-details = "hw-details"
 ar.sw-details = "sw-details"
 ar.certification-details = "certification-details"
 
+; types
+ar-timestamp = text
+ar-bytes = text
+
 ; vim: set tw=70 ts=2 et:

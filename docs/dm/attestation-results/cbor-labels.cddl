@@ -23,4 +23,8 @@ ar.hw-details = 0
 ar.sw-details = 1
 ar.certification-details = 2
 
+; types
+ar-timestamp = tdate
+ar-bytes = bytes
+
 ; vim: set tw=70 ts=2 et:

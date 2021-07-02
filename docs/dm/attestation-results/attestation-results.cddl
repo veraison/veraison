@@ -7,8 +7,8 @@ $ar-status /= ar.status-unknown
 attestation-results = {
   ar.status => $ar-status
   ar.trust-vector => ar-trust-vector
-  ? ar.raw-evidence => bytes
-  ar.timestamp => tdate
+  ? ar.raw-evidence => ar-bytes
+  ar.timestamp => ar-timestamp
   ? ar.endorsed-claims => ar-endorsed-claims
 }
 
