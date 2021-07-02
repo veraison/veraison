@@ -1,0 +1,13 @@
+{
+  "status": "unknown",
+  "trust-vector": {
+    "hw-authenticity": "success",
+    "sw-integrity": "unknown",
+    "sw-up-to-dateness": "success",
+    "config-integrity": "unknown",
+    "runtime-integrity": "failure",
+    "certification-status": "unknown"
+  },
+  "raw-evidence": h'74726973656374',
+  "timestamp": 0("2631-01-22t20:18:18z")
+}

@@ -1,0 +1,43 @@
+start = attestation-results
+
+$ar-status /= ar.status-failure
+$ar-status /= ar.status-success
+$ar-status /= ar.status-unknown
+
+attestation-results = {
+  ar.status => $ar-status
+  ar.trust-vector => ar-trust-vector
+  ? ar.raw-evidence => bytes
+  ar.timestamp => tdate
+  ? ar.endorsed-claims => ar-endorsed-claims
+}
+
+ar-trust-vector = {
+  ar.hw-authenticity => $ar-status
+  ar.sw-integrity => $ar-status
+  ar.sw-up-to-dateness => $ar-status
+  ar.config-integrity => $ar-status
+  ar.runtime-integrity => $ar-status
+  ar.certification-status => $ar-status
+  * $$ar-trust-vector-extension
+}
+
+ar-endorsed-claims = {
+  ar.hw-details => ar-hw-details
+  ar.sw-details => ar-sw-details
+  ar.certification-details => ar-certification-details
+}
+
+ar-hw-details = {
+  * $$ar-hw-details-extension
+}
+
+ar-sw-details = {
+  * $$ar-sw-details-extension
+}
+
+ar-certification-details = {
+  * $$ar-certification-details-extension
+}
+
+; vim: set tw=70 ts=2 et:

@@ -1,0 +1,26 @@
+; $ar-status
+ar.status-failure = 0
+ar.status-success = 1
+ar.status-unknown = 2
+
+; attestation-results
+ar.status = 0
+ar.trust-vector = 1
+ar.raw-evidence = 2
+ar.timestamp = 3
+ar.endorsed-claims = 4
+
+; ar-trust-vector
+ar.hw-authenticity = 0
+ar.sw-integrity = 1
+ar.sw-up-to-dateness = 2
+ar.config-integrity = 3
+ar.runtime-integrity = 4
+ar.certification-status = 5
+
+; ar-endorsed-claims
+ar.hw-details = 0
+ar.sw-details = 1
+ar.certification-details = 2
+
+; vim: set tw=70 ts=2 et:
