@@ -38,6 +38,7 @@ endef # cddl_check_template
 
 JSON_FRAGS := attestation-results.cddl
 JSON_FRAGS += json-labels.cddl
+JSON_FRAGS += generic-non-empty.cddl
 
 JSON_EXAMPLES := $(wildcard examples/json-*.diag)
 
@@ -45,6 +46,7 @@ $(eval $(call cddl_check_template,json,$(JSON_FRAGS),$(JSON_EXAMPLES)))
 
 CBOR_FRAGS := attestation-results.cddl
 CBOR_FRAGS += cbor-labels.cddl
+CBOR_FRAGS += generic-non-empty.cddl
 
 CBOR_EXAMPLES := $(wildcard examples/cbor-*.diag)
 

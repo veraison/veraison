@@ -26,5 +26,6 @@ ar.certification-details = 2
 ; types
 ar-timestamp = tdate
 ar-bytes = bytes
+ar-label = int / text
 
 ; vim: set tw=70 ts=2 et:

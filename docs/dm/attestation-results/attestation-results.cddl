@@ -6,7 +6,7 @@ $ar-status /= ar.status-unknown
 
 attestation-results = {
   ar.status => $ar-status
-  ar.trust-vector => ar-trust-vector
+  ? ar.trust-vector => ar-trust-vector
   ? ar.raw-evidence => ar-bytes
   ar.timestamp => ar-timestamp
   ? ar.endorsed-claims => ar-endorsed-claims
@@ -22,22 +22,22 @@ ar-trust-vector = {
   * $$ar-trust-vector-extension
 }
 
-ar-endorsed-claims = {
-  ar.hw-details => ar-hw-details
-  ar.sw-details => ar-sw-details
-  ar.certification-details => ar-certification-details
-}
+ar-endorsed-claims = non-empty<{
+  ? ar.hw-details => ar-hw-details
+  ? ar.sw-details => ar-sw-details
+  ? ar.certification-details => ar-certification-details
+}>
 
 ar-hw-details = {
-  * $$ar-hw-details-extension
+  + ar-label => any
 }
 
 ar-sw-details = {
-  * $$ar-sw-details-extension
+  + ar-label => any
 }
 
 ar-certification-details = {
-  * $$ar-certification-details-extension
+  + ar-label => any
 }
 
 ; vim: set tw=70 ts=2 et:
