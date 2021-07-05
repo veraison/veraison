@@ -27,6 +27,8 @@ ar-endorsed-claims = non-empty<{
   ? ar.hw-details => ar-hw-details
   ? ar.sw-details => ar-sw-details
   ? ar.certification-details => ar-certification-details
+  ? ar.config-details => ar-config-details
+  * $$ar-endorsed-claims-extension
 }>
 
 ar-hw-details = {
@@ -34,6 +36,10 @@ ar-hw-details = {
 }
 
 ar-sw-details = {
+  + ar-label => any
+}
+
+ar-config-details = {
   + ar-label => any
 }
 

@@ -22,6 +22,7 @@ ar.certification-status = "certification-status"
 ar.hw-details = "hw-details"
 ar.sw-details = "sw-details"
 ar.certification-details = "certification-details"
+ar.config-details = "config-details"
 
 ; types
 ar-timestamp = text
