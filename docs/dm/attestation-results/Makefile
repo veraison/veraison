@@ -8,6 +8,8 @@ include tools.mk
 
 check:: check-json check-json-examples
 check:: check-cbor check-cbor-examples
+check:: check-veraison-cbor check-veraison-cbor-examples
+check:: check-veraison-json check-veraison-json-examples
 
 # $1: label
 # $2: cddl fragments
@@ -51,5 +53,25 @@ CBOR_FRAGS += generic-non-empty.cddl
 CBOR_EXAMPLES := $(wildcard examples/cbor-*.diag)
 
 $(eval $(call cddl_check_template,cbor,$(CBOR_FRAGS),$(CBOR_EXAMPLES)))
+
+VERAISON_CBOR_FRAGS := attestation-results.cddl
+VERAISON_CBOR_FRAGS += cbor-labels.cddl
+VERAISON_CBOR_FRAGS += generic-non-empty.cddl
+VERAISON_CBOR_FRAGS += veraison.cddl
+VERAISON_CBOR_FRAGS += veraison-cbor-labels.cddl
+
+VERAISON_CBOR_EXAMPLES := $(wildcard examples/veraison-cbor-*.diag)
+
+$(eval $(call cddl_check_template,veraison-cbor,$(VERAISON_CBOR_FRAGS),$(VERAISON_CBOR_EXAMPLES)))
+
+VERAISON_JSON_FRAGS := attestation-results.cddl
+VERAISON_JSON_FRAGS += json-labels.cddl
+VERAISON_JSON_FRAGS += generic-non-empty.cddl
+VERAISON_JSON_FRAGS += veraison.cddl
+VERAISON_JSON_FRAGS += veraison-json-labels.cddl
+
+VERAISON_JSON_EXAMPLES := $(wildcard examples/veraison-json-*.diag)
+
+$(eval $(call cddl_check_template,veraison-json,$(VERAISON_JSON_FRAGS),$(VERAISON_JSON_EXAMPLES)))
 
 clean: ; $(RM) $(CLEANFILES)

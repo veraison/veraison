@@ -10,6 +10,7 @@ attestation-results = {
   ? ar.raw-evidence => ar-bytes
   ar.timestamp => ar-timestamp
   ? ar.endorsed-claims => ar-endorsed-claims
+  * $$attestation-results-extension
 }
 
 ar-trust-vector = {
