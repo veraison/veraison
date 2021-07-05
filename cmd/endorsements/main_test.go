@@ -72,10 +72,7 @@ func doRunCommand(command string, args []string) error {
 		return err
 	}
 
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return err
-	}
+	logger := zap.NewNop()
 
 	err = runCommand(config, command, args, logger)
 	if err != nil {
