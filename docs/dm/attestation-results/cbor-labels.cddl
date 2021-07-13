@@ -9,6 +9,7 @@ ar.trust-vector = 1
 ar.raw-evidence = 2
 ar.timestamp = 3
 ar.endorsed-claims = 4
+ar.appraisal-policy-id = 5
 
 ; ar-trust-vector
 ar.hw-authenticity = 0

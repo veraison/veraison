@@ -9,6 +9,7 @@ ar.trust-vector = "trust-vector"
 ar.raw-evidence = "raw-evidence"
 ar.timestamp = "timestamp"
 ar.endorsed-claims = "endorsed-claims"
+ar.appraisal-policy-id = "appraisal-policy-id"
 
 ; ar-trust-vector
 ar.hw-authenticity = "hw-authenticity"
