@@ -26,10 +26,11 @@ func (pm *Manager) InitializeStore(
 	pluginLocaitons []string,
 	name string,
 	params common.PolicyStoreParams,
+	quiet bool,
 ) error {
 	name = common.Canonize(name)
 
-	lp, err := common.LoadPlugin(pluginLocaitons, "policystore", name)
+	lp, err := common.LoadPlugin(pluginLocaitons, "policystore", name, quiet)
 	if err != nil {
 		return err
 	}

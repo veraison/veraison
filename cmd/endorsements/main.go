@@ -110,16 +110,19 @@ func runListQueriesCommand(
 func runCommand(config *common.Config, command string, args []string, logger *zap.Logger) error {
 	var err error
 
+	quiet := true
 	if config.Debug {
 		if logger, err = zap.NewDevelopment(); err != nil {
 			return err
 		}
 		defer logger.Sync() //nolint
+
+		quiet = false
 	}
 
 	em := endorsement.NewManager()
 	if err := em.InitializeStore(
-		config.PluginLocations, config.EndorsementStoreName, config.EndorsementStoreParams,
+		config.PluginLocations, config.EndorsementStoreName, config.EndorsementStoreParams, quiet,
 	); err != nil {
 		return err
 	}

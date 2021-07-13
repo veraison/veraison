@@ -26,7 +26,7 @@ func runCommand(config *common.Config, command string, args []string, logger *za
 
 	pm := policy.NewManager()
 	if err := pm.InitializeStore(
-		config.PluginLocations, config.PolicyStoreName, config.PolicyStoreParams,
+		config.PluginLocations, config.PolicyStoreName, config.PolicyStoreParams, false,
 	); err != nil {
 		return err
 	}
@@ -267,6 +267,7 @@ func runVerifyCommand(config *common.Config, args []string, pm *policy.Manager, 
 		config.PluginLocations,
 		config.PolicyEngineName,
 		config.PolicyEngineParams,
+		false,
 	)
 
 	if err != nil {

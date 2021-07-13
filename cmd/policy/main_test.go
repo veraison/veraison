@@ -87,7 +87,7 @@ func Test_PolicyTool_FullCycle(t *testing.T) {
 
 	pm := policy.NewManager()
 	err = pm.InitializeStore(
-		config.PluginLocations, config.PolicyStoreName, config.PolicyStoreParams,
+		config.PluginLocations, config.PolicyStoreName, config.PolicyStoreParams, true,
 	)
 	require.Nil(err)
 	defer pm.Close()

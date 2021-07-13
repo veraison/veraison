@@ -387,10 +387,11 @@ func LoadAndInitializePolicyEngine(
 	locations []string,
 	name string,
 	params PolicyEngineParams,
+	quiet bool,
 ) (IPolicyEngine, *plugin.Client, plugin.ClientProtocol, error) {
 	engineName := Canonize(name)
 
-	lp, err := LoadPlugin(locations, "policyengine", engineName)
+	lp, err := LoadPlugin(locations, "policyengine", engineName, quiet)
 	if err != nil {
 		return nil, nil, nil, err
 	}

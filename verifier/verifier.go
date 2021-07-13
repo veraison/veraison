@@ -40,11 +40,17 @@ func (v *Verifier) Initialize(vc Config) error {
 		vc.PluginLocations,
 		vc.EndorsementStoreName,
 		vc.EndorsementStoreParams,
+		false,
 	); err != nil {
 		return err
 	}
 
-	if err := v.pm.InitializeStore(vc.PluginLocations, vc.PolicyStoreName, vc.PolicyStoreParams); err != nil {
+	if err := v.pm.InitializeStore(
+		vc.PluginLocations,
+		vc.PolicyStoreName,
+		vc.PolicyStoreParams,
+		false,
+	); err != nil {
 		return err
 	}
 
@@ -52,6 +58,7 @@ func (v *Verifier) Initialize(vc Config) error {
 		vc.PluginLocations,
 		vc.PolicyEngineName,
 		vc.PolicyEngineParams,
+		false,
 	)
 	if err != nil {
 		return err

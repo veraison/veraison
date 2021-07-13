@@ -32,7 +32,7 @@ type LoadedExtractorPlugin struct {
 }
 
 func (tp *TokenProcessor) Init(config Config) error {
-	lp, err := common.LoadPlugin(config.PluginLocations, "trustanchorstore", config.TrustAnchorStoreName)
+	lp, err := common.LoadPlugin(config.PluginLocations, "trustanchorstore", config.TrustAnchorStoreName, false)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (tp TokenProcessor) GetExtractor(format common.TokenFormat) (common.IEviden
 		return extractorPlugin.Extractor, nil
 	}
 
-	lp, err := common.LoadPlugin(tp.PluginLocations, "evidenceextractor", format.String())
+	lp, err := common.LoadPlugin(tp.PluginLocations, "evidenceextractor", format.String(), false)
 	if err != nil {
 		return nil, err
 	}
