@@ -39,9 +39,9 @@ func (pe *OpaPolicyEngine) LoadPolicy(policy []byte) error {
 func (pe *OpaPolicyEngine) CheckValid(
 	evidence map[string]interface{},
 	endorsements map[string]interface{},
-) (bool, error) {
+) (common.Status, error) {
 	if pe.policy == nil {
-		return false, fmt.Errorf("policy not set")
+		return common.StatusFailure, fmt.Errorf("policy not set")
 	}
 
 	input := map[string]interface{}{"evidence": evidence, "endorsements": endorsements}
@@ -53,15 +53,19 @@ func (pe *OpaPolicyEngine) CheckValid(
 
 	rs, err := rego.Eval(pe.ctx)
 	if err != nil {
-		return false, err
+		return common.StatusFailure, err
 	}
 
 	result := rs[0].Expressions[0].Value
 	switch t := result.(type) {
 	case bool:
-		return result.(bool), nil
+		if result.(bool) {
+			return common.StatusSuccess, nil
+		}
+
+		return common.StatusFailure, nil
 	default:
-		return false, fmt.Errorf("query evaluated to %v; expected bool", t)
+		return common.StatusFailure, fmt.Errorf("query evaluated to %v; expected bool", t)
 	}
 }
 
@@ -102,7 +106,7 @@ func (pe *OpaPolicyEngine) GetAttetationResult(
 ) error {
 	var err error
 
-	result.IsValid, err = pe.CheckValid(evidence, endorsements)
+	result.Status, err = pe.CheckValid(evidence, endorsements)
 	if err != nil {
 		return err
 	}
@@ -111,7 +115,8 @@ func (pe *OpaPolicyEngine) GetAttetationResult(
 		return nil
 	}
 
-	result.Claims, err = pe.GetClaims(evidence, endorsements)
+	claimsLabel := common.NewStringLabel("veraison-processed-evidence")
+	result.ProcessedEvidence[claimsLabel], err = pe.GetClaims(evidence, endorsements)
 	if err != nil {
 		return err
 	}

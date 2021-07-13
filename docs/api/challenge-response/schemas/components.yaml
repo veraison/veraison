@@ -73,13 +73,72 @@ components:
 
     AttestationResult:
       required:
-        - is_valid
+        - status
+        - timestamp
       properties:
-        is_valid:
-          type: boolean
+        status:
+          $ref: "#/components/schemas/AttestationResultStatusValue"
           description: >
             Overall validation result
-        claims:
+        trust-vector:
+          $ref: "#/components/schemas/AttestationResultTrustVector"
+          description: >
+            A vector of status values characterising specific aspects of
+            attested evidence.
+        raw-evidence:
+          type: string
+          format: byte
+          description:
+            base64 encoded 32, 48, or 64 bytes evidence token as received by the verifier.
+        timestamp:
+          type: string
+          format: date-time
+          description: >
+            time (UTC ISO 8601 timestamp) at which the attestation result was
+            created.
+        endorsed-claims:
+          $ref: "#/components/schemas/AttestationResultEndorsedClaims"
+          description: >
+            Claims endorsed by the verifier based on the evidence extracted
+            from the evidence and available endorsements.
+        appraisal-policy-id:
+          type: string
+          description: >
+            An identifier of the policy that was used by the verifier to
+            evaluate the evidence and produce the attestation result.
+        veraison-processed-evidence:
+          type: object
+          description: >
+            Claims extracted from raw evidence.
+
+    AttestationResultTrustVector:
+      properties:
+        hw-authenticity:
+          $ref: "#/components/schemas/AttestationResultStatusValue"
+        sw-integrity:
+          $ref: "#/components/schemas/AttestationResultStatusValue"
+        sw-up-to-dateness:
+          $ref: "#/components/schemas/AttestationResultStatusValue"
+        config-integrity:
+          $ref: "#/components/schemas/AttestationResultStatusValue"
+        runtime-integrity:
+          $ref: "#/components/schemas/AttestationResultStatusValue"
+        certification-status:
+          $ref: "#/components/schemas/AttestationResultStatusValue"
+
+    AttestationResultStatusValue:
+      type: string
+      enum: [failure, success, unknown]
+
+    AttestationResultEndorsedClaims:
+      properties:
+        hw-details:
+          type: object
+        sw-details:
+          type: object
+        certification-details:
+          type: object
+        configdetails:
           type: object
 
     Problem:
@@ -133,4 +192,4 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
 
-
+# vim: set tw=79 sts=2 sw=2 et:

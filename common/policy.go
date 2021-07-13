@@ -359,7 +359,7 @@ type IPolicyEngine interface {
 	CheckValid(
 		evidence map[string]interface{},
 		endorsements map[string]interface{},
-	) (bool, error)
+	) (Status, error)
 
 	// GetClaims generates a set of additional claims derived from the
 	// provided evidence claims and endorsements.
