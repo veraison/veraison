@@ -29,7 +29,7 @@ CLEANFILES += $(1)-autogen.cddl
 check-$(1)-examples: $(1)-autogen.cddl $(3:.diag=.cbor)
 	@for f in $(3:.diag=.cbor); do \
 		echo ">> validating $$$$f" ; \
-		$$(cddl) $$< validate $$$$f ; \
+		$$(cddl) $$< validate $$$$f || exit 1; \
 	done
 
 .PHONY: check-$(1)-examples

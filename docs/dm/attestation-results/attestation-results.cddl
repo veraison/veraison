@@ -10,6 +10,7 @@ attestation-results = {
   ? ar.raw-evidence => ar-bytes
   ar.timestamp => ar-timestamp
   ? ar.endorsed-claims => ar-endorsed-claims
+  ar.appraisal-policy-id => text
   * $$attestation-results-extension
 }
 
