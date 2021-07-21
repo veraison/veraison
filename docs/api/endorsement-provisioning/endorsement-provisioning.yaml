@@ -1,0 +1,71 @@
+openapi: '3.0.0'
+
+info:
+  title: attestation endorsement provisioning
+  description: For further details, see datatracker.ietf.org/doc/draft-birkholz-corim
+  version: '1.0.0alpha'
+servers:
+  - url: 'https://veraison.example/endorsement-provisioning/v1'
+paths:
+  /submit:
+    post:
+      description: >
+        Submit a single CoRIM or a batch of CoRIM payloads using this API.
+      requestBody:
+        required: true
+        content:
+          application/rim+cbor:
+            schema:
+              $ref: './schemas/components.yaml#/components/schemas/Submission'  
+      responses:
+        '200':
+          description: >
+            A new CoRIM or a batch of CoRIM has been successfully provisioned inside 
+            a Verifier. The transaction is complete.
+        '201':
+          description: >
+            The submission is successful and will be processed
+            asynchronously. A new session resource is created and its URL is returned in the
+            Location header.  The resource will be kept alive for the specified
+            time-to-live.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description:
+                URL of the newly created session resource to be used in
+                subsequent status check.  (The current content of the
+                resource is returned in the response body.)
+          content:
+            provisioning-session+json:
+              schema:
+                $ref: './schemas/components.yaml#/components/schemas/SessionResponse'
+        default:
+          $ref: './schemas/components.yaml#/components/responses/Error'
+  /submissions/{SessionID}:
+    get:
+      description: >
+        retrieve the endorsement-provisioning session resource
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+      responses:
+        '200':
+          description: >
+            The endorsement provisioning session resource
+          content:
+            provisioning-session+json:
+              schema:
+                $ref: './schemas/components.yaml#/components/schemas/SessionResponse'
+        default:
+          $ref: './schemas/components.yaml#/components/responses/Error'
+components:
+  parameters:
+    SessionID:
+      name: SessionID
+      in: path
+      required: true
+      schema:
+        type: string
+        description:
+          A session identifier for polling the status of submission.
