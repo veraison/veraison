@@ -184,7 +184,7 @@ func (s *PolicyEngineServer) GetClaims(args PolicyEngineArgs, resp *map[string]i
 	return err
 }
 
-func (s *PolicyEngineServer) CheckValid(args PolicyEngineArgs, resp *bool) error {
+func (s *PolicyEngineServer) CheckValid(args PolicyEngineArgs, resp *Status) error {
 	var err error
 	*resp, err = s.Impl.CheckValid(args.Evidence, args.Endorsements)
 	return err
@@ -237,8 +237,8 @@ func (e *PolicyEngineRPC) LoadPolicy(policy []byte) error {
 func (e *PolicyEngineRPC) CheckValid(
 	evidence map[string]interface{},
 	endorsements map[string]interface{},
-) (bool, error) {
-	var resp bool
+) (Status, error) {
+	var resp Status
 
 	args := PolicyEngineArgs{Evidence: evidence, Endorsements: endorsements}
 	err := e.client.Call("Plugin.CheckValid", args, &resp)

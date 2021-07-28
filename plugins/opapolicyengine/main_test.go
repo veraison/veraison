@@ -54,7 +54,7 @@ func Test_Validate(t *testing.T) {
 	err = pe.LoadPolicy(policyData)
 	require.Nil(err)
 
-	isValid, err := pe.CheckValid(evidence, endorsements)
+	status, err := pe.CheckValid(evidence, endorsements)
 	assert.Nil(err)
-	assert.True(isValid)
+	assert.Equal(common.StatusSuccess, status)
 }
