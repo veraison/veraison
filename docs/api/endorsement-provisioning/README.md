@@ -32,6 +32,22 @@ format is CoRIM.
 
 ```
 
+* Client submits the endorsement provisioning request
+* Server responds with response code `200` indicating successful submission. 
+  The transaction is complete
+  
+```
+>> Request:
+  POST /endorsement-provisioning/v1/submit
+  Host: veraison.example
+  Content-Type: application/rim+cbor
+
+...CoRIM as binary data...
+
+<< Response:
+  HTTP/1.1 200 OK
+```
+
 ## Asynchronous submission
 
 ```
@@ -47,25 +63,6 @@ format is CoRIM.
              200 (OK)        '-------------'
              status= "complete"
 ```
-
-### Synchronous POST
-
-* Client submits the endorsement provisioning request
-* Server responds with response code `200` indicating successful submission. 
-  The transaction is complete
-```
->> Request:
-  POST /endorsement-provisioning/v1/submit
-  Host: veraison.example
-  Content-Type: application/rim+cbor
-
-...CoRIM as binary data...
-
-<< Response:
-  HTTP/1.1 200 OK
-```
-
-### Asynchronous POST
 
 * Client submits the endorsement provisioning request
 * Server responds with response code `201` indicating that the request has been accepted and will be processed asynchronously

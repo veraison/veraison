@@ -1,15 +1,6 @@
 components:
   schemas:
-    Submission:
-      required:
-        - payload
-      properties:
-        payload:
-          type: string
-          format: byte
-          description:
-            stream of data bytes
-    SessionResponse:
+    SessionResource:
       required:
         - status
         - expiry

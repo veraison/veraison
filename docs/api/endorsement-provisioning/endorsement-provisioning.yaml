@@ -2,7 +2,7 @@ openapi: '3.0.0'
 
 info:
   title: attestation endorsement provisioning
-  description: For further details, see datatracker.ietf.org/doc/draft-birkholz-corim
+  description: API to provision endorsements. For further details, see datatracker.ietf.org/doc/draft-birkholz-rats-corim
   version: '1.0.0alpha'
 servers:
   - url: 'https://veraison.example/endorsement-provisioning/v1'
@@ -16,7 +16,10 @@ paths:
         content:
           application/rim+cbor:
             schema:
-              $ref: './schemas/components.yaml#/components/schemas/Submission'  
+              type : string
+              format: binary
+              description: >
+                A stream of octet bytes
       responses:
         '200':
           description: >
@@ -40,7 +43,7 @@ paths:
           content:
             provisioning-session+json:
               schema:
-                $ref: './schemas/components.yaml#/components/schemas/SessionResponse'
+                $ref: './schemas/components.yaml#/components/schemas/SessionResource'
         default:
           $ref: './schemas/components.yaml#/components/responses/Error'
   /submissions/{SessionID}:
@@ -56,7 +59,7 @@ paths:
           content:
             provisioning-session+json:
               schema:
-                $ref: './schemas/components.yaml#/components/schemas/SessionResponse'
+                $ref: './schemas/components.yaml#/components/schemas/SessionResource'
         default:
           $ref: './schemas/components.yaml#/components/responses/Error'
 components:
