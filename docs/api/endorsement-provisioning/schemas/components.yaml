@@ -18,7 +18,7 @@ components:
           type: string
           enum:
             - processing
-            - completed
+            - complete
             - failed
           description: >
             For a payload submission 'status' processing reflects that provisioning is in progress
@@ -35,7 +35,7 @@ components:
         details:
           type: string
           description: >
-            Optional details that explains the cause when provisioning status is `failed`
+            Optional field to provide more details about the failure cause when provisioning status is `failed`
     Problem:
       required:
         - title

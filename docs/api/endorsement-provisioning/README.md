@@ -1,24 +1,24 @@
 # Endorsement Provisioning Interface
 
-The APIs described here are meant to illustrate the provisioning of 
-Endorsements based on RATS architecture. The API's defined here are not constrained 
-by any specific data model. HTTP Content negotiation will be used to negotiate the precise message structure and format of the information exchanged between the clients and the server. 
-One specific example of information exchange using the Data Model as
-illustrated in  [Concise Reference Integrity Manifest](https://datatracker.ietf.org/doc/draft-birkholz-rats-corim/) is given below.
+The API described here are can be used to provision 
+Endorsements into a Verifier. The API are not agnostic with regards to 
+the specific data model used to transport Endorsements. HTTP Content negotiation is used to negotiate the precise message structure and format of the information exchanged between the clients and the server. 
+One specific example of information exchange using
+[Concise Reference Integrity Manifest](https://datatracker.ietf.org/doc/draft-birkholz-rats-corim/) is given below.
 
 ## Provisioning API
 
-Provisioning API allows authorised supply chain actors to communicate reference and endorsed values,
+The provisioning API allows authorised supply chain actors to communicate reference and endorsed values,
 verification and identity key material, as well as other kinds of endorsements to Veraison. The supported 
 format is CoRIM.
 
-* To initiate a provisioning session, a client `POST`'s the CoRIM (or a batch of CoRIMs) containing endorsements  to /`submit` URL;
-* If the transaction completes synchronously and a `(200)`response is returned to the client, it indicates a
-  successful submission of the posted CoRIM (or a batch of CoRIM). The ongoing transaction is now complete.
-* For large submission with multiple CoRIMs, the provisioning processing may happen in background. In this case,
-  Client is returned a `(201)` response, with a link header populated with a session resource. Resource is only active for a given amount of time. Client will use the resource to poll the request till the session is active.
-* The session progresses as (`processing` -> `complete` | `failed`)
-* The resource has a defined `time to live` upon its expiry automatic garbage collection is performed.
+* To initiate a provisioning session, a client `POST`'s the CoRIM (or a batch of CoRIMs) containing endorsements  to the `/submit` URL;
+* If the transaction completes synchronously a `(200)` response is returned to the client to indicate a
+  successful submission of the posted CoRIM (or a batch of CoRIM).
+* For large submissions with multiple CoRIMs, the provisioning processing may happen in background. In this case,
+  the Server returns a `201` response, with a `Location` header pointing to a "session" resource.  This "session" resource is only active for a given amount of time. Client can poll the resource to query the status of the submission request until the session completes.
+* A session can be in one of the following states: `processing`, `complete`, or `failed`.
+* The resource has a defined "time to live": upon its expiry, the resource is garbage collected.
 * Client can continue periodic polling of the session uri, until the processing is either `complete` or `failed`
 
 
@@ -27,8 +27,8 @@ format is CoRIM.
 ```
  o        (1) POST           .-------------.
 /|\ ------------------------>| /submit     |
-/ \ \ <----------------------|             |
- \ \ \      200 (OK)         '-------------' 
+/ \ <------------------------|             |
+            200 (OK)         '-------------' 
 
 ```
 
@@ -38,30 +38,28 @@ format is CoRIM.
  o        (1) POST           .-------------.
 /|\ ------------------------>| /submit     |
 / \ \ <----------------------|             |
- \ \ \      201 ( Session )  '-------------' 
-  \ \ \                             |
-   \ \ \                            V
-    \ \ \  (2) GET            .-------------.
-     \ \ '------------------->| /session/01 |
-      \ \<--------------------|             |
-             200 (OK)         '-------------'
-             status= "completed"
+   \ \      201 ( Session )  '-------------' 
+    \ \                             |
+     \ \                            V
+      \ \  (2) GET           .-------------.
+       \ '------------------>| /session/01 |
+        \<-------------------|             |
+             200 (OK)        '-------------'
+             status= "complete"
 ```
 
 ### Synchronous POST
 
 * Client submits the endorsement provisioning request
 * Server responds with response code `200` indicating successful submission. 
-  The transation is now complete
+  The transaction is complete
 ```
 >> Request:
-  POST /endorsement-provisioning/v1/submit/
+  POST /endorsement-provisioning/v1/submit
   Host: veraison.example
   Content-Type: application/rim+cbor
 
-  {
-    "payload": "56789abcdesgjgwasdgh"
-  }
+...CoRIM as binary data...
 
 << Response:
   HTTP/1.1 200 OK
@@ -70,18 +68,16 @@ format is CoRIM.
 ### Asynchronous POST
 
 * Client submits the endorsement provisioning request
-* Server responds with response code `201` indicating that the request will be processed asynchronously.
-* Server returns a time bound resource in response header. The resource will be used to poll the original   request till the time it is complete (successful/failed) or the session expires.
+* Server responds with response code `201` indicating that the request has been accepted and will be processed asynchronously
+* Server returns a time-bound session resource in the `Location` header. The resource can be polled at regular intervals to check the progress of the submission, until the processing is complete (either successfully or with a failure)
 
 ```
 >> Request:
-  POST /endorsement-provisioning/v1/submit/
+  POST /endorsement-provisioning/v1/submit
   Host: veraison.example
   Content-Type: application/rim+cbor
 
-  {
-    "payload": "489765abcdesgfdwdunisdufbiubwjndisjd"
-  }
+...CoRIM as binary data...
   
 << Response:
   HTTP/1.1 201 Created
@@ -106,7 +102,7 @@ format is CoRIM.
   Content-Type: application/provisioning-session+json
 
   {
-    "status": "completed",
+    "status": "complete",
     "expiry": "2030-10-12T07:20:50.52Z"
   }
 ```

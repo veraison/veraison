@@ -20,8 +20,8 @@ paths:
       responses:
         '200':
           description: >
-            A new CoRIM or a batch of CoRIM has been successfully provisioned inside 
-            a Verifier. The transaction is complete.
+            A new CoRIM or a batch of CoRIM has been successfully provisioned in 
+            the Verifier. The transaction is complete.
         '201':
           description: >
             The submission is successful and will be processed
