@@ -38,7 +38,7 @@ paths:
                 format: uri
               description:
                 URL of the newly created session resource to be used in
-                subsequent status check.  (The current content of the
+                subsequent status check. (The current content of the
                 resource is returned in the response body.)
           content:
             provisioning-session+json:
