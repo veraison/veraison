@@ -12,14 +12,14 @@ The provisioning API allows authorised supply chain actors to communicate refere
 verification and identity key material, as well as other kinds of endorsements to Veraison. The supported 
 format is CoRIM.
 
-* To initiate a provisioning session, a client `POST`'s the CoRIM (or a batch of CoRIMs) containing endorsements  to the `/submit` URL;
-* If the transaction completes synchronously a `(200)` response is returned to the client to indicate a
-  successful submission of the posted CoRIM (or a batch of CoRIM).
+* To initiate a provisioning session, a client `POST`'s the CoRIM containing the endorsements to be provisioned to the `/submit` URL.
+* If the transaction completes synchronously, a `200` response is returned to the client to indicate a
+  successful submission of the posted CoRIM.
 * For large submissions with multiple CoRIMs, the provisioning processing may happen in background. In this case,
   the Server returns a `201` response, with a `Location` header pointing to a "session" resource.  This "session" resource is only active for a given amount of time. Client can poll the resource to query the status of the submission request until the session completes.
 * A session can be in one of the following states: `processing`, `complete`, or `failed`.
 * The resource has a defined "time to live": upon its expiry, the resource is garbage collected.
-* Client can continue periodic polling of the session uri, until the processing is either `complete` or `failed`
+* Client can continue periodic polling of the session uri, until the processing is either `complete` or `failed`.
 
 
 ## Synchronous submission
@@ -42,7 +42,7 @@ format is CoRIM.
   Host: veraison.example
   Content-Type: application/rim+cbor
 
-...CoRIM as binary data...
+  ...CoRIM as binary data...
 
 << Response:
   HTTP/1.1 200 OK

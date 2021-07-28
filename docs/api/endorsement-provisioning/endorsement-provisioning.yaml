@@ -10,7 +10,7 @@ paths:
   /submit:
     post:
       description: >
-        Submit a single CoRIM or a batch of CoRIM payloads using this API.
+        Submit a CoRIM payload containing the endorsements to be provisioned
       requestBody:
         required: true
         content:
@@ -19,11 +19,11 @@ paths:
               type : string
               format: binary
               description: >
-                A stream of octet bytes
+                a CBOR-encoded CoRIM
       responses:
         '200':
           description: >
-            A new CoRIM or a batch of CoRIM has been successfully provisioned in 
+            The supplied CoRIM has been successfully provisioned in
             the Verifier. The transaction is complete.
         '201':
           description: >
@@ -49,7 +49,7 @@ paths:
   /submissions/{SessionID}:
     get:
       description: >
-        retrieve the endorsement-provisioning session resource
+        retrieve the endorsement provisioning session resource
       parameters:
         - $ref: '#/components/parameters/SessionID'
       responses:
