@@ -14,12 +14,21 @@ paths:
       requestBody:
         required: true
         content:
-          application/rim+cbor:
+          multipart/mixed:
             schema:
-              type : string
-              format: binary
-              description: >
-                a CBOR-encoded CoRIM
+              type: object
+              properties:
+                singleRequest:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                    description: >
+                      a CBOR-encoded CoRIM
+              encoding:
+                singleRequest:
+                  # each items in singleRequest
+                  contentType: application/rim+cbor
       responses:
         '200':
           description: >
