@@ -1,7 +1,7 @@
 # GitHub Actions - CI for Go to build & test.  See ci-go-cover.yml and linters.yml for code coverage and linters.
 # Taken from: https://github.com/fxamacker/cbor/workflows/ci.yml (thanks!)
 name: ci
-on: [push]
+on: [push, pull_request]
 jobs:
 
   # Test on Ubuntu latest with default Go version.

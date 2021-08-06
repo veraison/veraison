@@ -1,6 +1,6 @@
 # Go Linters - GitHub Actions
 name: linters
-on: [push]
+on: [push, pull_request]
 jobs:
   # Check linters on latest-ubuntu with default version of Go.
   lint:
