@@ -5,6 +5,7 @@ This document sets out the accumulated knowledge and / or assumptions about:
 + the evidence available within a device which can be used for attestation
 + models for firmware release lifecycles 
 + observations on how multiple products may be released from a single source and the implications for provisioning data
+
 Why are these significant? The models here have driven the design of the Veraison system, in particular the way supply chain data is provisioned into the system and the Endorsement store is constructed to allow verification queries to access reference values to be used for evidence appraisal. Those design conclusions can be found in other documents.
 
 The Veraison project welcomes feedback from real world examples as to the accuracy of the models and assumptions used here. The project will be seeking confirmation on these models from industry partners. If you have views on these topics, please provide relevant commentary via a github issue or start a conversation on the Zulip channel.
