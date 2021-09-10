@@ -31,11 +31,11 @@ Note: attestation reports may contain additional complexities to modelling evide
 
 Diagram: relevant groupings for evidence
 
-![Groupings](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/docs/diags/tokens-model.puml)
+![Groupings](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/main/docs/diags/tokens-model.puml)
 
 Diagram: Known Tokens
 
-![Diagram: Mapping known attestation tokens to the evidence classifications](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/docs/diags/known-models.puml)
+![Diagram: Mapping known attestation tokens to the evidence classifications](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/main/docs/diags/known-models.puml)
 
 
 ## Firmware Lifecycles
@@ -63,14 +63,14 @@ Metadata can be added at any time to any released component via the provisioning
 
 Diagram: Firmware lifecycle models
 
- ![Diagram: Firmware lifecycle models](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/docs/diags/firmware-lifecycles.puml)
-
+ ![Diagram: Firmware lifecycle models](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/main/docs/diags/firmware-lifecycles.puml)
+ 
 
 ## Beware clashes from multiple products
 The above classifications can be used to build a data model which will allow the relevant __and related__ reference values / endorsements to be available for evidence appraisal. However, if a manufacturer releases multiple products using the same components *and* tokens from these products are handled by the same verification service, the creation of the data model must take into account these distinct products to avoid false lifecycle graphs. This is necessary to avoid, say, the implication that a firmware component is not up to date because a new release is available, which applies only to a different product. The concept of a product identity can be either created from a combination of evidence fields or be a created entity that is correlated to the TA-ID. 
 
 Diagram: Multi Product Models
 
-![Diagram: Multi product models](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/docs/diags/mult-prods.puml)
+![Diagram: Multi product models](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/main/docs/diags/mult-prods.puml)
 
 
