@@ -1,0 +1,58 @@
+@startuml
+skinparam rectangle {
+    ' these params allow any rectangle with the label stereotype to be displayed just as text
+    BackgroundColor<<label>> White
+    BorderColor<<label>> White
+    Shadowing<<label>> False
+}
+hide stereotype  
+'skinparam nodesep 5
+skinparam ranksep 5
+
+
+title "Background - Known Tokens"
+
+rectangle tokPSA as "PSA Token
+____
+Unique TA ID
+HW Group ID
+[FW # + MetaData]
+"
+
+rectangle tokDICE as "DICE Token
+____
+f(TAID)+FW#
+f(TAID)+FW#+FW'#
+f(TAID)+FW#+FW'#+FW''#
+...
+"
+
+rectangle tokSEV as "SEV Token
+____
+Unique TA ID (chain to AMD CA)
+FW Roll Up Version
+"
+
+rectangle tokNitro as "Nitro Token
+____
+Unique(?) TA ID (chain to AWS CA)
+[PCRs]
+"
+
+rectangle tokTPM as "TPM Token
+____
+TA ID (chain to manufacturer CA)
+[PCRs]
+"
+
+
+
+tokPSA --[hidden]r-> tokDICE
+tokDICE --[hidden]r-> tokSEV
+tokSEV --[hidden]r-> tokNitro
+tokNitro --[hidden]r-> tokTPM
+
+@enduml
+
+
+
