@@ -22,7 +22,7 @@ A device MAY contain a Hardware Group ID that is presented in attestation eviden
 A device is ASSUMED to produce evidence allowing the set of loaded firmware components to be identified. In some cases the device may summarise all loaded components into a single version number. In other cases a full set of measurements and metadata may be be made available to identify the set of firmware components loaded.
 
 ### Workload
-An attestation report may include a series of 
+An attestation report may include a series of measurements for the purpose of describing the workload running on a device. While a Veraison based attestation service can be capable of verifying such a series, there may not be a standard model for the reference values needed for this work. The workload is normally also divorced from the TCB and may require verification data to be obtained from a different supply chain from that used for device verification. This classification is therefore excluded from the device modelling assumptions.
 
 ### Other Evidence
 Other evidence may be contained within the Attestation Report that does not fall into the above categories. This evidence may need to be referenced as part of an evidence appraisal policy, but no additional classification for a group of evidence is known at the moment to affect the modelling of Endorsements for the project.
