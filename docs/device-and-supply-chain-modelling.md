@@ -40,7 +40,7 @@ Diagram: Known Tokens
 
 
 ## Firmware Lifecycles
-Where an attestation report contains only a firmware version, the reference or "known good" value for that version may need to be provisioned from the supply chain. Alternatively the handling of this value may be handled by alterations to the evidence appraisal policy.
+Where an attestation report contains only a firmware version, the reference or "known good" value(s) specifying what the policy should compare the version with in order to make a determination of validity may need to be provisioned from the supply chain. Alternatively the handling of this value may be handled by alterations to the evidence appraisal policy.
 
 If the attestation report contains a set of measurements describing the loaded firmware components, the situation is more complex but can offer the opportunity for a policy to make more nuanced appraisal choices. This case requires that the supply chain provisions information to the verifier about released firmware items for use by the appraisal policy. 
 
