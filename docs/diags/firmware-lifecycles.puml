@@ -1,0 +1,101 @@
+@startuml
+skinparam rectangle {
+    ' these params allow any rectangle with the label stereotype to be displayed just as text
+    BackgroundColor<<label>> White
+    BorderColor<<label>> White
+    Shadowing<<label>> False
+}
+hide stereotype  
+'skinparam nodesep 5
+skinparam ranksep 5
+
+
+title "FW Lifecycle model options"
+
+rectangle initstateLab<<label>> as "
+Initial Product Release State"
+rectangle initstate as "TA IA (U or G)
+{HW Group ID}
+FW1, FW2, FW3, FW4"
+initstateLab -[hidden]d-> initstate
+
+' 'Model A'
+rectangle MAU1 as "Update 1
+----
+FW1, FW2', FW3', FW4"
+rectangle MAP1 as "Patch 1
+----
+FW2''"
+rectangle MAP2 as "Patch 2
+----
+FW2''',FW3''"
+rectangle MAU2 as "Update 2
+----
+FW1, FW2'''', FW3'', FW4'"
+
+rectangle modelAlab<<label>> as "
+Model 1: Release all components for Updates; unchanged components not rebuilt; only modified components for patch
+"
+
+'align the stages L -> R
+MAU1 -r-> MAP1
+MAP1 -r-> MAP2
+MAP2 -r-> MAU2
+' place the label above the stages
+modelAlab -[hidden]d-> MAP2
+
+'place init state at top
+initstate -[hidden]d->modelAlab
+
+' 'Model B'
+rectangle MBU1 as "Update 1
+----
+FW1, FW2', FW3', FW4"
+rectangle MBP1 as "Patch 1
+----
+FW1, FW2'', FW3', FW4"
+rectangle MBP2 as "Patch 2
+----
+FW1, FW2''', FW3'', FW4"
+rectangle MBU2 as "Update 2
+----
+FW1, FW2''', FW3'', FW4'"
+
+rectangle modelBlab<<label>> as "
+Model 2: Always release all components; unchanged components not rebuilt
+"
+MBU1 -r-> MBP1
+MBP1 -r-> MBP2
+MBP2 -r-> MBU2
+' put label over stages
+modelBlab -[hidden]d-> MBP1
+
+'put model B under model A
+MAP1 -[hidden]d-> modelBlab
+
+' 'Model C'
+rectangle MCU1 as "Update 1
+----
+FW1', **FW2'**, **FW3'**, FW4'"
+rectangle MCP1 as "Patch 1
+----
+FW1'', **FW2''**, FW3'', FW4''"
+rectangle MCP2 as "Patch 2
+----
+FW1''', **FW2'''**, **FW3'''**, FW4'''"
+rectangle MCU2 as "Update 2
+----
+FW1'''', **FW2'''', FW3'''', FW4''''**"
+
+rectangle modelClab<<label>> as "
+Model 3: Always release all components; always rebuild all components (bold indicates functional change)
+"
+MCU1 -r-> MCP1
+MCP1 -r-> MCP2
+MCP2 -r-> MCU2
+' put label over stages
+modelClab -[hidden]d-> MCP2
+
+'put model C under model B
+MBP2 -[hidden]d-> modelClab
+@enduml
