@@ -36,7 +36,7 @@ Diagram: relevant groupings for evidence
 
 Diagram: Known Tokens
 
-![Diagram: Mapping known attestation tokens to the evidence classifications](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/main/docs/diags/known-models.puml)
+![Diagram: Mapping known attestation tokens to the evidence classifications](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/main/docs/diags/known-tokens.puml)
 
 
 ## Firmware Lifecycles
