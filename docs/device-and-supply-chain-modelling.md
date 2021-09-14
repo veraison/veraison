@@ -1,6 +1,6 @@
 # Device and Supply Chain modelling
 
-## Intro
+## Introduction
 This document sets out the accumulated knowledge and / or assumptions about:
 + the evidence available within a device which can be used for attestation
 + models for firmware release lifecycles 
@@ -14,10 +14,10 @@ The Veraison project welcomes feedback from real world examples as to the accura
 The evidence within an attestation report can be categorised into the following classes. These classes are not an exhaustive set of all types of evidence that may be found within a report but are those necessary for correlating evidence with endorsement / reference value queries.
 
 ### Trust Anchor
-All devices are ASSUMED to contain a Trust Anchor (TA) or a descendant from a Trust Anchor. This is normally provisioned into the device at manufacturing time but may also be provisioned to the device on enrolling into a management structure. The TA takes the form of a key or a seed from which an Attestation signing key can be derived. The attestation report will contain information, referred to here as a Trust Anchor ID (TA-ID), which a Verifier can use to locate an endorsement providing information on the public value of the relevant key to use to validate the signature on a report. The Trust Anchor may have unique-to-device or group scope (i.e. multiple devices contain the same trust anchor). The latter case has been used as one solution for privacy protection use cases. 
+All devices are ASSUMED to contain a Trust Anchor (TA) or a descendant from a Trust Anchor. This is normally provisioned into the device at manufacturing time but may also be provisioned to the device on enrolling into a management structure. The TA takes the form of a key or a seed from which an Attestation signing key can be derived. The attestation report will contain information, referred to here as a Trust Anchor ID (TA-ID). A Verifier can use the TA-ID to locate an endorsement providing information on the public value of the relevant key to use to validate the signature on a report. The Trust Anchor may have unique-to-device or group scope (i.e. multiple devices contain the same trust anchor). The latter case has been used as one solution for privacy protection use cases. 
 
 ### Hardware Group
-A device MAY contain a Hardware Group ID that is presented in attestation evidence. This is an identifier, provisioned during manufacturing, which can be used to classify the SoC used within the device and will be the same for any devices built using that SoC. Although termed as a hardware ID, in fact this identifier will classify the immutable Root of Trust, being the un-modifiable and un-measured first boot component as well as the specific SoC hardware within the SoC. The identifier is a public value and has no security value, but aids classification for a verifier. If no Hardware Group ID is included within the attestation evidence then an equivalent value can be provisioned into the verifier as a correlation to the Trust Anchor ID.
+A device MAY contain a Hardware Group ID that is presented in attestation evidence. This is an identifier, provisioned during manufacturing, which can be used to classify the SoC used within the device and will be the same for any devices built using that SoC. Although termed as a hardware ID, in fact this identifier will classify the immutable Root of Trust, being the un-modifiable and un-measured first boot component as well as the specific SoC hardware within the SoC. The identifier is a public value and has no security value, but aids classification for a verifier. If no Hardware Group ID is included within the attestation evidence then an equivalent group identifier can be provisioned into the verifier as a correlation to the Trust Anchor ID.
 
 ### Firmware
 A device is ASSUMED to produce evidence allowing the set of loaded firmware components to be identified. In some cases the device may summarise all loaded components into a single version number. In other cases a full set of measurements and metadata may be be made available to identify the set of firmware components loaded.
