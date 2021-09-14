@@ -44,8 +44,9 @@ func (em *Manager) InitializeStore(
 	pluginLocaitons []string,
 	name string,
 	params common.EndorsementStoreParams,
+	quiet bool,
 ) error {
-	lp, err := common.LoadPlugin(pluginLocaitons, "endorsementstore", name)
+	lp, err := common.LoadPlugin(pluginLocaitons, "endorsementstore", name, quiet)
 	if err != nil {
 		return err
 	}

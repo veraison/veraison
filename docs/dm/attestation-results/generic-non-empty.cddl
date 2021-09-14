@@ -1,0 +1,6 @@
+; The non-empty generic can be used to ensure the presence
+; of at least one item in an object with only optional
+; fields.
+non-empty<M> = (M) .within ({ + any => any })
+
+; vim: set tw=70 ts=2 et:

@@ -75,7 +75,7 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
 	params := common.PolicyStoreParams{"dbpath": dbPath}
-	err = pm.InitializeStore([]string{pluginDir}, "sqlite", params)
+	err = pm.InitializeStore([]string{pluginDir}, "sqlite", params, true)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

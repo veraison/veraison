@@ -36,34 +36,37 @@ func NewVerifier(logger *zap.Logger) (*Verifier, error) {
 
 // Initialize bootstraps the verifier
 func (v *Verifier) Initialize(vc Config) error {
-	if err := v.em.InitializeStore(vc.PluginLocations, vc.EndorsementStoreName, vc.EndorsementStoreParams); err != nil {
+	if err := v.em.InitializeStore(
+		vc.PluginLocations,
+		vc.EndorsementStoreName,
+		vc.EndorsementStoreParams,
+		false,
+	); err != nil {
 		return err
 	}
 
-	if err := v.pm.InitializeStore(vc.PluginLocations, vc.PolicyStoreName, vc.PolicyStoreParams); err != nil {
+	if err := v.pm.InitializeStore(
+		vc.PluginLocations,
+		vc.PolicyStoreName,
+		vc.PolicyStoreParams,
+		false,
+	); err != nil {
 		return err
 	}
 
-	engineName := common.Canonize(vc.PolicyEngineName)
-
-	lp, err := common.LoadPlugin(vc.PluginLocations, "policyengine", engineName)
+	pe, client, rpcClient, err := common.LoadAndInitializePolicyEngine(
+		vc.PluginLocations,
+		vc.PolicyEngineName,
+		vc.PolicyEngineParams,
+		false,
+	)
 	if err != nil {
 		return err
 	}
 
-	v.pe = lp.Raw.(common.IPolicyEngine)
-	v.client = lp.PluginClient
-	v.rpcClient = lp.RPCClient
-
-	if v.client == nil {
-		return fmt.Errorf("failed to find policy engine with name '%v'", engineName)
-	}
-
-	err = v.pe.Init(vc.PolicyEngineParams)
-	if err != nil {
-		v.client.Kill()
-		return err
-	}
+	v.pe = pe
+	v.client = client
+	v.rpcClient = rpcClient
 
 	return nil
 }

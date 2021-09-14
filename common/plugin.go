@@ -40,7 +40,7 @@ type INamed interface {
 // LoadPlugin returns a pointer to a LoadedPlugin based on the plugin type and
 // names specfied, by search for a suitable plugin binary inside the provided
 // locations.
-func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, error) {
+func LoadPlugin(locations []string, plugType, plugName string, quiet bool) (*LoadedPlugin, error) {
 
 	handshakeConfig := plugin.HandshakeConfig{
 		ProtocolVersion:  1,
@@ -48,10 +48,17 @@ func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, e
 		MagicCookieValue: "VERAISON",
 	}
 
+	var logLevel hclog.Level
+	if quiet {
+		logLevel = hclog.Error
+	} else {
+		logLevel = hclog.Warn
+	}
+
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   plugName,
 		Output: os.Stdout,
-		Level:  hclog.Warn,
+		Level:  logLevel,
 	})
 
 	for _, location := range locations {

@@ -38,7 +38,6 @@ Diagram: Known Tokens
 
 ![Diagram: Mapping known attestation tokens to the evidence classifications](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/veraison/veraison/main/docs/diags/known-tokens.puml)
 
-
 ## Firmware Lifecycles
 Where an attestation report contains only a firmware version, the reference or "known good" value(s) specifying what the policy should compare the version with in order to make a determination of validity may need to be provisioned from the supply chain. Alternatively the handling of this value may be handled by alterations to the evidence appraisal policy.
 

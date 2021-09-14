@@ -1,0 +1,19 @@
+{
+  "status": "unknown",
+  "trust-vector": {
+    "hw-authenticity": "success",
+    "sw-integrity": "unknown",
+    "sw-up-to-dateness": "success",
+    "config-integrity": "unknown",
+    "runtime-integrity": "failure",
+    "certification-status": "unknown"
+  },
+  "raw-evidence": "NzQ3MjY5NzM2NTYzNzQK",
+  "timestamp": "2631-01-22T20:18:18Z",
+  "appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
+  "veraison.processed-evidence": {
+    "nonce": "aGpzZGZoZGEK",
+    "client-id": 1,
+    "no-sw-measurements": true
+  }
+}

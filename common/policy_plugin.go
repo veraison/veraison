@@ -46,14 +46,32 @@ func (s *PolicyStoreServer) Init(args PolicyStoreParams, resp *string) error {
 	return s.Impl.Init(args)
 }
 
+func (s *PolicyStoreServer) ListPolicies(tenantID int, resp *[]byte) error {
+	result, err := s.Impl.ListPolicies(tenantID)
+	if err != nil {
+		return err
+	}
+
+	*resp, err = json.Marshal(result)
+	return err
+}
+
 func (s *PolicyStoreServer) GetPolicy(args GetPolicyArgs, resp *Policy) error {
 	policy, err := s.Impl.GetPolicy(args.TenantID, args.TokenFormat)
-	*resp = *policy
+
+	if policy != nil {
+		*resp = *policy
+	}
+
 	return err
 }
 
 func (s *PolicyStoreServer) PutPolicy(args PutPolicyArgs, resp *interface{}) error {
 	return s.Impl.PutPolicy(args.TenantID, args.Policy)
+}
+
+func (s *PolicyStoreServer) DeletePolicy(args GetPolicyArgs, resp *interface{}) error {
+	return s.Impl.DeletePolicy(args.TenantID, args.TokenFormat)
 }
 
 func (s *PolicyStoreServer) Close(args interface{}, resp *interface{}) error {
@@ -78,6 +96,24 @@ func (e *PolicyStoreRPC) Init(args PolicyStoreParams) error {
 	return e.client.Call("Plugin.Init", args, nil)
 }
 
+func (e *PolicyStoreRPC) ListPolicies(tenantID int) ([]PolicyListEntry, error) {
+	var result []PolicyListEntry
+
+	var resp []byte
+
+	if err := e.client.Call("Plugin.ListPolicies", tenantID, &resp); err != nil {
+		return nil, err
+	}
+
+	// NOTE: encoding/gob used to serialize objects by net/rpc cannot handle []interface{}, which
+	//       necessitates pre-serialing any objects that may contain arbitrary JSON decodings.
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (e *PolicyStoreRPC) GetPolicy(tenantID int, tokenFormat TokenFormat) (*Policy, error) {
 	var resp Policy
 
@@ -91,6 +127,12 @@ func (e *PolicyStoreRPC) PutPolicy(tenantID int, policy *Policy) error {
 	args := PutPolicyArgs{TenantID: tenantID, Policy: policy}
 	// TODO: figure out why the last argument here must be non-nil
 	return e.client.Call("Plugin.PutPolicy", args, new(interface{}))
+}
+
+func (e *PolicyStoreRPC) DeletePolicy(tenantID int, tokenFormat TokenFormat) error {
+	args := GetPolicyArgs{TenantID: tenantID, TokenFormat: tokenFormat}
+	// TODO: figure out why the last argument here must be non-nil
+	return e.client.Call("Plugin.DeletePolicy", args, new(interface{}))
 }
 
 func (e *PolicyStoreRPC) Close() error {
@@ -142,7 +184,7 @@ func (s *PolicyEngineServer) GetClaims(args PolicyEngineArgs, resp *map[string]i
 	return err
 }
 
-func (s *PolicyEngineServer) CheckValid(args PolicyEngineArgs, resp *bool) error {
+func (s *PolicyEngineServer) CheckValid(args PolicyEngineArgs, resp *Status) error {
 	var err error
 	*resp, err = s.Impl.CheckValid(args.Evidence, args.Endorsements)
 	return err
@@ -195,8 +237,8 @@ func (e *PolicyEngineRPC) LoadPolicy(policy []byte) error {
 func (e *PolicyEngineRPC) CheckValid(
 	evidence map[string]interface{},
 	endorsements map[string]interface{},
-) (bool, error) {
-	var resp bool
+) (Status, error) {
+	var resp Status
 
 	args := PolicyEngineArgs{Evidence: evidence, Endorsements: endorsements}
 	err := e.client.Call("Plugin.CheckValid", args, &resp)
