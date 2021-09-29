@@ -1,2 +1,5 @@
 plugins/bin/
 main
+protogen
+*.pb.go
+*.pb.json.go

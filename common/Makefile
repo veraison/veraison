@@ -5,7 +5,10 @@
 
 GOPKG := github.com/veraison/common
 
+PROTOSRCS := result.proto
+
 include ../mk/common.mk
+include ../mk/proto.mk
 include ../mk/pkg.mk
 include ../mk/lint.mk
 include ../mk/test.mk

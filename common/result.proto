@@ -1,0 +1,44 @@
+syntax = "proto3";
+package common;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/veraison/common";
+
+enum Status {
+    FAILURE = 0;
+    SUCCESS = 1;
+    UNKNOWN = 2;
+    INVALID = 3;
+}
+
+message TrustVector {
+    Status hardware_authenticity = 1 [json_name = "hw-authenticity"];
+    Status software_integrity = 2 [json_name = "sw-integrity"];
+    Status software_up_to_dateness = 3 [json_name = "sw-up-to-dateness"];
+    Status config_integrity = 4 [json_name = "config-integrity"];
+    Status runtime_integrity = 5 [json_name = "runtime-integrity"];
+    Status certification_status = 6 [json_name = "certification-status"];
+}
+
+message EndorsedClaims {
+    google.protobuf.Struct hardware_details = 1 [json_name = "hw-details"];
+    google.protobuf.Struct software_details = 2 [json_name = "sw-details"];
+    google.protobuf.Struct certification_details = 3 [json_name = "certification-details"];
+    google.protobuf.Struct config_details = 4 [json_name = "config-details"];
+}
+
+message AttestationResult {
+    Status status = 1 [json_name = "status"];
+    TrustVector trust_vector = 2 [json_name = "trust-vector"];
+    bytes raw_evidence = 3 [json_name = "raw-evidence"];
+    google.protobuf.Timestamp timestamp = 4 [json_name = "timestamp"];
+    EndorsedClaims endorsed_claims = 5 [json_name = "endorsed-claims"];
+    string AppraisalPolicyID = 6 [json_name = "appraisal-policy-id"];
+
+    // Extension
+    google.protobuf.Struct processed_evidence = 7 [json_name = "veraison-procesed-evidence"];
+}
+
+// vim: set et sts=4 sw=4 ai:
