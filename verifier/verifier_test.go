@@ -152,10 +152,10 @@ func TestVerifier(t *testing.T) {
 
 		assert.NotNil(result)
 
-		if strings.HasPrefix(fi.Name(), "valid-") && result.Status != common.StatusSuccess {
+		if strings.HasPrefix(fi.Name(), "valid-") && result.Status != common.Status_SUCCESS {
 			t.Fatalf("%v resported as invalid", fi.Name())
 		}
-		if strings.HasPrefix(fi.Name(), "invalid-") && result.Status == common.StatusSuccess {
+		if strings.HasPrefix(fi.Name(), "invalid-") && result.Status == common.Status_SUCCESS {
 			t.Fatalf("%v resported as valid", fi.Name())
 		}
 	}

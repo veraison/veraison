@@ -7,10 +7,10 @@ import (
 	"fmt"
 )
 
-// EndorsementStoreParams encapsulates parameters used to initialize the
+// EndorsementBackendParams encapsulates parameters used to initialize the
 // endorsement store. What parameters are required and values supported depends
-// on the specific IEndorsementStore implementation.
-type EndorsementStoreParams map[string]interface{}
+// on the specific IEndorsementBackend implementation.
+type EndorsementBackendParams map[string]interface{}
 
 // SoftwareEndoresement encapsulates an endorsed measurement value associated
 // with a particular version of a software component. It represents a know good
@@ -29,10 +29,10 @@ type SoftwareEndorsement struct {
 // is the result of matching endorsements from a sore suing GetEndorsements().
 type EndorsementMatches map[string]QueryResult
 
-// IEndorsementStore defines the interface that must be provide by an
+// IEndorsementBackend defines the interface that must be provide by an
 // endorsement store implementation. An endorsement store is used to store and
 // query endorsement values against which an attested device may be evaluated.
-type IEndorsementStore interface {
+type IEndorsementBackend interface {
 
 	// GetName returns the name of the implemented endorsement store. This
 	// name is used to configure which store will be used by a deployment.
@@ -44,7 +44,7 @@ type IEndorsementStore interface {
 	// implementation, but would typically involve things such as
 	// establishing connection to a database server. This must be called
 	// before running any queries against the store.
-	Init(args EndorsementStoreParams) error
+	Init(args EndorsementBackendParams) error
 
 	// GetEndorsements queries the underlying store for endorsements based
 	// on the specified QueryDescriptor's. Each query descriptor specified
@@ -62,17 +62,17 @@ type IEndorsementStore interface {
 	// RunQuery executes the query with the specified name against the
 	// parameter values specified by the provided QueryArgs and return the
 	// corresponding QueryResult. The name must be of a query supported by
-	// the particular IEndorsementStore implementation (see
+	// the particular IEndorsementBackend implementation (see
 	// GetSupportedQueries below) otherwise an error will be returned.
 	RunQuery(name string, args QueryArgs) (QueryResult, error)
 
 	// GetSupportedQueries returns a list of the names of the queries
-	// supported by the IEndorsementStore implementation. Only the queries
+	// supported by the IEndorsementBackend implementation. Only the queries
 	// whos names are turned may be run against this store.
 	GetSupportedQueries() []string
 
 	// SupportsQuery returns a boolean value indicating whether the query
-	// with the specified name is supported by the IEndorsementStore
+	// with the specified name is supported by the IEndorsementBackend
 	// implementation.
 	SupportsQuery(query string) bool
 
@@ -82,23 +82,23 @@ type IEndorsementStore interface {
 	Close() error
 }
 
-// BaseEndorsementStore implements generic functionality that may be shared
-// cross all IEndorsementStore implementations.
-type BaseEndorsementStore struct {
+// BaseEndorsementBackend implements generic functionality that may be shared
+// cross all IEndorsementBackend implementations.
+type BaseEndorsementBackend struct {
 
 	// Queries is a map of names to Query functions populated by a
-	// particular IEndorsementStore implementation. Each implementation
+	// particular IEndorsementBackend implementation. Each implementation
 	// defines a Query function for every type of query it supports and
 	// "registers" them under a name here.
 	Queries map[string]Query
 
 	// Adders is a map of names of endorsement types to the Adder function
-	// used to add/update those endorsements. Each IEndorsementStore
+	// used to add/update those endorsements. Each IEndorsementBackend
 	// implementation defines its own adders and registers them here.
 	Adders map[string]QueryAdder
 }
 
-func (e *BaseEndorsementStore) AddEndorsement(name string, args QueryArgs, update bool) error {
+func (e *BaseEndorsementBackend) AddEndorsement(name string, args QueryArgs, update bool) error {
 	adderFunc, ok := e.Adders[name]
 	if !ok {
 		return fmt.Errorf("no adder specified for %q", name)
@@ -109,7 +109,7 @@ func (e *BaseEndorsementStore) AddEndorsement(name string, args QueryArgs, updat
 
 // GetEndorsements invokes RunQuery for each of the specified QueryDescriptor's
 // and collects returned QueryResult's inside EndorsementMatches.
-func (e *BaseEndorsementStore) GetEndorsements(qds ...QueryDescriptor) (EndorsementMatches, error) {
+func (e *BaseEndorsementBackend) GetEndorsements(qds ...QueryDescriptor) (EndorsementMatches, error) {
 	matches := make(EndorsementMatches)
 
 	for _, qd := range qds {
@@ -130,7 +130,7 @@ func (e *BaseEndorsementStore) GetEndorsements(qds ...QueryDescriptor) (Endorsem
 
 // RunQuery retrieves the Query function associated with the specified name and
 // executes it with the provided QueryArgs, returning the QueryResult.
-func (e *BaseEndorsementStore) RunQuery(name string, args QueryArgs) (QueryResult, error) {
+func (e *BaseEndorsementBackend) RunQuery(name string, args QueryArgs) (QueryResult, error) {
 	queryFunc, ok := e.Queries[name]
 	if !ok {
 		return nil, fmt.Errorf("query %q not implemented", name)
@@ -145,8 +145,8 @@ func (e *BaseEndorsementStore) RunQuery(name string, args QueryArgs) (QueryResul
 }
 
 // GetSupportedQueries returns the list of name of queries supported by the
-// IEndorsementStore implementation.
-func (e *BaseEndorsementStore) GetSupportedQueries() []string {
+// IEndorsementBackend implementation.
+func (e *BaseEndorsementBackend) GetSupportedQueries() []string {
 	keys := make([]string, 0, len(e.Queries))
 	for k := range e.Queries {
 		keys = append(keys, k)
@@ -155,9 +155,9 @@ func (e *BaseEndorsementStore) GetSupportedQueries() []string {
 }
 
 // SupportsQuery returns a boolean value indicating whether the query
-// with the specified name is supported by the IEndorsementStore
+// with the specified name is supported by the IEndorsementBackend
 // implementation.
-func (e *BaseEndorsementStore) SupportsQuery(query string) bool {
+func (e *BaseEndorsementBackend) SupportsQuery(query string) bool {
 	if _, ok := e.Queries[query]; ok {
 		return true
 	}

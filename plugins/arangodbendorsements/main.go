@@ -35,7 +35,7 @@ const (
 
 // EndorsementStore is the abstraction of Endorsement store
 type EndorsementStore struct {
-	common.BaseEndorsementStore
+	common.BaseEndorsementBackend
 	store Store
 }
 

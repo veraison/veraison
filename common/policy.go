@@ -238,7 +238,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 
 		fileName := Canonize(segments[1])
 		switch fileName {
-		case "rules":
+		case "RULES":
 			if entry.ReadRules {
 				return nil, fmt.Errorf("multiple rules definitions found for %v", formatName)
 			}
@@ -253,7 +253,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 			}
 
 			entry.ReadRules = true
-		case "query_map", "query_map.json":
+		case "QUERY_MAP", "QUERY_MAP.JSON":
 			if entry.ReadQMap {
 				return nil, fmt.Errorf("multiple query map definitions found for %v", formatName)
 			}
@@ -434,5 +434,15 @@ func newPolicyEntry(name string) *policyEntry {
 	entry := new(policyEntry)
 	entry.TokenFormatName = name
 	entry.Policy = NewPolicy()
+	entry.Policy.TokenFormat = getTokenFromat(name)
 	return entry
+}
+
+func getTokenFromat(name string) TokenFormat {
+	value, ok := TokenFormat_value[name]
+	if !ok {
+		return TokenFormat_UNKNOWN_FORMAT
+	}
+
+	return TokenFormat(value)
 }

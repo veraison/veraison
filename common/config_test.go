@@ -24,7 +24,7 @@ func Test_LoadConfig(t *testing.T) {
 
 	assert.Equal("opa", config.PolicyEngineName)
 	assert.Equal("sqlite", config.PolicyStoreName)
-	assert.Equal("sqlite", config.EndorsementStoreName)
+	assert.Equal("sqlite", config.EndorsementBackendName)
 	assert.Equal(true, config.Debug)
 	assert.Equal([]string{"../plugins/bin/"}, config.PluginLocations)
 }

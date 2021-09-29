@@ -39,9 +39,9 @@ type Config struct {
 	// deployment.
 	PolicyEngineName string
 
-	// The name of the EndorsementStorePlugin that should be loaded for
+	// The name of the EndorsementBackendPlugin that should be loaded for
 	// this deployment.
-	EndorsementStoreName string
+	EndorsementBackendName string
 
 	// Parameters to be passed for initializing the policy store. See the
 	// documentation for a particular store implementation for which
@@ -56,7 +56,7 @@ type Config struct {
 	// Parameters to be passed for initializing the endorsements store. See the
 	// documentation for a particular store implementation for which
 	// parameters are valid, and what values are accepted.
-	EndorsementStoreParams EndorsementStoreParams
+	EndorsementBackendParams EndorsementBackendParams
 
 	viper *viper.Viper
 }
@@ -108,8 +108,8 @@ func (c *Config) Reload() error {
 	c.PolicyStoreParams = c.viper.GetStringMapString("policy.store_params")
 	c.PolicyEngineName = c.viper.GetString("policy.engine_name")
 	c.PolicyEngineParams = c.viper.GetStringMapString("policy.engine_params")
-	c.EndorsementStoreName = c.viper.GetString("endorsements.store_name")
-	c.EndorsementStoreParams = c.viper.GetStringMap("endorsements.store_params")
+	c.EndorsementBackendName = c.viper.GetString("endorsements.store_name")
+	c.EndorsementBackendParams = c.viper.GetStringMap("endorsements.store_params")
 
 	return nil
 }

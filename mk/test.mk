@@ -23,7 +23,7 @@ MOCK_FILES := $(foreach m,$(INTERFACES),$(join mock_,$(m)))
 _mocks: $(MOCK_FILES)
 .PHONY: _mocks
 
-test: _mocks; go test $(TEST_ARGS) $(GOPKG)
+test: _mocks $(GEN_FILES); go test $(TEST_ARGS) $(GOPKG)
 .PHONY: test
 
 CLEANFILES += $(MOCK_FILES)
