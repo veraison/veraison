@@ -182,7 +182,7 @@ func TestSqliteEndorsementStore(t *testing.T) {
 
 	store := new(SqliteEndorsementStore)
 
-	err = store.Init(common.EndorsementStoreParams{"dbpath": dbPath})
+	err = store.Init(common.EndorsementBackendParams{"dbpath": dbPath})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -195,7 +195,7 @@ func TestSqliteEndorsementStore(t *testing.T) {
 	testAddSoftwareComponents(t, store)
 }
 
-func testGetSupportedQueries(t *testing.T, store common.IEndorsementStore) {
+func testGetSupportedQueries(t *testing.T, store common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	var expected = map[string]bool{"hardware_id": true, "software_components": true}
@@ -211,7 +211,7 @@ func testGetSupportedQueries(t *testing.T, store common.IEndorsementStore) {
 	}
 }
 
-func testSupportsQuery(t *testing.T, store common.IEndorsementStore) {
+func testSupportsQuery(t *testing.T, store common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	assert.True(store.SupportsQuery("hardware_id"),
@@ -220,11 +220,11 @@ func testSupportsQuery(t *testing.T, store common.IEndorsementStore) {
 		"store claims to support a non-existing query")
 }
 
-func testQueryHardwareID(t *testing.T, store common.IEndorsementStore) {
+func testQueryHardwareID(t *testing.T, store common.IEndorsementBackend) {
 	runHwIDQuery(t, store, "76543210fedcba9817161514131211101f1e1d1c1b1a1918", "acme-rr-trap")
 }
 
-func testQuerySoftwareComponents(t *testing.T, store common.IEndorsementStore) {
+func testQuerySoftwareComponents(t *testing.T, store common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -245,7 +245,7 @@ func testQuerySoftwareComponents(t *testing.T, store common.IEndorsementStore) {
 	assert.NotEmpty(qr["software_components"], "Did not match software components")
 }
 
-func testAddHardwareID(t *testing.T, store common.IEndorsementStore) {
+func testAddHardwareID(t *testing.T, store common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	err := store.AddEndorsement(
@@ -284,7 +284,7 @@ func testAddHardwareID(t *testing.T, store common.IEndorsementStore) {
 	runHwIDQuery(t, store, "123456789abcdef123456789abcdef123456789abcdef123", "production-hardware")
 }
 
-func runHwIDQuery(t *testing.T, store common.IEndorsementStore, platID string, expected string) {
+func runHwIDQuery(t *testing.T, store common.IEndorsementBackend, platID string, expected string) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -306,7 +306,7 @@ func runHwIDQuery(t *testing.T, store common.IEndorsementStore, platID string, e
 		"hardware_id failed to match")
 }
 
-func testAddSoftwareComponents(t *testing.T, store common.IEndorsementStore) {
+func testAddSoftwareComponents(t *testing.T, store common.IEndorsementBackend) {
 	assert := assert.New(t)
 	require := require.New(t)
 

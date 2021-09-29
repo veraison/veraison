@@ -90,7 +90,7 @@ func Test_TokenProcessor_ProcessDice(t *testing.T) {
 
 	config := Config{
 		PluginLocations:      []string{pluginDir},
-		TrustAnchorStoreName: "sqlite",
+		TrustAnchorStoreName: "SQLITE",
 		TrustAnchorStoreParams: common.TrustAnchorStoreParams{
 			"dbpath": dbPath,
 		},
@@ -101,6 +101,7 @@ func Test_TokenProcessor_ProcessDice(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	defer tp.Close()
 
 	tokenFile := filepath.Join(wd, "test", "DeviceCerts.pem")
 	tokenData, err := ioutil.ReadFile(tokenFile)
@@ -111,10 +112,10 @@ func Test_TokenProcessor_ProcessDice(t *testing.T) {
 	expectedFWID := base64.StdEncoding.EncodeToString(FWID)
 	expectedDeviceID := base64.StdEncoding.EncodeToString(DeviceID)
 
-	ec, err := tp.Process(1, common.DiceToken, tokenData)
+	ec, err := tp.Process(1, common.TokenFormat_DICE, tokenData)
 	require.Nil(err)
 	require.Equal(1, ec.TenantID)
-	require.Equal(common.DiceToken, ec.Format)
+	require.Equal(common.TokenFormat_DICE, ec.Format)
 	require.Equal(expectedFWID, ec.Evidence["FWID"])
 	require.Equal(expectedDeviceID, ec.Evidence["DeviceID"])
 }

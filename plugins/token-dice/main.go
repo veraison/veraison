@@ -21,7 +21,7 @@ type EvidenceExtractor struct {
 }
 
 func (ee EvidenceExtractor) GetName() string {
-	return "dice"
+	return "DICE"
 }
 
 // Init is a no-op for this plugin.

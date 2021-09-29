@@ -19,7 +19,7 @@ type EvidenceExtractor struct {
 }
 
 func (ee EvidenceExtractor) GetName() string {
-	return "psa"
+	return "PSA"
 }
 
 func (ee EvidenceExtractor) Init(params common.EvidenceExtractorParams) error {

@@ -20,7 +20,7 @@ type PolicyStore struct {
 }
 
 func (ps *PolicyStore) GetName() string {
-	return "sqlite"
+	return "SQLITE"
 }
 
 // Init opens the database connection.

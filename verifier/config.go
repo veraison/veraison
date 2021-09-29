@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	PluginLocations        []string
-	PolicyStoreName        string
-	PolicyEngineName       string
-	EndorsementStoreName   string
-	PolicyStoreParams      common.PolicyStoreParams
-	PolicyEngineParams     common.PolicyEngineParams
-	EndorsementStoreParams common.EndorsementStoreParams
+	PluginLocations          []string
+	PolicyStoreName          string
+	PolicyEngineName         string
+	EndorsementStoreAddress  string
+	EndorsementBackendName   string
+	PolicyStoreParams        common.PolicyStoreParams
+	PolicyEngineParams       common.PolicyEngineParams
+	EndorsementBackendParams common.EndorsementBackendParams
 }

@@ -67,7 +67,7 @@ func TestInitStore(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			ms := NewMockStore(ctrl)
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -106,7 +106,7 @@ func TestConnectStore(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			ms := NewMockStore(ctrl)
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -191,7 +191,7 @@ func TestQueryHardwareID(t *testing.T) {
 				)
 			}
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -393,7 +393,7 @@ func TestQueryGetSoftwareComponents(t *testing.T) {
 				ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[5]), gomock.Any(), gomock.Any()).Return(test.qRsp[5], retErr),
 			)
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -542,7 +542,7 @@ func TestQueryAltSoftwareComponents(t *testing.T) {
 					)
 				}
 			}
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"AltAlgorithm":  "Normal",
 				"storeInstance": ms,
 			}
@@ -668,7 +668,7 @@ func TestQueryAllSoftwareComponents(t *testing.T) {
 				ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[5]), gomock.Any(), gomock.Any()).Return(test.qRsp[5], retErr),
 			)
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -793,7 +793,7 @@ func TestQueryLatestLinkedSwComponent(t *testing.T) {
 					ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[3]), gomock.Any(), gomock.Any()).Return(test.qRsp[3], nil),
 				)
 			}
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -986,7 +986,7 @@ func TestQueryMostRecentSwComp(t *testing.T) {
 				ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[5]), gomock.Any(), gomock.Any()).Return(test.qRsp[3], nil),
 			)
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}

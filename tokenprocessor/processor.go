@@ -52,6 +52,11 @@ func (tp *TokenProcessor) Init(config Config) error {
 	return nil
 }
 
+func (tp *TokenProcessor) Close() {
+	tp.Client.Kill()
+	tp.RPCClient.Close()
+}
+
 func (tp TokenProcessor) GetExtractor(format common.TokenFormat) (common.IEvidenceExtractor, error) {
 	extractorPlugin, ok := tp.extractors[format]
 	if ok {

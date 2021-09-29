@@ -20,7 +20,7 @@ type OpaPolicyEngine struct {
 }
 
 func (pe *OpaPolicyEngine) GetName() string {
-	return "opa"
+	return "OPA"
 }
 
 // Init initializes the OPA context that will be used to evaluate the policy.

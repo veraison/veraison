@@ -15,16 +15,16 @@ import (
 )
 
 type SqliteEndorsementStore struct {
-	common.BaseEndorsementStore
+	common.BaseEndorsementBackend
 	db   *sql.DB
 	path string
 }
 
 func (e *SqliteEndorsementStore) GetName() string {
-	return "sqlite"
+	return "SQLITE"
 }
 
-func retrieveDbPath(args common.EndorsementStoreParams) string {
+func retrieveDbPath(args common.EndorsementBackendParams) string {
 	i, found := args["dbpath"]
 	if !found {
 		return ""
@@ -42,7 +42,7 @@ func retrieveDbPath(args common.EndorsementStoreParams) string {
 // Init opens the database connection.
 // Expected parameters:
 //    args -- the input parameters to Init.
-func (e *SqliteEndorsementStore) Init(args common.EndorsementStoreParams) error {
+func (e *SqliteEndorsementStore) Init(args common.EndorsementBackendParams) error {
 	dbPath := retrieveDbPath(args)
 	if dbPath == "" {
 		return fmt.Errorf("dbPath not specified inside FetcherParams")
@@ -370,7 +370,7 @@ func main() {
 	}
 
 	var pluginMap = map[string]plugin.Plugin{
-		"endorsementstore": &common.EndorsementStorePlugin{
+		"endorsementstore": &common.EndorsementBackendPlugin{
 			Impl: &SqliteEndorsementStore{},
 		},
 	}

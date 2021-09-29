@@ -204,7 +204,7 @@ func (s *PolicyEngineServer) GetAttetationResult(argBlob []byte, resp *[]byte) e
 	}
 
 	var err error
-	*resp, err = json.Marshal(result)
+	*resp, err = json.Marshal(&result)
 	return err
 }
 

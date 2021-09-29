@@ -93,14 +93,15 @@ func TestVerifier(t *testing.T) {
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
 	var vc = Config{
-		PluginLocations:      []string{pluginDir},
-		PolicyEngineName:     "opa",
-		PolicyStoreName:      "sqlite",
-		EndorsementStoreName: "sqlite",
+		PluginLocations:         []string{pluginDir},
+		PolicyEngineName:        "opa",
+		PolicyStoreName:         "sqlite",
+		EndorsementBackendName:  "sqlite",
+		EndorsementStoreAddress: "localhost:50051",
 		PolicyStoreParams: common.PolicyStoreParams{
 			"dbpath": policyDbPath,
 		},
-		EndorsementStoreParams: common.EndorsementStoreParams{
+		EndorsementBackendParams: common.EndorsementBackendParams{
 			"dbpath": endorsementDbPath,
 		},
 	}
@@ -129,7 +130,7 @@ func TestVerifier(t *testing.T) {
 
 	ec := common.EvidenceContext{
 		TenantID: 1,
-		Format:   common.PsaIatToken,
+		Format:   common.TokenFormat_PSA,
 	}
 
 	for _, fi := range fis {

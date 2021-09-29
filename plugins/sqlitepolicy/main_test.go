@@ -72,10 +72,10 @@ func TestSqliteGetPolicy(t *testing.T) {
 	err = pm.Init(common.PolicyStoreParams{"dbpath": dbPath})
 	require.Nil(err)
 
-	policy, err := pm.GetPolicy(1, common.PsaIatToken)
+	policy, err := pm.GetPolicy(1, common.TokenFormat_PSA)
 	require.Nil(err)
 
-	assert.Equal(common.PsaIatToken, policy.TokenFormat)
+	assert.Equal(common.TokenFormat_PSA, policy.TokenFormat)
 	assert.Equal("$.implementation_id", policy.QueryMap["hardware_id"]["platform_id"])
 	assert.Equal("$.sw_components[*].measurement_value",
 		policy.QueryMap["software_components"]["measurements"])
@@ -102,10 +102,10 @@ func TestSqliteDeletePolicy(t *testing.T) {
 	err = pm.Init(common.PolicyStoreParams{"dbpath": dbPath})
 	require.Nil(err)
 
-	err = pm.DeletePolicy(1, common.PsaIatToken)
+	err = pm.DeletePolicy(1, common.TokenFormat_PSA)
 	assert.Nil(err)
 
-	err = pm.DeletePolicy(1, common.PsaIatToken)
+	err = pm.DeletePolicy(1, common.TokenFormat_PSA)
 	require.NotNil(err)
 	assert.Contains(err.Error(), "no rows")
 }
