@@ -5,10 +5,30 @@ option go_package = "github.com/veraison/endorsement";
 
 import "google/protobuf/struct.proto";
 import "result.proto";
-import "tokenformat.proto";
+
+enum AttestationFormat {
+	// UnknownFormat is used to indicate that the format of the attestation could
+	// not be established.
+	UNKNOWN_FORMAT = 0;
+
+	// PSA-IOT is the PSA attestation format (based on:
+	// https://developer.arm.com/architectures/architecture-security-features/platform-security)
+	PSA_IOT = 1;
+
+	// DICE is the attestation format based on the TCG DICE specification
+	// https://trustedcomputinggroup.org/wp-content/uploads/TCG_DICE_Attestation_Architecture_r22_02dec2020.pdf
+	DICE = 2;
+}
+
+enum TaType {
+    UNSPECIFIED = 0;
+    RAWPUBLICKEY = 1;
+    // Refer https://github.com/veraison/veraison/issues/76, to introduce certs here!
+    INVALID = 255;
+}
 
 message EndorsementID {
-    common.TokenFormat type = 1;
+    AttestationFormat type = 1;
     google.protobuf.Struct parts = 2;
 }
 
@@ -22,16 +42,15 @@ message GetEndorsementsArgs{
 }
 
 message Response {
-    int32 error_value = 1;
+    bool result = 1;
     string error_detail = 2;
 }
 
 message GetEndorsementsResponse {
-    int32 error_value = 1;
-    string error_detail = 2;
-    string details = 3;
-    common.TrustVector trust_vector = 4;
-    google.protobuf.Struct endorsements = 5;
+    Response status = 1;
+    string details = 2;
+    common.TrustVector trust_vector = 3;
+    google.protobuf.Struct endorsements = 4;
 }
 
 message OpenArgs {
@@ -44,6 +63,58 @@ message OpenArgs {
 message CloseArgs {
 }
 
+message SwComponentID {
+    AttestationFormat type = 1;
+    google.protobuf.Struct parts = 2;
+}
+
+message SwComponent {
+    SwComponentID id = 1;
+    google.protobuf.Struct meta = 2; 
+}
+
+message AddSwComponentArgs {
+    repeated SwComponent info = 1;
+}
+
+message GetSwComponentArgs {
+    SwComponentID id = 1;
+}
+
+message GetSwComponentResponse {
+    Response status = 1;
+    google.protobuf.Struct meta = 2;
+}
+
+message TrustAnchorID {
+    AttestationFormat type = 1;
+    google.protobuf.Struct parts = 2;
+}
+
+message TrustAnchorValue {
+    TaType type = 1;
+    google.protobuf.Struct value = 2;
+}
+
+message TrustAnchor {
+    TrustAnchorID id = 1;
+    TrustAnchorValue value = 2;
+    google.protobuf.Struct meta = 3;
+}
+
+message AddTrustAnchorArgs {
+    TrustAnchor trust_anchor = 1;
+}
+
+message GetTrustAnchorArgs {
+    TrustAnchorID ta_id = 1;
+}
+
+message GetTrustAnchorResponse {
+    Response status = 1;
+    TrustAnchorValue value = 2;
+}
+
 service Store {
     rpc Open(OpenArgs) returns (Response);
     rpc Close(CloseArgs) returns (Response);
@@ -53,5 +124,13 @@ service Fetcher {
     rpc GetEndorsements(GetEndorsementsArgs) returns (GetEndorsementsResponse);
 }
 
-
+// Provisioner is the Service end point that is used to store
+// and retrieve Software Components and Trust Anchors to and from
+// the Endorsement Store
+service Provisioner {
+    rpc AddSwComponents(AddSwComponentArgs) returns (Response);
+    rpc GetSwComponent(GetSwComponentArgs)  returns (GetSwComponentResponse);
+    rpc AddTrustAnchor(AddTrustAnchorArgs) returns (Response);
+    rpc GetTrustAnchor(GetTrustAnchorArgs) returns (GetTrustAnchorResponse);
+}
 // vim: set et sts=4 sw=4 si :
