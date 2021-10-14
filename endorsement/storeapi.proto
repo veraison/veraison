@@ -41,13 +41,13 @@ message GetEndorsementsArgs{
     Evidence evidence = 2;
 }
 
-message ResponseHeader {
+message StatusResponse {
     bool result = 1;
     string error_detail = 2;
 }
 
 message GetEndorsementsResponse {
-    ResponseHeader status = 1;
+    StatusResponse status = 1;
     string details = 2;
     common.TrustVector trust_vector = 3;
     google.protobuf.Struct endorsements = 4;
@@ -82,7 +82,7 @@ message GetSwComponentArgs {
 }
 
 message GetSwComponentResponse {
-    ResponseHeader status = 1;
+    StatusResponse status = 1;
     google.protobuf.Struct attributes = 2;
 }
 
@@ -110,13 +110,13 @@ message GetTrustAnchorArgs {
 }
 
 message GetTrustAnchorResponse {
-    ResponseHeader status = 1;
+    StatusResponse status = 1;
     TrustAnchorValue value = 2;
 }
 
 service Store {
-    rpc Open(OpenArgs) returns (ResponseHeader);
-    rpc Close(CloseArgs) returns (ResponseHeader);
+    rpc Open(OpenArgs) returns (StatusResponse);
+    rpc Close(CloseArgs) returns (StatusResponse);
 }
 
 service Fetcher {
@@ -127,9 +127,9 @@ service Fetcher {
 // and retrieve Software Components and Trust Anchors to and from
 // the Endorsement Store
 service Provisioner {
-    rpc AddSwComponents(AddSwComponentArgs) returns (ResponseHeader);
+    rpc AddSwComponents(AddSwComponentArgs) returns (StatusResponse);
     rpc GetSwComponent(GetSwComponentArgs)  returns (GetSwComponentResponse);
-    rpc AddTrustAnchor(AddTrustAnchorArgs) returns (ResponseHeader);
+    rpc AddTrustAnchor(AddTrustAnchorArgs) returns (StatusResponse);
     rpc GetTrustAnchor(GetTrustAnchorArgs) returns (GetTrustAnchorResponse);
 }
 // vim: set et sts=4 sw=4 si :
