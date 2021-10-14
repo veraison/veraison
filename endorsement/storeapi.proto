@@ -41,13 +41,13 @@ message GetEndorsementsArgs{
     Evidence evidence = 2;
 }
 
-message Response {
+message ResponseHeader {
     bool result = 1;
     string error_detail = 2;
 }
 
 message GetEndorsementsResponse {
-    Response status = 1;
+    ResponseHeader status = 1;
     string details = 2;
     common.TrustVector trust_vector = 3;
     google.protobuf.Struct endorsements = 4;
@@ -66,7 +66,7 @@ message SwComponentID {
 
 message SwComponent {
     SwComponentID id = 1;
-    google.protobuf.Struct meta = 2; 
+    google.protobuf.Struct attributes = 2; 
 }
 
 message AddSwComponentArgs {
@@ -78,8 +78,8 @@ message GetSwComponentArgs {
 }
 
 message GetSwComponentResponse {
-    Response status = 1;
-    google.protobuf.Struct meta = 2;
+    ResponseHeader status = 1;
+    google.protobuf.Struct attributes = 2;
 }
 
 message TrustAnchorID {
@@ -95,7 +95,6 @@ message TrustAnchorValue {
 message TrustAnchor {
     TrustAnchorID id = 1;
     TrustAnchorValue value = 2;
-    google.protobuf.Struct meta = 3;
 }
 
 message AddTrustAnchorArgs {
@@ -107,13 +106,13 @@ message GetTrustAnchorArgs {
 }
 
 message GetTrustAnchorResponse {
-    Response status = 1;
+    ResponseHeader status = 1;
     TrustAnchorValue value = 2;
 }
 
 service Store {
-    rpc Open(OpenArgs) returns (Response);
-    rpc Close(CloseArgs) returns (Response);
+    rpc Open(OpenArgs) returns (ResponseHeader);
+    rpc Close(CloseArgs) returns (ResponseHeader);
 }
 
 service Fetcher {
@@ -124,9 +123,9 @@ service Fetcher {
 // and retrieve Software Components and Trust Anchors to and from
 // the Endorsement Store
 service Provisioner {
-    rpc AddSwComponents(AddSwComponentArgs) returns (Response);
+    rpc AddSwComponents(AddSwComponentArgs) returns (ResponseHeader);
     rpc GetSwComponent(GetSwComponentArgs)  returns (GetSwComponentResponse);
-    rpc AddTrustAnchor(AddTrustAnchorArgs) returns (Response);
+    rpc AddTrustAnchor(AddTrustAnchorArgs) returns (ResponseHeader);
     rpc GetTrustAnchor(GetTrustAnchorArgs) returns (GetTrustAnchorResponse);
 }
 // vim: set et sts=4 sw=4 si :
