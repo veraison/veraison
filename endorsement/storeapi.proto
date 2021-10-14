@@ -36,31 +36,31 @@ message Evidence {
     google.protobuf.Struct value = 1;
 }
 
-message GetEndorsementsArgs{
+message GetEndorsementsRequest{
     EndorsementID id = 1;
     Evidence evidence = 2;
 }
 
-message StatusResponse {
+message Status {
     bool result = 1;
     string error_detail = 2;
 }
 
 message GetEndorsementsResponse {
-    StatusResponse status = 1;
+    Status status = 1;
     string details = 2;
     common.TrustVector trust_vector = 3;
     google.protobuf.Struct endorsements = 4;
 }
 
-message OpenArgs {
+message OpenRequest {
     string backend_name = 1;
     google.protobuf.Struct backend_config = 2;
     repeated string plugin_locations = 3;
     bool quiet = 4;
 }
 
-message CloseArgs {
+message CloseRequest {
 }
 
 message SwComponentID {
@@ -73,16 +73,20 @@ message SwComponent {
     google.protobuf.Struct attributes = 2; 
 }
 
-message AddSwComponentArgs {
+message AddSwComponentsRequest {
     repeated SwComponent info = 1;
 }
 
-message GetSwComponentArgs {
+message AddSwComponentsResponse {
+    Status status = 1;
+}
+
+message GetSwComponentRequest {
     SwComponentID id = 1;
 }
 
 message GetSwComponentResponse {
-    StatusResponse status = 1;
+    Status status = 1;
     google.protobuf.Struct attributes = 2;
 }
 
@@ -101,35 +105,47 @@ message TrustAnchor {
     TrustAnchorValue value = 2;
 }
 
-message AddTrustAnchorArgs {
+message AddTrustAnchorRequest {
     TrustAnchor trust_anchor = 1;
 }
 
-message GetTrustAnchorArgs {
+message AddTrustAnchorResponse {
+    Status status = 1;
+}
+
+message GetTrustAnchorRequest {
     TrustAnchorID ta_id = 1;
 }
 
 message GetTrustAnchorResponse {
-    StatusResponse status = 1;
+    Status status = 1;
     TrustAnchorValue value = 2;
 }
 
+message OpenResponse {
+    Status status = 1;
+}
+
+message CloseResponse {
+    Status status = 1;
+}
+
 service Store {
-    rpc Open(OpenArgs) returns (StatusResponse);
-    rpc Close(CloseArgs) returns (StatusResponse);
+    rpc Open(OpenRequest) returns (OpenResponse);
+    rpc Close(CloseRequest) returns (CloseResponse);
 }
 
 service Fetcher {
-    rpc GetEndorsements(GetEndorsementsArgs) returns (GetEndorsementsResponse);
+    rpc GetEndorsements(GetEndorsementsRequest) returns (GetEndorsementsResponse);
 }
 
 // Provisioner is the Service end point that is used to store
 // and retrieve Software Components and Trust Anchors to and from
 // the Endorsement Store
 service Provisioner {
-    rpc AddSwComponents(AddSwComponentArgs) returns (StatusResponse);
-    rpc GetSwComponent(GetSwComponentArgs)  returns (GetSwComponentResponse);
-    rpc AddTrustAnchor(AddTrustAnchorArgs) returns (StatusResponse);
-    rpc GetTrustAnchor(GetTrustAnchorArgs) returns (GetTrustAnchorResponse);
+    rpc AddSwComponents(AddSwComponentsRequest) returns (AddSwComponentsResponse);
+    rpc GetSwComponent(GetSwComponentRequest)  returns (GetSwComponentResponse);
+    rpc AddTrustAnchor(AddTrustAnchorRequest) returns (AddTrustAnchorResponse);
+    rpc GetTrustAnchor(GetTrustAnchorRequest) returns (GetTrustAnchorResponse);
 }
 // vim: set et sts=4 sw=4 si :
