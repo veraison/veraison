@@ -48,6 +48,26 @@ func (v *Verifier) Initialize(vc Config) error {
 	}
 
 	endorsementStoreClient := endorsement.NewStoreClient(esConn)
+
+	backendConfig, err := structpb.NewStruct(vc.EndorsementBackendParams)
+	if err != nil {
+		return err
+	}
+
+	openArgs := &endorsement.OpenRequest{}
+
+	response, err := endorsementStoreClient.Open(context.Background(), openArgs)
+	if err != nil {
+		esConn.Close()
+		return err
+	}
+	if !response.Status.Result {
+		return fmt.Errorf(
+			"could not connect to endorsement store; got: %q",
+			response.Status.ErrorDetail,
+		)
+	}
+
 	endorsementFetcherClient := endorsement.NewFetcherClient(esConn)
 
 	if err := v.pm.InitializeStore(
@@ -119,7 +139,7 @@ func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.Atte
 		return nil, err
 	}
 
-	args := &endorsement.GetEndorsementsArgs{
+	args := &endorsement.GetEndorsementsRequest{
 		Id: &endorsement.EndorsementID{
 			Type:  ec.Format,
 			Parts: partsStruct,
@@ -135,11 +155,10 @@ func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.Atte
 	if err != nil {
 		return nil, err
 	}
-	if response.ErrorValue != 0 {
+	if !response.Status.Result {
 		return nil, fmt.Errorf(
-			"could not get endorsements; got %d: %q",
-			response.ErrorValue,
-			response.ErrorDetail,
+			"could not get endorsements; got: %q",
+			response.Status.ErrorDetail,
 		)
 	}
 

@@ -5,7 +5,7 @@
 
 GOPKG := github.com/veraison/common
 
-PROTOSRCS := result.proto tokenformat.proto
+PROTOSRCS := result.proto attestation_format.proto
 
 include ../mk/common.mk
 include ../mk/proto.mk

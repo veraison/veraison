@@ -5,20 +5,7 @@ option go_package = "github.com/veraison/endorsement";
 
 import "google/protobuf/struct.proto";
 import "result.proto";
-
-enum AttestationFormat {
-	// UnknownFormat is used to indicate that the format of the attestation could
-	// not be established.
-	UNKNOWN_FORMAT = 0;
-
-	// PSA-IOT is the PSA attestation format (based on:
-	// https://developer.arm.com/architectures/architecture-security-features/platform-security)
-	PSA_IOT = 1;
-
-	// DICE is the attestation format based on the TCG DICE specification
-	// https://trustedcomputinggroup.org/wp-content/uploads/TCG_DICE_Attestation_Architecture_r22_02dec2020.pdf
-	DICE = 2;
-}
+import "attestation_format.proto";
 
 enum TaType {
     UNSPECIFIED = 0;
@@ -28,7 +15,7 @@ enum TaType {
 }
 
 message EndorsementID {
-    AttestationFormat type = 1;
+    common.AttestationFormat type = 1;
     google.protobuf.Struct parts = 2;
 }
 
@@ -60,7 +47,7 @@ message CloseRequest {
 }
 
 message SwComponentID {
-    AttestationFormat type = 1;
+    common.AttestationFormat type = 1;
     google.protobuf.Struct parts = 2;
 }
 
@@ -87,7 +74,7 @@ message GetSwComponentResponse {
 }
 
 message TrustAnchorID {
-    AttestationFormat type = 1;
+    common.AttestationFormat type = 1;
     google.protobuf.Struct parts = 2;
 }
 

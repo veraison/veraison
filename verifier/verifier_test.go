@@ -127,7 +127,7 @@ func TestVerifier(t *testing.T) {
 
 	ec := common.EvidenceContext{
 		TenantID: 1,
-		Format:   common.TokenFormat_PSA,
+		Format:   common.AttestationFormat_PSA_IOT,
 	}
 
 	for _, fi := range fis {

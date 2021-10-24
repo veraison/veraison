@@ -69,7 +69,7 @@ func (ps *PolicyStore) ListPolicies(tenantID int) ([]common.PolicyListEntry, err
 
 	for rows.Next() {
 		var entry common.PolicyListEntry
-		if err := rows.Scan(&entry.TenantID, &entry.TokenFormatName); err != nil {
+		if err := rows.Scan(&entry.TenantID, &entry.AttestationFormatName); err != nil {
 			return nil, err
 		}
 		result = append(result, entry)
@@ -79,10 +79,10 @@ func (ps *PolicyStore) ListPolicies(tenantID int) ([]common.PolicyListEntry, err
 }
 
 // GetPolicy returns a policy matching a tenant and the Evidence format
-func (ps *PolicyStore) GetPolicy(tenantID int, tokenFormat common.TokenFormat) (*common.Policy, error) {
+func (ps *PolicyStore) GetPolicy(tenantID int, tokenFormat common.AttestationFormat) (*common.Policy, error) {
 	policy := common.NewPolicy()
 
-	policy.TokenFormat = tokenFormat
+	policy.AttestationFormat = tokenFormat
 
 	row := ps.db.QueryRow(
 		"select query_map, rules from policy where tenant_id = ? and token_format = ?",
@@ -114,14 +114,14 @@ func (ps *PolicyStore) PutPolicy(tenantID int, policy *common.Policy) error {
 
 	_, err = ps.db.Exec(
 		"insert into policy (tenant_id, token_format, query_map, rules) values (?, ?, ?, ?)",
-		tenantID, policy.TokenFormat.String(), QueryMapBytes, policy.Rules,
+		tenantID, policy.AttestationFormat.String(), QueryMapBytes, policy.Rules,
 	)
 
 	return err
 }
 
-// DeletePolicy removes the policy identified by the tenantID and tokenFormat
-func (ps *PolicyStore) DeletePolicy(tenantID int, tokenFormat common.TokenFormat) error {
+// DeletePolicy removes the policy identified by the tenantID and AttestationFormat
+func (ps *PolicyStore) DeletePolicy(tenantID int, tokenFormat common.AttestationFormat) error {
 	// Make sure the policy is present before deleting
 	row := ps.db.QueryRow(
 		"select query_map, rules from policy where tenant_id = ? and token_format = ?",
