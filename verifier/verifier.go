@@ -53,7 +53,7 @@ func (v *Verifier) Initialize(vc Config) error {
 		return err
 	}
 
-	openArgs := &endorsement.OpenArgs{
+	openArgs := &endorsement.OpenRequest{
 		PluginLocations: vc.PluginLocations,
 		BackendName:     vc.EndorsementBackendName,
 		BackendConfig:   backendConfig,
@@ -64,11 +64,10 @@ func (v *Verifier) Initialize(vc Config) error {
 		esConn.Close()
 		return err
 	}
-	if response.ErrorValue != 0 {
+	if !response.Status.Result {
 		return fmt.Errorf(
-			"could not connect to endorsement store; got: %d: %q",
-			response.ErrorValue,
-			response.ErrorDetail,
+			"could not connect to endorsement store; got: %q",
+			response.Status.ErrorDetail,
 		)
 	}
 
@@ -143,7 +142,7 @@ func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.Atte
 		return nil, err
 	}
 
-	args := &endorsement.GetEndorsementsArgs{
+	args := &endorsement.GetEndorsementsRequest{
 		Id: &endorsement.EndorsementID{
 			Type:  ec.Format,
 			Parts: partsStruct,
@@ -159,11 +158,10 @@ func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.Atte
 	if err != nil {
 		return nil, err
 	}
-	if response.ErrorValue != 0 {
+	if !response.Status.Result {
 		return nil, fmt.Errorf(
-			"could not get endorsements; got %d: %q",
-			response.ErrorValue,
-			response.ErrorDetail,
+			"could not get endorsements; got: %q",
+			response.Status.ErrorDetail,
 		)
 	}
 

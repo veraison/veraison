@@ -21,8 +21,8 @@ import (
 // should be validated.
 type Policy struct {
 
-	// TokenFormat indicates the tokens to which this policy applies.
-	TokenFormat TokenFormat
+	// AttestationFormat indicates the tokens to which this policy applies.
+	AttestationFormat AttestationFormat
 
 	// QueryMap specifies the queries that need to be run in order to
 	// obtains the endorsements needed to validate the token.
@@ -47,7 +47,7 @@ func NewPolicy() *Policy {
 func (p *Policy) Write(w io.Writer) error {
 	zw := zip.NewWriter(w)
 
-	formatName := p.TokenFormat.String()
+	formatName := p.AttestationFormat.String()
 
 	rulesName := filepath.Join(formatName, "rules")
 	rulesWriter, err := zw.Create(rulesName)
@@ -147,24 +147,24 @@ func WritePoliciesToPath(policies []*Policy, path string) error {
 }
 
 func doWritePolicies(writer *zip.Writer, policies []*Policy) error {
-	seenFormats := make(map[TokenFormat]bool)
+	seenFormats := make(map[AttestationFormat]bool)
 
 	for _, policy := range policies {
 
-		if _, ok := seenFormats[policy.TokenFormat]; ok {
-			return fmt.Errorf("found multiple polcies with format %q", policy.TokenFormat.String())
+		if _, ok := seenFormats[policy.AttestationFormat]; ok {
+			return fmt.Errorf("found multiple polcies with format %q", policy.AttestationFormat.String())
 		}
 
 		queryMapData, err := json.Marshal(policy.QueryMap)
 		if err != nil {
 			return fmt.Errorf(
 				"could not serialize query map for %q: %v",
-				policy.TokenFormat.String(),
+				policy.AttestationFormat.String(),
 				err,
 			)
 		}
 
-		queryMapPath := filepath.Join(policy.TokenFormat.String(), "query_map.json")
+		queryMapPath := filepath.Join(policy.AttestationFormat.String(), "query_map.json")
 		file, err := writer.Create(queryMapPath)
 		if err != nil {
 			return fmt.Errorf("could not create %q: %v", queryMapPath, err)
@@ -174,7 +174,7 @@ func doWritePolicies(writer *zip.Writer, policies []*Policy) error {
 			return fmt.Errorf("could not write %q: %v", queryMapPath, err)
 		}
 
-		rulesPath := filepath.Join(policy.TokenFormat.String(), "rules")
+		rulesPath := filepath.Join(policy.AttestationFormat.String(), "rules")
 		file, err = writer.Create(rulesPath)
 		if err != nil {
 			return fmt.Errorf("could not create %q: %v", rulesPath, err)
@@ -184,7 +184,7 @@ func doWritePolicies(writer *zip.Writer, policies []*Policy) error {
 			return fmt.Errorf("could not write %q: %v", rulesPath, err)
 		}
 
-		seenFormats[policy.TokenFormat] = true
+		seenFormats[policy.AttestationFormat] = true
 	}
 
 	return nil
@@ -277,7 +277,7 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 	var policies []*Policy
 	for _, entry := range entries {
 		if !(entry.ReadQMap && entry.ReadRules) {
-			return nil, fmt.Errorf("incomplete definition for '%v'", entry.TokenFormatName)
+			return nil, fmt.Errorf("incomplete definition for '%v'", entry.AttestationFormatName)
 		}
 		policies = append(policies, entry.Policy)
 	}
@@ -316,15 +316,15 @@ type IPolicyStore interface {
 	// GetPolicy returns the Policy stored for the specified tenant and
 	// token format. If such a policy is not found, an error will be
 	// returned.
-	GetPolicy(tenantID int, tokenFormat TokenFormat) (*Policy, error)
+	GetPolicy(tenantID int, AttestationFormat AttestationFormat) (*Policy, error)
 
 	// PutPolicy adds a Policy for the specified tenant.
 	PutPolicy(tenantID int, policy *Policy) error
 
 	// DeletePolicy removes the policy identified by the specfied TenantID
-	// and TokenFormat from the store. If such a policy does not exist or,
+	// and AttestationFormat from the store. If such a policy does not exist or,
 	// for whatever reason, could not be removed, an error is returned.
-	DeletePolicy(tenantID int, tokenFormat TokenFormat) error
+	DeletePolicy(tenantID int, AttestationFormat AttestationFormat) error
 
 	// Close ensures a clean shut down of the policy store, closing the
 	// underlying database connections, etc.
@@ -419,30 +419,30 @@ type PolicyListEntry struct {
 	// TenantID is the ID of the tenant to whom the policy belongs
 	TenantID int `json:"tenant_id"`
 
-	//  TokenFormatName the name of the token format to which the policy applies.
-	TokenFormatName string `json:"token_format_name"`
+	//  AttestationFormatName the name of the token format to which the policy applies.
+	AttestationFormatName string `json:"token_format_name"`
 }
 
 type policyEntry struct {
-	TokenFormatName string
-	ReadRules       bool
-	ReadQMap        bool
-	Policy          *Policy
+	AttestationFormatName string
+	ReadRules             bool
+	ReadQMap              bool
+	Policy                *Policy
 }
 
 func newPolicyEntry(name string) *policyEntry {
 	entry := new(policyEntry)
-	entry.TokenFormatName = name
+	entry.AttestationFormatName = name
 	entry.Policy = NewPolicy()
-	entry.Policy.TokenFormat = getTokenFromat(name)
+	entry.Policy.AttestationFormat = getTokenFromat(name)
 	return entry
 }
 
-func getTokenFromat(name string) TokenFormat {
-	value, ok := TokenFormat_value[name]
+func getTokenFromat(name string) AttestationFormat {
+	value, ok := AttestationFormat_value[name]
 	if !ok {
-		return TokenFormat_UNKNOWN_FORMAT
+		return AttestationFormat_UNKNOWN_FORMAT
 	}
 
-	return TokenFormat(value)
+	return AttestationFormat(value)
 }

@@ -30,7 +30,7 @@ func TestPolicyReadWrite(t *testing.T) {
 	assert.Equal(1, len(policies))
 
 	policy := policies[0]
-	assert.Equal(TokenFormat_PSA, policy.TokenFormat)
+	assert.Equal(AttestationFormat_PSA_IOT, policy.AttestationFormat)
 	assert.Equal("$.implementation_id", policy.QueryMap["hardware_id"]["platform_id"])
 	assert.Equal("$.sw_components[*].measurement_value",
 		policy.QueryMap["software_components"]["measurements"])

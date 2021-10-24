@@ -13,8 +13,9 @@ import (
 	"github.com/veraison/common"
 )
 
-func ResponseFromError(err error) *Response {
-	return &Response{ErrorValue: 1, ErrorDetail: err.Error()}
+func ResponseFromError(err error) *OpenResponse {
+	status := &Status{Result: false, ErrorDetail: err.Error()}
+	return &OpenResponse{Status: status}
 }
 
 // Manager handles interadctions with the endorsement store. It is responsible
@@ -41,7 +42,7 @@ type Store struct {
 	Client *plugin.Client
 }
 
-func (s *Store) Open(ctx context.Context, args *OpenArgs) (*Response, error) {
+func (s *Store) Open(ctx context.Context, args *OpenRequest) (*OpenResponse, error) {
 	lp, err := common.LoadPlugin(args.PluginLocations, "endorsementstore", args.BackendName, args.Quiet)
 	if err != nil {
 		return ResponseFromError(err), nil
@@ -56,26 +57,26 @@ func (s *Store) Open(ctx context.Context, args *OpenArgs) (*Response, error) {
 		return ResponseFromError(err), nil
 	}
 
-	return &Response{}, nil
+	return &OpenResponse{}, nil
 }
 
-func (s Store) Close(ctx context.Context, args *CloseArgs) (*Response, error) {
+func (s Store) Close(ctx context.Context, args *CloseRequest) (*CloseResponse, error) {
 	s.Client.Kill()
 	s.RPCClient.Close()
 	s.Backend.Close()
 
-	return &Response{}, nil
+	return &CloseResponse{}, nil
 }
 
 func (s Store) GetEndorsements(
 	ctx context.Context,
-	args *GetEndorsementsArgs,
+	args *GetEndorsementsRequest,
 ) (*GetEndorsementsResponse, error) {
 
 	// TODO: this a a HACK to provide a minimal impleentation of the new interface.
 	// Query Descriptors should no longer be required here. Additionally, the assempled
 	// descriptors are for PSA only....
-	if args.Id.Type != common.TokenFormat_PSA {
+	if args.Id.Type != common.AttestationFormat_PSA_IOT {
 		return nil, fmt.Errorf("format %q not supported", args.Id.Type)
 	}
 
