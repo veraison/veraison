@@ -17,7 +17,7 @@ import (
 func runQueryCommand(
 	config *common.Config,
 	args []string,
-	em *endorsement.Manager,
+	em endorsement.Store,
 	logger *zap.Logger,
 ) error {
 	var queryParams = make(common.QueryArgs)
@@ -34,7 +34,7 @@ func runQueryCommand(
 	}
 
 	queryName := argsRest[0]
-	queryResult, err := em.RunQuery(queryName, queryParams)
+	queryResult, err := em.Backend.RunQuery(queryName, queryParams)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func runQueryCommand(
 func runAddCommand(
 	config *common.Config,
 	args []string,
-	em *endorsement.Manager,
+	em *endorsement.Store,
 	logger *zap.Logger,
 ) error {
 	var queryParams = make(common.QueryArgs)
@@ -72,7 +72,7 @@ func runAddCommand(
 	}
 
 	endorsementName := argsRest[0]
-	err := em.AddEndorsement(endorsementName, queryParams, update)
+	err := em.Backend.AddEndorsement(endorsementName, queryParams, update)
 
 	if err == nil {
 		var verb string
@@ -91,11 +91,11 @@ func runAddCommand(
 func runListQueriesCommand(
 	config *common.Config,
 	args []string,
-	em *endorsement.Manager,
+	em *endorsement.Store,
 	logger *zap.Logger,
 ) error {
-	name := em.GetName()
-	queries := em.GetSupportedQueries()
+	name := em.Backend.GetName()
+	queries := em.Backend.GetSupportedQueries()
 
 	sort.Strings(queries)
 
@@ -110,30 +110,31 @@ func runListQueriesCommand(
 func runCommand(config *common.Config, command string, args []string, logger *zap.Logger) error {
 	var err error
 
-	quiet := true
+	//quiet := true
 	if config.Debug {
 		if logger, err = zap.NewDevelopment(); err != nil {
 			return err
 		}
 		defer logger.Sync() //nolint
 
-		quiet = false
+		//quiet = false
 	}
 
-	em := endorsement.NewManager()
-	if err := em.InitializeStore(
-		config.PluginLocations, config.EndorsementStoreName, config.EndorsementStoreParams, quiet,
-	); err != nil {
-		return err
-	}
-
+	em := endorsement.Store{}
+	/*
+		if err := em.InitializeStore(
+			config.PluginLocations, config.EndorsementBackendName, config.EndorsementBackendParams, quiet,
+		); err != nil {
+			return err
+		}
+	*/
 	switch command {
 	case "list-queries":
-		return runListQueriesCommand(config, args, em, logger)
+		return runListQueriesCommand(config, args, &em, logger)
 	case "query":
 		return runQueryCommand(config, args, em, logger)
 	case "add":
-		return runAddCommand(config, args, em, logger)
+		return runAddCommand(config, args, &em, logger)
 	default:
 		return fmt.Errorf("unexpected command: \"%s\"", command)
 	}
