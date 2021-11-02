@@ -14,7 +14,7 @@ type EvidenceContext struct {
 	// extracted. This is used to specify how the Evidence structure should
 	// be interpreted, and to identify which endorsements will be necessary
 	// for verification.
-	Format AttestationFormat `json:"token_format"`
+	Format AttestationFormat `json:"attestation_format"`
 
 	// Evidence contains the evidence claims extracted from the token.
 	// Claims can be simple key-value pairs or more complicated nested

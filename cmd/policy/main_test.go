@@ -73,15 +73,11 @@ func Test_PolicyTool_FullCycle(t *testing.T) {
 	pluginDir := filepath.Join(wd, "..", "..", "plugins", "bin")
 
 	config := &common.Config{
-		PluginLocations:      []string{pluginDir},
-		PolicyEngineName:     "opa",
-		PolicyStoreName:      "sqlite",
-		EndorsementStoreName: "sqlite", // thos won't be used
+		PluginLocations:  []string{pluginDir},
+		PolicyEngineName: "opa",
+		PolicyStoreName:  "sqlite",
 		PolicyStoreParams: common.PolicyStoreParams{
 			"dbpath": dbPath,
-		},
-		EndorsementStoreParams: common.EndorsementStoreParams{
-			"dbpath": "", // this won't be used.
 		},
 	}
 
