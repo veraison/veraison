@@ -47,7 +47,6 @@ jobs:
       run: |
         go version
         go install github.com/golang/mock/mockgen@v1.5.0
-        make --debug=j CI_PIPELINE=true TEST_ARGS="-short -cover" all test
- #       make --debug=j CI_PIPELINE=true TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
+        make CI_PIPELINE=true TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
  
       shell: bash
