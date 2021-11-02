@@ -112,10 +112,10 @@ func Test_TokenProcessor_ProcessDice(t *testing.T) {
 	expectedFWID := base64.StdEncoding.EncodeToString(FWID)
 	expectedDeviceID := base64.StdEncoding.EncodeToString(DeviceID)
 
-	ec, err := tp.Process(1, common.TokenFormat_DICE, tokenData)
+	ec, err := tp.Process(1, common.AttestationFormat_DICE, tokenData)
 	require.Nil(err)
 	require.Equal(1, ec.TenantID)
-	require.Equal(common.TokenFormat_DICE, ec.Format)
+	require.Equal(common.AttestationFormat_DICE, ec.Format)
 	require.Equal(expectedFWID, ec.Evidence["FWID"])
 	require.Equal(expectedDeviceID, ec.Evidence["DeviceID"])
 }

@@ -73,7 +73,7 @@ func (v *Verifier) Initialize(vc Config) error {
 
 	endorsementFetcherClient := endorsement.NewFetcherClient(esConn)
 
-	if err := v.pm.InitializeStore(
+	if err = v.pm.InitializeStore(
 		vc.PluginLocations,
 		vc.PolicyStoreName,
 		vc.PolicyStoreParams,
