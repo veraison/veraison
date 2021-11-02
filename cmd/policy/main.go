@@ -315,7 +315,7 @@ func runVerifyCommand(config *common.Config, args []string, pm *policy.Manager, 
 		return fmt.Errorf("problem getting attestation result: %v", err)
 	}
 
-	resultBytes, err := json.MarshalIndent(result, "", "    ")
+	resultBytes, err := result.MarshalJSON()
 	if err != nil {
 		return fmt.Errorf("problem encoding attestation result: %v", err)
 	}
