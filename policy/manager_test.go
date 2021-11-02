@@ -93,11 +93,11 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	policy, err := pm.GetPolicy(1, common.TokenFormat_PSA)
+	policy, err := pm.GetPolicy(1, common.AttestationFormat_PSA_IOT)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	assert.Equal(common.TokenFormat_PSA, policy.TokenFormat)
+	assert.Equal(common.AttestationFormat_PSA_IOT, policy.AttestationFormat)
 	assert.Equal("$.implementation_id", policy.QueryMap["hardware_id"]["platform_id"])
 	assert.Equal("$.sw_components[*].measurement_value",
 		policy.QueryMap["software_components"]["measurements"])
