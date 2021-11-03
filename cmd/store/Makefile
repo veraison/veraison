@@ -3,7 +3,9 @@
 
 GOPKG := github.com/veraison/cmd/store
 SRCS := main.go
+CMD := store
 
+include ../../mk/cmd.mk
 include ../../mk/common.mk
 include ../../mk/lint.mk
 include ../../mk/pkg.mk
