@@ -10,8 +10,6 @@
 # * all      - build the binary and save it to $(CMD)
 # * clean    - remove the generated binary
 
-.DEFAULT_GOAL := all
-
 ifndef CMD
   $(error CMD must be set when including cmd.mk)
 endif
