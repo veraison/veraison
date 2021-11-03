@@ -3,5 +3,6 @@
 
 SUBDIR := endorsements
 SUBDIR += policy
+SUBDIR += store
 
 include ../mk/subdir.mk
