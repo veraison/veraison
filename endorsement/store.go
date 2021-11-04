@@ -39,32 +39,38 @@ type Store struct {
 	// handle for the interface implemented by the plugin and establishing
 	// the RPC channel.
 	Client *plugin.Client
+
+	config IEndorsementConfig
 }
 
-func (s *Store) Open(ctx context.Context, args *OpenArgs) (*Response, error) {
-	lp, err := common.LoadPlugin(args.PluginLocations, "endorsementstore", args.BackendName, args.Quiet)
+func (s *Store) Init(config IEndorsementConfig) error {
+	lp, err := common.LoadPlugin(
+		config.GetPluginLocations(),
+		"endorsementstore",
+		config.GetEndorsementBackendName(),
+		config.GetQuiet(),
+	)
 	if err != nil {
-		return ResponseFromError(err), nil
+		return err
 	}
 
 	s.Backend = lp.Raw.(common.IEndorsementBackend)
 	s.Client = lp.PluginClient
 	s.RPCClient = lp.RPCClient
 
-	if err = s.Backend.Init(args.BackendConfig.AsMap()); err != nil {
+	if err = s.Backend.Init(config.GetEndorsementBackendParams()); err != nil {
 		s.Client.Kill()
-		return ResponseFromError(err), nil
+		return err
 	}
 
-	return &Response{}, nil
+	return nil
 }
 
-func (s Store) Close(ctx context.Context, args *CloseArgs) (*Response, error) {
+
+func (s Store) Fini() {
 	s.Client.Kill()
 	s.RPCClient.Close()
 	s.Backend.Close()
-
-	return &Response{}, nil
 }
 
 func (s Store) GetEndorsements(

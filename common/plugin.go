@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
@@ -91,7 +92,7 @@ func LoadPlugin(locations []string, plugType, plugName string, quiet bool) (*Loa
 			}
 
 			named := raw.(INamed)
-			if named.GetName() != plugName {
+			if strings.ToLower(named.GetName()) != strings.ToLower(plugName) {
 				hclog.Default().Debug("wrong name in %v.\n", pluginPath)
 				client.Kill()
 				continue

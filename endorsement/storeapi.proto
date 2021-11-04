@@ -35,10 +35,6 @@ message GetEndorsementsResponse {
 }
 
 message OpenArgs {
-    string backend_name = 1;
-    google.protobuf.Struct backend_config = 2;
-    repeated string plugin_locations = 3;
-    bool quiet = 4;
 }
 
 message CloseArgs {

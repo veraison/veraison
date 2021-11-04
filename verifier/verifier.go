@@ -41,37 +41,13 @@ func NewVerifier(logger *zap.Logger) (*Verifier, error) {
 
 // Initialize bootstraps the verifier
 func (v *Verifier) Initialize(vc Config) error {
-	esConn, err := grpc.Dial(vc.EndorsementStoreAddress, grpc.WithInsecure())
+	storeAddress := fmt.Sprintf("%s:%d", vc.EndorsementStoreHost, vc.EndorsementStorePort)
+	esConn, err := grpc.Dial(storeAddress, grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
 
 	endorsementStoreClient := endorsement.NewStoreClient(esConn)
-
-	backendConfig, err := structpb.NewStruct(vc.EndorsementBackendParams)
-	if err != nil {
-		return err
-	}
-
-	openArgs := &endorsement.OpenArgs{
-		PluginLocations: vc.PluginLocations,
-		BackendName:     vc.EndorsementBackendName,
-		BackendConfig:   backendConfig,
-	}
-
-	response, err := endorsementStoreClient.Open(context.Background(), openArgs)
-	if err != nil {
-		esConn.Close()
-		return err
-	}
-	if response.ErrorValue != 0 {
-		return fmt.Errorf(
-			"could not connect to endorsement store; got: %d: %q",
-			response.ErrorValue,
-			response.ErrorDetail,
-		)
-	}
-
 	endorsementFetcherClient := endorsement.NewFetcherClient(esConn)
 
 	if err := v.pm.InitializeStore(

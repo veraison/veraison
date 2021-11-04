@@ -96,13 +96,10 @@ func TestVerifier(t *testing.T) {
 		PluginLocations:         []string{pluginDir},
 		PolicyEngineName:        "opa",
 		PolicyStoreName:         "sqlite",
-		EndorsementBackendName:  "sqlite",
-		EndorsementStoreAddress: "localhost:50051",
+		EndorsementStoreHost: "localhost",
+		EndorsementStorePort: 50051,
 		PolicyStoreParams: common.PolicyStoreParams{
 			"dbpath": policyDbPath,
-		},
-		EndorsementBackendParams: common.EndorsementBackendParams{
-			"dbpath": endorsementDbPath,
 		},
 	}
 

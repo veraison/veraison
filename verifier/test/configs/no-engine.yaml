@@ -1,0 +1,11 @@
+debug: true
+plugin:
+    locations:
+        - ../plugins/bin/
+policy:
+    store_name: sqlite
+    store_params:
+        dbPath: test/policy-store.db
+endorsements:
+    store_host: "localhost"
+    store_port: 50051
