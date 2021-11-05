@@ -45,7 +45,7 @@ func retrieveDbPath(args common.EndorsementBackendParams) string {
 func (e *SqliteEndorsementStore) Init(args common.EndorsementBackendParams) error {
 	dbPath := retrieveDbPath(args)
 	if dbPath == "" {
-		return fmt.Errorf("dbPath not specified inside FetcherParams")
+		return fmt.Errorf("dbPath not specified inside EndorsementBackendParams")
 	}
 	dbConfig := fmt.Sprintf("file:%s?cache=shared", dbPath)
 	db, err := sql.Open("sqlite3", dbConfig)
