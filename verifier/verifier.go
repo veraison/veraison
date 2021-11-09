@@ -48,12 +48,12 @@ func (v *Verifier) Initialize(vc Config) error {
 	}
 
 	endorsementStoreClient := endorsement.NewStoreClient(esConn)
-
-	backendConfig, err := structpb.NewStruct(vc.EndorsementBackendParams)
-	if err != nil {
-		return err
-	}
-
+	/*
+		backendConfig, err := structpb.NewStruct(vc.EndorsementBackendParams)
+		if err != nil {
+			return err
+		}
+	*/
 	openArgs := &endorsement.OpenRequest{}
 
 	response, err := endorsementStoreClient.Open(context.Background(), openArgs)
