@@ -16,23 +16,24 @@ var DefaultConfigPaths = []string{
 	".",
 }
 
+/*
 var expectedConfigKey = []string{
 	"plugin.locations",
 	"policy.store_name",
 	"policy.engine_name",
 	"endorsements.store_name",
 }
+*/
 
 type ConfigKind int
+
 const (
 	GenericConfig ConfigKind = iota
 	VerifierConfig
 	EndorsementStoreConfig
 )
 
-
 type ConfigPaths []string
-
 
 func (p *ConfigPaths) Set(value string) error {
 	*p = append(*p, value)
@@ -82,7 +83,7 @@ type BaseConfig struct {
 	Debug bool
 
 	derived IConfig
-	Viper *viper.Viper
+	Viper   *viper.Viper
 }
 
 func (c *BaseConfig) SetDerived(derived IConfig) {
@@ -118,7 +119,7 @@ func (c *BaseConfig) ReadInConfig() error {
 		return err
 	}
 
-	return  c.derived.Reload()
+	return c.derived.Reload()
 }
 
 func (c *BaseConfig) ReadConfig(in io.Reader) error {
@@ -126,7 +127,7 @@ func (c *BaseConfig) ReadConfig(in io.Reader) error {
 		return err
 	}
 
-	return  c.derived.Reload()
+	return c.derived.Reload()
 }
 
 // Reload re-populates the config with discovered values.
@@ -151,13 +152,13 @@ func (c BaseConfig) ExpectedKeys() []string {
 
 func (c BaseConfig) Get(name string) interface{} {
 	cv := reflect.ValueOf(c)
-	retv  := cv.FieldByName(name)
+	retv := cv.FieldByName(name)
 	return retv.Interface()
 }
 
 func (c BaseConfig) GetInt(name string) int64 {
 	cv := reflect.ValueOf(c)
-	retv  := cv.FieldByName(name)
+	retv := cv.FieldByName(name)
 
 	switch retv.Kind() {
 	case reflect.Int:
@@ -173,21 +174,20 @@ func (c BaseConfig) GetInt(name string) int64 {
 
 func (c BaseConfig) GetString(name string) string {
 	cv := reflect.ValueOf(c)
-	retv  := cv.FieldByName(name)
+	retv := cv.FieldByName(name)
 
 	if retv.Kind() == reflect.String {
 		return retv.String()
-	} else {
-		return ""
 	}
+	return ""
 }
 
 func (c BaseConfig) GetStringSlice(name string) []string {
 	cv := reflect.ValueOf(c)
-	retv  := cv.FieldByName(name)
+	retv := cv.FieldByName(name)
 
 	if retv.Kind() == reflect.Slice {
-		slice, ok :=  retv.Interface().([]string)
+		slice, ok := retv.Interface().([]string)
 		if ok {
 			return slice
 		}
@@ -198,7 +198,7 @@ func (c BaseConfig) GetStringSlice(name string) []string {
 
 func (c BaseConfig) GetStringMapString(name string) map[string]string {
 	cv := reflect.ValueOf(c)
-	retv  := cv.FieldByName(name)
+	retv := cv.FieldByName(name)
 
 	if retv.Kind() == reflect.Map {
 		m, ok := retv.Interface().(map[string]string)

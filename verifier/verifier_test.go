@@ -93,9 +93,9 @@ func TestVerifier(t *testing.T) {
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
 	var vc = Config{
-		PluginLocations:         []string{pluginDir},
-		PolicyEngineName:        "opa",
-		PolicyStoreName:         "sqlite",
+		PluginLocations:      []string{pluginDir},
+		PolicyEngineName:     "opa",
+		PolicyStoreName:      "sqlite",
 		EndorsementStoreHost: "localhost",
 		EndorsementStorePort: 50051,
 		PolicyStoreParams: common.PolicyStoreParams{

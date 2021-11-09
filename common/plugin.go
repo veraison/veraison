@@ -92,7 +92,7 @@ func LoadPlugin(locations []string, plugType, plugName string, quiet bool) (*Loa
 			}
 
 			named := raw.(INamed)
-			if strings.ToLower(named.GetName()) != strings.ToLower(plugName) {
+			if !strings.EqualFold(named.GetName(), strings.ToLower(plugName)) {
 				hclog.Default().Debug("wrong name in %v.\n", pluginPath)
 				client.Kill()
 				continue

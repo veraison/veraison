@@ -41,7 +41,7 @@ type Store struct {
 	// the RPC channel.
 	Client *plugin.Client
 
-	config IEndorsementConfig
+	// config IEndorsementConfig
 }
 
 func (s *Store) Init(config IEndorsementConfig) error {

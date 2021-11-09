@@ -7,14 +7,9 @@ import (
 	"github.com/veraison/common"
 )
 
-
 type IEndorsementConfig interface {
 	GetPluginLocations() []string
 	GetEndorsementBackendName() string
 	GetEndorsementBackendParams() common.EndorsementBackendParams
 	GetQuiet() bool
 }
-
-
-
-

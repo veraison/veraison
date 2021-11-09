@@ -33,8 +33,8 @@ type Config struct {
 
 	// Address of the entorsement store. The format depends on the type store
 	// used, but would typically be in the form "<host>:<port>" or similar.
-	EndorsementStoreHost  string
-	EndorsementStorePort  int
+	EndorsementStoreHost string
+	EndorsementStorePort int
 }
 
 func (c *Config) Reload() error {
@@ -72,8 +72,7 @@ func (c Config) Kind() common.ConfigKind {
 // config paths.
 func NewConfig(paths []string) *Config {
 	config := &Config{}
-	config.Init(paths)
+	// config.Init(paths)
 	config.BaseConfig.SetDerived(config)
 	return config
 }
-
