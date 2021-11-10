@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Install mock
+    - name: Install mockgen
       run: |
         go get github.com/golang/mock/mockgen@v1.5.0
     - name: Install Protoc

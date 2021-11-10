@@ -33,7 +33,7 @@ jobs:
         go-version: "1.17.2"
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Install mock
+    - name: Install mockgen
       run: | 
         go install github.com/golang/mock/mockgen@v1.5.0
     - name: Install Protoc
