@@ -33,6 +33,9 @@ jobs:
         go-version: "1.17.2"
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Install mock
+      run: | 
+        go install github.com/golang/mock/mockgen@v1.5.0
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
       with:
@@ -46,7 +49,6 @@ jobs:
     - name: Go Coverage
       run: |
         go version
-        go install github.com/golang/mock/mockgen@v1.5.0
         make CI_PIPELINE=true TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
  
       shell: bash

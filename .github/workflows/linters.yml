@@ -13,6 +13,16 @@ jobs:
       run: |
         go version
         curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.8
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1
+      with:
+        version: '3.x'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: protoc-gen deps
+      run: |
+        go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+        go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+        go get github.com/mitchellh/protoc-gen-go-json@latest
     - name: Run required linters in .golangci.yml plus hard-coded ones here
       run: make -w GOLINT=$(go env GOPATH)/bin/golangci-lint lint
     - name: Run optional linters (not required to pass)
