@@ -25,7 +25,7 @@ func (p *PolicyStorePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interfac
 
 type GetPolicyArgs struct {
 	TenantID    int
-	TokenFormat TokenFormat
+	TokenFormat AttestationFormat
 }
 
 type PutPolicyArgs struct {
@@ -114,7 +114,7 @@ func (e *PolicyStoreRPC) ListPolicies(tenantID int) ([]PolicyListEntry, error) {
 	return result, nil
 }
 
-func (e *PolicyStoreRPC) GetPolicy(tenantID int, tokenFormat TokenFormat) (*Policy, error) {
+func (e *PolicyStoreRPC) GetPolicy(tenantID int, tokenFormat AttestationFormat) (*Policy, error) {
 	var resp Policy
 
 	args := GetPolicyArgs{TenantID: tenantID, TokenFormat: tokenFormat}
@@ -129,7 +129,7 @@ func (e *PolicyStoreRPC) PutPolicy(tenantID int, policy *Policy) error {
 	return e.client.Call("Plugin.PutPolicy", args, new(interface{}))
 }
 
-func (e *PolicyStoreRPC) DeletePolicy(tenantID int, tokenFormat TokenFormat) error {
+func (e *PolicyStoreRPC) DeletePolicy(tenantID int, tokenFormat AttestationFormat) error {
 	args := GetPolicyArgs{TenantID: tenantID, TokenFormat: tokenFormat}
 	// TODO: figure out why the last argument here must be non-nil
 	return e.client.Call("Plugin.DeletePolicy", args, new(interface{}))
@@ -204,7 +204,7 @@ func (s *PolicyEngineServer) GetAttetationResult(argBlob []byte, resp *[]byte) e
 	}
 
 	var err error
-	*resp, err = json.Marshal(result)
+	*resp, err = json.Marshal(&result)
 	return err
 }
 

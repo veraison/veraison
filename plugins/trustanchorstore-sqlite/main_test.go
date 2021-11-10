@@ -78,7 +78,7 @@ func Test_Cert_RoundTrip(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	assert.Equal("sqlite", taStore.GetName())
+	assert.Equal("SQLITE", taStore.GetName())
 
 	certsFile := filepath.Join(wd, "test", "certs.pem")
 	certData, err := ioutil.ReadFile(certsFile)
@@ -134,7 +134,7 @@ func Test_Key_RoundTrip(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	assert.Equal("sqlite", taStore.GetName())
+	assert.Equal("SQLITE", taStore.GetName())
 
 	keyFile := filepath.Join(wd, "test", "key.pem")
 	keyData, err := ioutil.ReadFile(keyFile)

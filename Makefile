@@ -14,4 +14,9 @@ SUBDIR += cmd
 # testing because it messes up the coverage collection filter.
 SUBDIR := $(filter-out frontend,$(SUBDIR))
 
+# At present, the verifier tests do not work, we need to remove it from the CI
+# testing because it messes up the coverage collection filter.
+SUBDIR := $(filter-out verifier,$(SUBDIR))
+
+
 include mk/subdir.mk

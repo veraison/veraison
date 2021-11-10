@@ -27,7 +27,7 @@ type SqliteTrustAnchorStore struct {
 }
 
 func (s SqliteTrustAnchorStore) GetName() string {
-	return "sqlite"
+	return "SQLITE"
 }
 
 // Init opens the database connection.

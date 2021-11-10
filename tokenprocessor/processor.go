@@ -22,7 +22,7 @@ type TokenProcessor struct {
 	RPCClient            plugin.ClientProtocol
 	PluginLocations      []string
 
-	extractors map[common.TokenFormat]LoadedExtractorPlugin
+	extractors map[common.AttestationFormat]LoadedExtractorPlugin
 }
 
 type LoadedExtractorPlugin struct {
@@ -42,7 +42,7 @@ func (tp *TokenProcessor) Init(config Config) error {
 	tp.RPCClient = lp.RPCClient
 	tp.Client = lp.PluginClient
 	tp.PluginLocations = config.PluginLocations
-	tp.extractors = make(map[common.TokenFormat]LoadedExtractorPlugin)
+	tp.extractors = make(map[common.AttestationFormat]LoadedExtractorPlugin)
 
 	if err = tp.TrustAnchorStore.Init(config.TrustAnchorStoreParams); err != nil {
 		tp.Client.Kill()
@@ -52,7 +52,12 @@ func (tp *TokenProcessor) Init(config Config) error {
 	return nil
 }
 
-func (tp TokenProcessor) GetExtractor(format common.TokenFormat) (common.IEvidenceExtractor, error) {
+func (tp *TokenProcessor) Close() {
+	tp.Client.Kill()
+	tp.RPCClient.Close()
+}
+
+func (tp TokenProcessor) GetExtractor(format common.AttestationFormat) (common.IEvidenceExtractor, error) {
 	extractorPlugin, ok := tp.extractors[format]
 	if ok {
 		return extractorPlugin.Extractor, nil
@@ -81,7 +86,7 @@ func (tp TokenProcessor) GetExtractor(format common.TokenFormat) (common.IEviden
 
 func (tp TokenProcessor) Process(
 	tenantID int,
-	format common.TokenFormat,
+	format common.AttestationFormat,
 	token []byte,
 ) (*common.EvidenceContext, error) {
 	extractor, err := tp.GetExtractor(format)

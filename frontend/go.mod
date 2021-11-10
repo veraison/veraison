@@ -14,7 +14,7 @@ replace github.com/veraison/verifier => ../verifier
 
 require (
 	github.com/gin-gonic/gin v1.6.3
-	github.com/moogar0880/problems v0.1.1 // indirect
+	github.com/moogar0880/problems v0.1.1
 	github.com/veraison/common v0.0.0
 	github.com/veraison/endorsement v0.0.0
 	github.com/veraison/policy v0.0.0

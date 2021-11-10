@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
@@ -16,7 +17,7 @@ import (
 
 // PluginMap maps the name of a plugin type onto the corresponding plugin struct.
 var PluginMap = map[string]plugin.Plugin{
-	"endorsementstore":  &EndorsementStorePlugin{},
+	"endorsementstore":  &EndorsementBackendPlugin{},
 	"policyengine":      &PolicyEnginePlugin{},
 	"policystore":       &PolicyStorePlugin{},
 	"evidenceextractor": &EvidenceExtractorPlugin{},
@@ -91,7 +92,7 @@ func LoadPlugin(locations []string, plugType, plugName string, quiet bool) (*Loa
 			}
 
 			named := raw.(INamed)
-			if named.GetName() != plugName {
+			if !strings.EqualFold(named.GetName(), strings.ToLower(plugName)) {
 				hclog.Default().Debug("wrong name in %v.\n", pluginPath)
 				client.Kill()
 				continue

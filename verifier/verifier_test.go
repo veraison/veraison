@@ -96,12 +96,10 @@ func TestVerifier(t *testing.T) {
 		PluginLocations:      []string{pluginDir},
 		PolicyEngineName:     "opa",
 		PolicyStoreName:      "sqlite",
-		EndorsementStoreName: "sqlite",
+		EndorsementStoreHost: "localhost",
+		EndorsementStorePort: 50051,
 		PolicyStoreParams: common.PolicyStoreParams{
 			"dbpath": policyDbPath,
-		},
-		EndorsementStoreParams: common.EndorsementStoreParams{
-			"dbpath": endorsementDbPath,
 		},
 	}
 
@@ -129,7 +127,7 @@ func TestVerifier(t *testing.T) {
 
 	ec := common.EvidenceContext{
 		TenantID: 1,
-		Format:   common.PsaIatToken,
+		Format:   common.AttestationFormat_PSA_IOT,
 	}
 
 	for _, fi := range fis {
@@ -152,10 +150,10 @@ func TestVerifier(t *testing.T) {
 
 		assert.NotNil(result)
 
-		if strings.HasPrefix(fi.Name(), "valid-") && result.Status != common.StatusSuccess {
+		if strings.HasPrefix(fi.Name(), "valid-") && result.Status != common.Status_SUCCESS {
 			t.Fatalf("%v resported as invalid", fi.Name())
 		}
-		if strings.HasPrefix(fi.Name(), "invalid-") && result.Status == common.StatusSuccess {
+		if strings.HasPrefix(fi.Name(), "invalid-") && result.Status == common.Status_SUCCESS {
 			t.Fatalf("%v resported as valid", fi.Name())
 		}
 	}

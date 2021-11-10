@@ -69,7 +69,7 @@ func finiDb(t *testing.T) {
 }
 
 // testGetSupportedQueries checks the number of supported queries
-func testGetSupportedQueries(t *testing.T, fetcher common.IEndorsementStore) {
+func testGetSupportedQueries(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	var expected = map[string]bool{
@@ -91,7 +91,7 @@ func testGetSupportedQueries(t *testing.T, fetcher common.IEndorsementStore) {
 }
 
 // testSupportsQuery checks whether the required query is supported or not?
-func testSupportsQuery(t *testing.T, fetcher common.IEndorsementStore) {
+func testSupportsQuery(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	assert.True(fetcher.SupportsQuery("hardware_id"),
@@ -101,7 +101,7 @@ func testSupportsQuery(t *testing.T, fetcher common.IEndorsementStore) {
 }
 
 // testQueryHardwareID sets the required query parameter for GetHardwareId query
-func testQueryHardwareID(t *testing.T, fetcher common.IEndorsementStore) {
+func testQueryHardwareID(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -124,7 +124,7 @@ func testQueryHardwareID(t *testing.T, fetcher common.IEndorsementStore) {
 }
 
 // testQuerySoftwareComponents sets the required parameter for the SW Component Query
-func testQuerySoftwareComponents(t *testing.T, fetcher common.IEndorsementStore) {
+func testQuerySoftwareComponents(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -147,7 +147,7 @@ func testQuerySoftwareComponents(t *testing.T, fetcher common.IEndorsementStore)
 
 // testQueryAlternativeSwComponents checks the Alternative Software Algorithm for Query
 // to fetch the components
-func testQueryAlternativeSwComponents(t *testing.T, fetcher common.IEndorsementStore) {
+func testQueryAlternativeSwComponents(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -170,7 +170,7 @@ func testQueryAlternativeSwComponents(t *testing.T, fetcher common.IEndorsementS
 
 // testQueryAllSoftwareRelations sets the query parameter to fetch all Software relations
 // for a given platform
-func testQueryAllSoftwareRelations(t *testing.T, fetcher common.IEndorsementStore) {
+func testQueryAllSoftwareRelations(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -193,7 +193,7 @@ func testQueryAllSoftwareRelations(t *testing.T, fetcher common.IEndorsementStor
 // testQueryLatestLinkSwComp sets the query parameter to fetch the latest
 // and greates SW component (update+patch) for a given software component
 // linked to the platform
-func testQueryLatestLinkSwComp(t *testing.T, fetcher common.IEndorsementStore) {
+func testQueryLatestLinkSwComp(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -218,7 +218,7 @@ func testQueryLatestLinkSwComp(t *testing.T, fetcher common.IEndorsementStore) {
 // testQueryLatestSwComp sets the query parameter to fetch the latest
 // and greates SW component (update+patch) for a given software component
 // which could either be a patch or an update
-func testQueryLatestSwComp(t *testing.T, fetcher common.IEndorsementStore) {
+func testQueryLatestSwComp(t *testing.T, fetcher common.IEndorsementBackend) {
 	assert := assert.New(t)
 
 	qd := common.QueryDescriptor{
@@ -292,7 +292,7 @@ func TestArangoDbEndorsementStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	argList := common.EndorsementStoreParams{
+	argList := common.EndorsementBackendParams{
 		"storeInstance": as,
 	}
 	require.Nil(t, initDb(t))
@@ -332,7 +332,7 @@ func TestArangoDbAlternativeSwComponent(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	argList := common.EndorsementStoreParams{
+	argList := common.EndorsementBackendParams{
 		"AltAlgorithm":  "Normal",
 		"storeInstance": as,
 	}
@@ -367,7 +367,7 @@ func TestArangoDbEndorsementAllSwComponents(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	argList := common.EndorsementStoreParams{
+	argList := common.EndorsementBackendParams{
 		"storeInstance": as,
 	}
 
@@ -402,7 +402,7 @@ func TestArangoDbEndorsementLatestLinkedSwComponent(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	argList := common.EndorsementStoreParams{
+	argList := common.EndorsementBackendParams{
 		"storeInstance": as,
 	}
 	require.Nil(t, initDb(t))
@@ -437,7 +437,7 @@ func TestArangoDbEndorsementLatestSwComponent(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	argList := common.EndorsementStoreParams{
+	argList := common.EndorsementBackendParams{
 		"storeInstance": as,
 	}
 

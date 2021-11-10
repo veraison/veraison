@@ -22,10 +22,13 @@ else
   DFLAGS :=
 endif
 
-$(PLUGIN): $(SRCS) ; go build $(DFLAGS) -o $(PLUGIN)
+$(PLUGIN): $(SRCS) ../../common/protogen; go build $(DFLAGS) -o $(PLUGIN)
 
 .PHONY: all
 all: $(PLUGIN)
 
 .PHONY: clean
 clean: ; $(RM) $(PLUGIN) $(CLEANFILES)
+
+../../common/protogen:
+	cd ../../common && $(MAKE) protogen

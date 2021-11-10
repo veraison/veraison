@@ -69,7 +69,7 @@ func runListCommand(config *common.Config, args []string, pm *policy.Manager, lo
 	}
 
 	for _, pentry := range policies {
-		fmt.Println(pentry.TenantID, pentry.TokenFormatName)
+		fmt.Println(pentry.TenantID, pentry.AttestationFormatName)
 	}
 
 	return nil
@@ -92,11 +92,19 @@ func runGetCommand(config *common.Config, args []string, pm *policy.Manager, log
 		return fmt.Errorf("token format(s) not specified (see -h for usage)")
 	}
 
-	var formats []common.TokenFormat
+	var formats []common.AttestationFormat
+	var format common.AttestationFormat
 	for _, fmtName := range argsRest {
-		format, err := common.TokenFormatFromString(fmtName)
-		if err != nil {
-			return err
+
+		switch common.AttestationFormat_value[fmtName] {
+		case 0:
+			format = common.AttestationFormat_UNKNOWN_FORMAT
+		case 1:
+			format = common.AttestationFormat_PSA_IOT
+		case 2:
+			format = common.AttestationFormat_DICE
+		default:
+			return fmt.Errorf("unknown format")
 		}
 
 		formats = append(formats, format)
@@ -153,15 +161,15 @@ func runSetCommand(config *common.Config, args []string, pm *policy.Manager, log
 
 	for _, policy := range policies {
 
-		_, err := pm.GetPolicy(tenantID, policy.TokenFormat)
+		_, err := pm.GetPolicy(tenantID, policy.AttestationFormat)
 		if err == nil { // policy exists
 			if force {
-				err = pm.DeletePolicy(tenantID, policy.TokenFormat)
+				err = pm.DeletePolicy(tenantID, policy.AttestationFormat)
 				if err != nil {
 					return fmt.Errorf(
 						"could not remove existing policy for tenantID %d and format %q: %v",
 						tenantID,
-						policy.TokenFormat,
+						policy.AttestationFormat,
 						err,
 					)
 				}
@@ -169,14 +177,14 @@ func runSetCommand(config *common.Config, args []string, pm *policy.Manager, log
 				return fmt.Errorf(
 					"policy for tenant %d and format %q already exists; use -f to overwrite",
 					tenantID,
-					policy.TokenFormat,
+					policy.AttestationFormat,
 				)
 			}
 		}
 
 		err = pm.PutPolicy(tenantID, policy)
 		if err != nil {
-			return fmt.Errorf("problem adding policy %q: %v", policy.TokenFormat, err)
+			return fmt.Errorf("problem adding policy %q: %v", policy.AttestationFormat, err)
 		}
 	}
 
@@ -185,7 +193,7 @@ func runSetCommand(config *common.Config, args []string, pm *policy.Manager, log
 
 func runDeleteCommand(config *common.Config, args []string, pm *policy.Manager, logger *zap.Logger) error {
 	var tenantID int
-	var tokenFormat common.TokenFormat
+	var attestationFormat common.AttestationFormat
 
 	deleteFlags := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteFlags.IntVar(&tenantID, "t", 1, "TenantID for which the policies should be deleted.")
@@ -200,15 +208,25 @@ func runDeleteCommand(config *common.Config, args []string, pm *policy.Manager, 
 		return fmt.Errorf("unexpected arguments: %v (see -h for usage)", argsRest[1:])
 	}
 
-	if err := tokenFormat.FromString(argsRest[0]); err != nil {
-		return err
+	var format common.AttestationFormat
+	fmtName := argsRest[0]
+
+	switch common.AttestationFormat_value[fmtName] {
+	case 0:
+		format = common.AttestationFormat_UNKNOWN_FORMAT
+	case 1:
+		format = common.AttestationFormat_PSA_IOT
+	case 2:
+		format = common.AttestationFormat_DICE
+	default:
+		return fmt.Errorf("unknown format")
 	}
 
-	if err := pm.DeletePolicy(tenantID, tokenFormat); err != nil {
+	if err := pm.DeletePolicy(tenantID, format); err != nil {
 		return fmt.Errorf(
 			"could not delete policy for tenant %d, format %q: %v",
 			tenantID,
-			tokenFormat,
+			attestationFormat,
 			err,
 		)
 	}
@@ -297,7 +315,7 @@ func runVerifyCommand(config *common.Config, args []string, pm *policy.Manager, 
 		return fmt.Errorf("problem getting attestation result: %v", err)
 	}
 
-	resultBytes, err := json.MarshalIndent(result, "", "    ")
+	resultBytes, err := result.MarshalJSON()
 	if err != nil {
 		return fmt.Errorf("problem encoding attestation result: %v", err)
 	}

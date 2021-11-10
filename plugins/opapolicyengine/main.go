@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/open-policy-agent/opa/rego"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/veraison/common"
 )
@@ -19,7 +20,7 @@ type OpaPolicyEngine struct {
 }
 
 func (pe *OpaPolicyEngine) GetName() string {
-	return "opa"
+	return "OPA"
 }
 
 // Init initializes the OPA context that will be used to evaluate the policy.
@@ -41,7 +42,7 @@ func (pe *OpaPolicyEngine) CheckValid(
 	endorsements map[string]interface{},
 ) (common.Status, error) {
 	if pe.policy == nil {
-		return common.StatusFailure, fmt.Errorf("policy not set")
+		return common.Status_FAILURE, fmt.Errorf("policy not set")
 	}
 
 	input := map[string]interface{}{"evidence": evidence, "endorsements": endorsements}
@@ -53,19 +54,19 @@ func (pe *OpaPolicyEngine) CheckValid(
 
 	rs, err := rego.Eval(pe.ctx)
 	if err != nil {
-		return common.StatusFailure, err
+		return common.Status_FAILURE, err
 	}
 
 	result := rs[0].Expressions[0].Value
 	switch t := result.(type) {
 	case bool:
 		if result.(bool) {
-			return common.StatusSuccess, nil
+			return common.Status_SUCCESS, nil
 		}
 
-		return common.StatusFailure, nil
+		return common.Status_FAILURE, nil
 	default:
-		return common.StatusFailure, fmt.Errorf("query evaluated to %v; expected bool", t)
+		return common.Status_FAILURE, fmt.Errorf("query evaluated to %v; expected bool", t)
 	}
 }
 
@@ -115,8 +116,12 @@ func (pe *OpaPolicyEngine) GetAttetationResult(
 		return nil
 	}
 
-	claimsLabel := common.NewStringLabel("veraison-processed-evidence")
-	result.ProcessedEvidence[claimsLabel], err = pe.GetClaims(evidence, endorsements)
+	claimsMap, err := pe.GetClaims(evidence, endorsements)
+	if err != nil {
+		return err
+	}
+
+	result.ProcessedEvidence, err = structpb.NewStruct(claimsMap)
 	if err != nil {
 		return err
 	}
