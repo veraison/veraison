@@ -72,7 +72,7 @@ func (c Config) Kind() common.ConfigKind {
 // config paths.
 func NewConfig(paths []string) *Config {
 	config := &Config{}
-	// config.Init(paths)
+	config.Init(paths)
 	config.BaseConfig.SetDerived(config)
 	return config
 }
