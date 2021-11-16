@@ -3,9 +3,7 @@
 
 SUBDIR := plugins
 SUBDIR += common
-SUBDIR += endorsement
 SUBDIR += policy
-SUBDIR += tokenprocessor
 SUBDIR += verifier
 SUBDIR += frontend
 SUBDIR += cmd

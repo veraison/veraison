@@ -17,11 +17,11 @@ import (
 
 // PluginMap maps the name of a plugin type onto the corresponding plugin struct.
 var PluginMap = map[string]plugin.Plugin{
-	"endorsementstore":  &EndorsementBackendPlugin{},
-	"policyengine":      &PolicyEnginePlugin{},
-	"policystore":       &PolicyStorePlugin{},
-	"evidenceextractor": &EvidenceExtractorPlugin{},
-	"trustanchorstore":  &TrustAnchorStorePlugin{},
+	"endorsementstore": &EndorsementBackendPlugin{},
+	"policyengine":     &PolicyEnginePlugin{},
+	"policystore":      &PolicyStorePlugin{},
+	"scheme":           &SchemePlugin{},
+	"trustanchorstore": &TrustAnchorStorePlugin{},
 }
 
 // LoadedPlugin encapsulates a loaded Hashicorp plugin.

@@ -16,6 +16,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func initDb(schemaFile string) (string, error) {
@@ -56,6 +57,7 @@ func finiDb(path string) {
 }
 
 func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
+	require := require.New(t)
 	assert := assert.New(t)
 
 	pm := NewManager()
@@ -74,8 +76,20 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
-	params := common.PolicyStoreParams{"dbpath": dbPath}
-	err = pm.InitializeStore([]string{pluginDir}, "sqlite", params, true)
+	managerParams, err := NewManagerParamStore()
+	require.Nil(err)
+
+	err = managerParams.PopulateFromMap(map[string]interface{}{
+		"PluginLocations":   []string{pluginDir},
+		"PolicyStoreName":   "sqlite",
+		"PolicyStoreParams": map[string]interface{}{"dbpath": dbPath},
+		"Quiet":             true,
+	})
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	err = pm.Init(managerParams)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

@@ -7,6 +7,13 @@ import (
 	"fmt"
 )
 
+type IEndorsementStoreConfig interface {
+	GetHost() string
+	GetPort() int
+	GetEndorsementBackendName() *EndorsementBackendParams
+	GetEndorsementBackendParams() *EndorsementBackendParams
+}
+
 // EndorsementBackendParams encapsulates parameters used to initialize the
 // endorsement store. What parameters are required and values supported depends
 // on the specific IEndorsementBackend implementation.

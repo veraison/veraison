@@ -7,12 +7,30 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/hashicorp/go-plugin"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/veraison/common"
 )
+
+var paramDescriptions = map[string]*common.ParamDescription{
+	"dbpath": {
+		Kind:     uint32(reflect.String),
+		Path:     "policy.store_params.dbPath",
+		Required: common.ParamNecessity_REQUIRED,
+	},
+}
+
+func CreatePolicyStoreParams() (*common.ParamStore, error) {
+	params := common.NewParamStore("policy_store")
+	if err := params.AddParamDefinitions(paramDescriptions); err != nil {
+		return nil, err
+	}
+	params.Freeze()
+	return params, nil
+}
 
 type PolicyStore struct {
 	db   *sql.DB
@@ -23,13 +41,17 @@ func (ps *PolicyStore) GetName() string {
 	return "SQLITE"
 }
 
+func (ps PolicyStore) GetParamDescriptions() (map[string]*common.ParamDescription, error) {
+	return paramDescriptions, nil
+}
+
 // Init opens the database connection.
 // Expected parameters:
 //    dbPath -- the path to the database file.
-func (ps *PolicyStore) Init(args common.PolicyStoreParams) error {
-	dbPath, found := args["dbpath"]
-	if !found {
-		return fmt.Errorf("\"dbpath\" policy store parameter not specified")
+func (ps *PolicyStore) Init(params *common.ParamStore) error {
+	dbPath, err := params.TryGetString("dbpath")
+	if err != nil {
+		return err
 	}
 
 	dbConfig := fmt.Sprintf("file:%s?cache=shared", dbPath)

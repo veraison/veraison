@@ -7,6 +7,6 @@ policy:
     store_params:
         dbPath: test/policy-store.db
     engine_name: opa
-endorsements:
-    store_host: "localhost"
-    store_port: 50051
+vts:
+    host: "localhost"
+    port: 50051

@@ -69,7 +69,12 @@ func TestSqliteGetPolicy(t *testing.T) {
 	defer finiDb(dbPath)
 
 	var pm PolicyStore
-	err = pm.Init(common.PolicyStoreParams{"dbpath": dbPath})
+
+	params, err := CreatePolicyStoreParams()
+	require.Nil(err)
+	require.Nil(params.SetString("dbpath", dbPath))
+
+	err = pm.Init(params)
 	require.Nil(err)
 
 	policy, err := pm.GetPolicy(1, common.AttestationFormat_PSA_IOT)
@@ -99,7 +104,12 @@ func TestSqliteDeletePolicy(t *testing.T) {
 	defer finiDb(dbPath)
 
 	var pm PolicyStore
-	err = pm.Init(common.PolicyStoreParams{"dbpath": dbPath})
+
+	params, err := CreatePolicyStoreParams()
+	require.Nil(err)
+	require.Nil(params.SetString("dbpath", dbPath))
+
+	err = pm.Init(params)
 	require.Nil(err)
 
 	err = pm.DeletePolicy(1, common.AttestationFormat_PSA_IOT)

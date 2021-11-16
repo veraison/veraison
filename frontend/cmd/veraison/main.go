@@ -20,17 +20,12 @@ func main() {
 	}
 	defer logger.Sync() //nolint:errcheck
 
-	tokenProcessor, err := frontend.NewTokenProcessor(pluginDir, dbPath)
-	if err != nil {
-		logger.Fatal("Could not init token processor", zap.Error(err))
-	}
-
 	verifier, err := frontend.NewVerifier(pluginDir, dbPath, logger)
 	if err != nil {
 		logger.Fatal("Could not init verifier", zap.Error(err))
 	}
 
-	router := frontend.NewRouter(logger, tokenProcessor, verifier)
+	router := frontend.NewRouter(logger, verifier)
 	err = router.Run()
 	if err != nil {
 		logger.Error("error running server", zap.Error(err))

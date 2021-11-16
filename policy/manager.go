@@ -4,10 +4,43 @@
 package policy
 
 import (
+	"reflect"
+
 	"github.com/hashicorp/go-plugin"
 
 	"github.com/veraison/common"
 )
+
+func NewManagerParamStore() (*common.ParamStore, error) {
+	store := common.NewParamStore("policy_manager")
+	err := PopulateManagerParams(store)
+	return store, err
+}
+
+func PopulateManagerParams(store *common.ParamStore) error {
+	return store.AddParamDefinitions(map[string]*common.ParamDescription{
+		"PluginLocations": {
+			Kind:     uint32(reflect.Slice),
+			Path:     "plugin.locations",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"PolicyStoreName": {
+			Kind:     uint32(reflect.String),
+			Path:     "policy.store_name",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"PolicyStoreParams": {
+			Kind:     uint32(reflect.Map),
+			Path:     "policy.store_params",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+		"Quiet": {
+			Kind:     uint32(reflect.Bool),
+			Path:     "quiet",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+	})
+}
 
 type Manager struct {
 	StoreName string
@@ -22,15 +55,13 @@ func NewManager() *Manager {
 	}
 }
 
-func (pm *Manager) InitializeStore(
-	pluginLocaitons []string,
-	name string,
-	params common.PolicyStoreParams,
-	quiet bool,
-) error {
-	name = common.Canonize(name)
+func (pm *Manager) Init(params *common.ParamStore) error {
+	pluginLocaitons := params.GetStringSlice("PluginLocations")
+	storeName := common.Canonize(params.GetString("PolicyStoreName"))
+	storeParamMap := params.GetStringMapString("PolicyStoreParams")
+	quiet := params.GetBool("Quiet")
 
-	lp, err := common.LoadPlugin(pluginLocaitons, "policystore", name, quiet)
+	lp, err := common.LoadPlugin(pluginLocaitons, "policystore", storeName, quiet)
 	if err != nil {
 		return err
 	}
@@ -39,7 +70,21 @@ func (pm *Manager) InitializeStore(
 	pm.RPCClient = lp.RPCClient
 	pm.Client = lp.PluginClient
 
-	if err = pm.Store.Init(params); err != nil {
+	storeParams := common.NewParamStore("test")
+	pdesc, err := pm.Store.GetParamDescriptions()
+	if err != nil {
+		return err
+	}
+
+	if err = storeParams.AddParamDefinitions(pdesc); err != nil {
+		return err
+	}
+
+	if err = storeParams.PopulateFromStringMapString(storeParamMap); err != nil {
+		return err
+	}
+
+	if err = pm.Store.Init(storeParams); err != nil {
 		pm.Client.Kill()
 		return err
 	}
@@ -80,7 +125,9 @@ func (pm *Manager) DeletePolicy(tenantID int, tokenFormat common.AttestationForm
 	return pm.Store.DeletePolicy(tenantID, tokenFormat)
 }
 
-func (pm *Manager) Close() {
+func (pm Manager) Close() error {
 	pm.Client.Kill()
 	pm.RPCClient.Close()
+
+	return nil
 }

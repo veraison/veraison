@@ -4,6 +4,8 @@ import (
 	"path"
 
 	"github.com/veraison/common"
+	"github.com/veraison/policy"
+	"github.com/veraison/trustedservices"
 	"github.com/veraison/verifier"
 
 	"go.uber.org/zap"
@@ -12,31 +14,47 @@ import (
 func NewVerifier(pluginDir string, dbPath string, logger *zap.Logger) (*verifier.Verifier, error) {
 
 	policyDbPath := path.Join(dbPath, "policy.sqlite3")
-	endorsementDbPath := path.Join(dbPath, "endorsements.sqlite3")
 
-	// TODO make engine/store names configurable
-	var vc = verifier.Config{
-		PluginLocations:      []string{pluginDir},
-		PolicyEngineName:     "opa",
-		PolicyStoreName:      "sqlite",
-		EndorsementStoreName: "sqlite",
-		PolicyStoreParams: common.PolicyStoreParams{
-			"dbPath": policyDbPath,
-		},
-		EndorsementStoreParams: common.EndorsementStoreParams{
-			"dbPath": endorsementDbPath,
-		},
+	verifierParams, err := verifier.NewVerifierParams()
+	if err != nil {
+		return nil, err
 	}
+
+	pluginLocations := []string{pluginDir}
+
+	// TODO make configurable
+	verifierParams.SetStringSlice("PluginLocations", pluginLocations)
+	verifierParams.SetString("VtsHost", "")
+	verifierParams.SetString("VtsPort", "")
+	verifierParams.SetStringMapString("VtsParams", make(map[string]string))
 
 	v, err := verifier.NewVerifier(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	err = v.Initialize(vc)
+	connector := new(trustedservices.LocalClientConnector)
+
+	policyManagerParams, err := policy.NewManagerParamStore()
+	if err != nil {
+		return nil, err
+	}
+	// TODO make configurable
+	policyManagerParams.SetStringSlice("PluginLocations", pluginLocations)
+	policyManagerParams.SetString("PolicyStoreName", "sqlite")
+	policyManagerParams.SetStringMapString("PolicyStoreParams", map[string]string{"dbPath": policyDbPath})
+
+	pm := policy.NewManager()
+	err = pm.Init(policyManagerParams)
 	if err != nil {
 		return nil, err
 	}
 
-	return v, nil
+	pe, err := common.LoadPolicyEnginePlugin(pluginLocations, "opa")
+	if err != nil {
+		return nil, err
+	}
+
+	err = v.Init(verifierParams, connector, pm, pe)
+	return v, err
 }

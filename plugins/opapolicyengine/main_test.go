@@ -46,9 +46,8 @@ func Test_Validate(t *testing.T) {
 	require.Nil(err)
 
 	var pe OpaPolicyEngine
-	var peParams common.PolicyEngineParams
 
-	err = pe.Init(peParams)
+	err = pe.Init(nil)
 	require.Nil(err)
 
 	err = pe.LoadPolicy(policyData)

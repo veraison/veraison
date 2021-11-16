@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/veraison/tokenprocessor"
 	"github.com/veraison/verifier"
 )
 
@@ -46,8 +45,8 @@ func initGin() *gin.Engine {
 	return r
 }
 
-func NewRouter(logger *zap.Logger, tp *tokenprocessor.TokenProcessor, v *verifier.Verifier) *gin.Engine {
-	ctrl := NewController(logger, tp, v)
+func NewRouter(logger *zap.Logger, v *verifier.Verifier) *gin.Engine {
+	ctrl := NewController(logger, v)
 
 	r := initGin()
 
