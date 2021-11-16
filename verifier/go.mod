@@ -4,17 +4,20 @@ go 1.15
 
 replace github.com/veraison/common => ../common/
 
-replace github.com/veraison/endorsement => ../endorsement/
-
 replace github.com/veraison/policy => ../policy/
+
+replace github.com/veraison/trustedservices => ../trustedservices/
+
+replace github.com/veraison/veraison/kvstore => ../kvstore/
 
 require (
 	github.com/hashicorp/go-plugin v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.3
 	github.com/stretchr/testify v1.7.0
 	github.com/veraison/common v0.0.0
-	github.com/veraison/endorsement v0.0.0
 	github.com/veraison/policy v0.0.0
+	github.com/veraison/trustedservices v0.0.0
+	github.com/veraison/veraison/kvstore v0.0.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/tools v0.0.0-20200914163123-ea50a3c84940 // indirect
 	google.golang.org/grpc v1.41.0

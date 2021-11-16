@@ -4,181 +4,119 @@
 package verifier
 
 import (
-	"context"
-	"fmt"
+	"reflect"
 
-	"github.com/hashicorp/go-plugin"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/structpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/veraison/common"
-	"github.com/veraison/endorsement"
-	"github.com/veraison/policy"
 )
 
-type Verifier struct {
-	pm        *policy.Manager
-	pe        common.IPolicyEngine
-	rpcClient plugin.ClientProtocol
-	client    *plugin.Client
+func NewVerifierParams() (*common.ParamStore, error) {
+	store := common.NewParamStore("verifier")
+	err := store.AddParamDefinitions(map[string]*common.ParamDescription{
+		"pluginLocations": {
+			Kind:     uint32(reflect.String),
+			Path:     "plugin.locations",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"policyEngineName": {
+			Kind:     uint32(reflect.String),
+			Path:     "policy.engine_name",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"policyStoreName": {
+			Kind:     uint32(reflect.String),
+			Path:     "policy.store_name",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"policyStoreParams": {
+			Kind:     uint32(reflect.Map),
+			Path:     "policy.store_name",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+		"vtsHost": {
+			Kind:     uint32(reflect.String),
+			Path:     "vts.host",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+		"vtsPort": {
+			Kind:     uint32(reflect.Int),
+			Path:     "vts.port",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	store.Freeze()
 
-	esConn *grpc.ClientConn
-	es     endorsement.StoreClient
-	ef     endorsement.FetcherClient
-
-	logger *zap.Logger
+	return store, nil
 }
 
 func NewVerifier(logger *zap.Logger) (*Verifier, error) {
 	v := new(Verifier)
 
 	v.logger = logger
-	v.pm = policy.NewManager()
 
 	return v, nil
 }
 
-// Initialize bootstraps the verifier
-func (v *Verifier) Initialize(vc Config) error {
-	storeAddress := fmt.Sprintf("%s:%d", vc.EndorsementStoreHost, vc.EndorsementStorePort)
-	esConn, err := grpc.Dial(storeAddress, grpc.WithInsecure())
-	if err != nil {
-		return err
-	}
+type Verifier struct {
+	config *common.ParamStore
+	vts    common.ITrustedServicesClient
+	pm     common.IPolicyManager
+	pe     common.IPolicyEngine
+	logger *zap.Logger
+}
 
-	endorsementStoreClient := endorsement.NewStoreClient(esConn)
-	/*
-		backendConfig, err := structpb.NewStruct(vc.EndorsementBackendParams)
-		if err != nil {
-			return err
-		}
-	*/
-	openArgs := &endorsement.OpenRequest{}
+func (v *Verifier) Init(
+	config *common.ParamStore,
+	conn common.ITrustedServicesConnector,
+	pm common.IPolicyManager,
+	pe common.IPolicyEngine,
+) error {
+	v.config = config
+	v.pm = pm
+	v.pe = pe
 
-	response, err := endorsementStoreClient.Open(context.Background(), openArgs)
-	if err != nil {
-		esConn.Close()
-		return err
-	}
-	if !response.Status.Result {
-		return fmt.Errorf(
-			"could not connect to endorsement store; got: %q",
-			response.Status.ErrorDetail,
-		)
-	}
-
-	endorsementFetcherClient := endorsement.NewFetcherClient(esConn)
-
-	if err = v.pm.InitializeStore(
-		vc.PluginLocations,
-		vc.PolicyStoreName,
-		vc.PolicyStoreParams,
-		false,
-	); err != nil {
-		esConn.Close()
-		return err
-	}
-
-	pe, client, rpcClient, err := common.LoadAndInitializePolicyEngine(
-		vc.PluginLocations,
-		vc.PolicyEngineName,
-		vc.PolicyEngineParams,
-		false,
+	var err error
+	v.vts, err = conn.Connect(
+		v.config.GetString("VtsHost"),
+		v.config.GetInt("VtsPort"),
+		v.config.GetStringMapString("VtsParams"),
 	)
 	if err != nil {
-		esConn.Close()
 		return err
 	}
-
-	v.pe = pe
-	v.client = client
-	v.rpcClient = rpcClient
-
-	v.esConn = esConn
-	v.es = endorsementStoreClient
-	v.ef = endorsementFetcherClient
 
 	return nil
 }
 
-// Verify verifies the supplied Evidence
-func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.AttestationResult, error) {
-	v.logger.Debug("verify params", zap.Reflect("evidence context", ec), zap.Bool("simple", simple))
-	policy, err := v.pm.GetPolicy(ec.TenantID, ec.Format)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = v.pe.LoadPolicy(policy.Rules); err != nil {
-		return nil, err
-	}
-
-	// TODO: this a a HACK to provide a minimal impleentation of the new interface.
-	// Query Descriptors should no longer be required here
-	qds, err := policy.GetQueryDesriptors(ec.Evidence, common.QcNone)
-	if err != nil {
-		return nil, err
-	}
-
-	parts := make(map[string]interface{})
-	for _, qd := range qds {
-		for key, val := range qd.Args {
-			parts[key] = val
-		}
-	}
-
-	partsStruct, err := structpb.NewStruct(parts)
-	if err != nil {
-		return nil, err
-	}
-	// end of HACK
-
-	evStruct, err := structpb.NewStruct(ec.Evidence)
-	if err != nil {
-		return nil, err
-	}
-
-	args := &endorsement.GetEndorsementsRequest{
-		Id: &endorsement.EndorsementID{
-			Type:  ec.Format,
-			Parts: partsStruct,
-		},
-		Evidence: &endorsement.Evidence{Value: evStruct},
-	}
-
-	// TODO: make the timeout configurable
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second))
-	//defer cancel()
-
-	response, err := v.ef.GetEndorsements(context.Background(), args)
-	if err != nil {
-		return nil, err
-	}
-	if !response.Status.Result {
-		return nil, fmt.Errorf(
-			"could not get endorsements; got: %q",
-			response.Status.ErrorDetail,
-		)
-	}
-
-	endorsements := response.Endorsements.AsMap()
-	result := new(common.AttestationResult)
-
-	v.logger.Debug("fetched endorsements", zap.Reflect("endorsements", endorsements))
-	v.logger.Debug("extracted evidence", zap.Reflect("evidence", ec.Evidence))
-
-	if err := v.pe.GetAttetationResult(ec.Evidence, endorsements, simple, result); err != nil {
-		return nil, err
-	}
-
-	v.logger.Debug("attestation result", zap.Reflect("result", result))
-	return result, nil
+func (v *Verifier) Close() error {
+	return v.vts.Close()
 }
 
-func (v *Verifier) Close() {
-	v.esConn.Close()
-	v.pm.Close()
-	v.client.Kill()
-	v.rpcClient.Close()
+func (v *Verifier) Verify(
+	token *common.AttestationToken,
+) (*common.AttestationResult, error) {
+	policy, err := v.pm.GetPolicy(int(token.TenantId), token.Format)
+	if err != nil {
+		return nil, err
+	}
+
+	attestation, err := v.vts.GetAttestation(token)
+	if err != nil {
+		return nil, err
+	}
+
+	attestation.Result.RawEvidence = token.Data
+	attestation.Result.Timestamp = timestamppb.Now()
+
+	err = v.pe.Appraise(attestation, policy)
+	if err != nil {
+		return nil, err
+	}
+
+	return attestation.Result, nil
 }

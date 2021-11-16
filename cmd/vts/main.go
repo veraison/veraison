@@ -1,15 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 
-	grpc "google.golang.org/grpc"
-
 	"github.com/veraison/common"
-	"github.com/veraison/endorsement"
+	"github.com/veraison/trustedservices"
+	"google.golang.org/grpc"
 )
 
 // TODO this a very minimal "frontend" implementation.
@@ -20,7 +20,16 @@ func main() {
 	flag.Var(configPaths, "config", "Path to direcotory containing the config file(s).")
 	flag.Parse()
 
-	config, err := NewConfig(*configPaths)
+	clientParams, err := trustedservices.NewLocalClientParamStore()
+	if err != nil {
+		log.Fatalf("could not load config: %v", err)
+	}
+	serverParams, err := trustedservices.NewRPCServerParamStore()
+	if err != nil {
+		log.Fatalf("could not load config: %v", err)
+	}
+
+	config, err := common.NewConfig(*configPaths, clientParams, serverParams)
 	if err != nil {
 		log.Fatalf("could not load config: %v", err)
 	}
@@ -28,24 +37,24 @@ func main() {
 		log.Fatalf("could not load config: %v", err)
 	}
 
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", config.Port)) //nolint
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", serverParams.GetInt("Port"))) //nolint
 	if err != nil {
 		log.Fatalf("could not create listener: %v", err)
 	}
 
-	store := endorsement.Store{}
+	server := trustedservices.RPCServer{}
+	ctx := context.Background()
 
-	if err := store.Init(config); err != nil {
+	if _, err := server.Init(ctx, clientParams); err != nil {
 		log.Fatalf("could not initialize store: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
-	endorsement.RegisterStoreServer(grpcServer, &store)
-	endorsement.RegisterFetcherServer(grpcServer, &store)
+	common.RegisterVTSServer(grpcServer, &server)
 
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 
-	store.Fini()
+	server.Close(ctx, nil)
 }

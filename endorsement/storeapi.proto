@@ -53,7 +53,7 @@ message SwComponentID {
 
 message SwComponent {
     SwComponentID id = 1;
-    google.protobuf.Struct attributes = 2; 
+    google.protobuf.Struct attributes = 2;
 }
 
 message AddSwComponentsRequest {

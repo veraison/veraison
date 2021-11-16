@@ -1,107 +1,170 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package verifier
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/veraison/common"
 
 	"go.uber.org/zap"
 )
 
-func getInput(path string, v interface{}) error {
-	data, err := ioutil.ReadFile(path)
+type StubVtsClient struct {
+	dbPath      string
+	evidenceDir string
+}
+
+func (c *StubVtsClient) Init(params *common.ParamStore) error {
+	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+	c.evidenceDir = filepath.Join(wd, "test", "samples")
 
-	err = json.Unmarshal(data, v)
-	return err
+	return nil
 }
 
-func initDb(schemaFile string) (string, error) {
-	schema, err := ioutil.ReadFile(schemaFile)
-	if err != nil {
-		return "", err
-	}
-
-	dbf, err := ioutil.TempFile(os.TempDir(), "veraison-db-")
-	if err != nil {
-		return "", err
-	}
-	dbPath := dbf.Name()
-	dbf.Close()
-
-	dbConfig := fmt.Sprintf("file:%s?cache=shared", dbPath)
-	db, err := sql.Open("sqlite3", dbConfig)
-	if err != nil {
-		return dbPath, err
-	}
-	defer db.Close()
-
-	commands := strings.Split(string(schema), ";")
-	for _, command := range commands {
-		_, err := db.Exec(command)
-		if err != nil {
-			return dbPath, err
-		}
-	}
-
-	return dbPath, nil
+func (c StubVtsClient) Close() error {
+	return nil
 }
 
-func finiDb(path string) {
-	if path != "" {
-		os.RemoveAll(path)
+func (c StubVtsClient) GetAttestation(
+	token *common.AttestationToken,
+) (*common.Attestation, error) {
+	certDetails, err := structpb.NewStruct(map[string]interface{}{
+		"certification_authority": "Acme",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not cert details for token %q: %s", token.Data, err.Error())
 	}
+
+	evidence, err := structpb.NewStruct(map[string]interface{}{})
+	if err != nil {
+		return nil, err
+	}
+
+	attestation := common.Attestation{
+		Result: &common.AttestationResult{
+			TrustVector: &common.TrustVector{
+				HardwareAuthenticity: common.Status_SUCCESS,
+				SoftwareIntegrity:    common.Status_SUCCESS,
+				SoftwareUpToDateness: common.Status_UNKNOWN,
+				RuntimeIntegrity:     common.Status_UNKNOWN,
+				ConfigIntegrity:      common.Status_UNKNOWN,
+				CertificationStatus:  common.Status_SUCCESS,
+			},
+			Status:      common.Status_SUCCESS,
+			RawEvidence: token.Data,
+			Timestamp:   timestamppb.Now(),
+			EndorsedClaims: &common.EndorsedClaims{
+				CertificationDetails: certDetails,
+			},
+		},
+		Evidence: &common.EvidenceContext{
+			TenantId: 1,
+			Format:   token.Format,
+			Evidence: evidence,
+		},
+	}
+
+	return &attestation, nil
+}
+
+type StubConnector struct {
+}
+
+func (c StubConnector) Connect(
+	host string,
+	port int,
+	params map[string]string,
+) (common.ITrustedServicesClient, error) {
+	vts := new(StubVtsClient)
+
+	store := common.NewParamStore("vts-stub")
+
+	err := vts.Init(store)
+	return vts, err
+}
+
+type StubManager struct {
+}
+
+func (m *StubManager) Init(params *common.ParamStore) error {
+	return nil
+}
+
+func (m *StubManager) ListPolicies(tenantID int) ([]common.PolicyListEntry, error) {
+	return nil, nil
+}
+
+func (m *StubManager) GetPolicy(tenantID int, tokenFormat common.AttestationFormat) (*common.Policy, error) {
+	return nil, nil
+}
+
+func (m *StubManager) PutPolicy(tenantID int, policy *common.Policy) error {
+	return nil
+}
+
+func (m *StubManager) PutPolicyBytes(tenantID int, policyBytes []byte) error {
+	return nil
+}
+
+func (m *StubManager) DeletePolicy(tenantID int, tokenFormat common.AttestationFormat) error {
+	return nil
+}
+
+func (m *StubManager) Close() error {
+	return nil
+}
+
+type StubEngine struct {
+}
+
+func (m StubEngine) GetName() string {
+	return "stub-policy-engine"
+}
+
+func (m *StubEngine) Init(params *common.ParamStore) error {
+	return nil
+}
+
+func (m *StubEngine) Appraise(attestation *common.Attestation, policy *common.Policy) error {
+
+	attestation.Result.TrustVector.CertificationStatus = common.Status_FAILURE
+	attestation.Result.Status = common.Status_FAILURE
+
+	return nil
+}
+
+func (m StubEngine) Close() error {
+	return nil
 }
 
 func TestVerifier(t *testing.T) {
 	assert := assert.New(t)
+	require := require.New(t)
 
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	schemaFile := filepath.Join(wd, "test", "iat-policy.sqlite")
-	policyDbPath, err := initDb(schemaFile)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	defer finiDb(policyDbPath)
-
-	schemaFile = filepath.Join(wd, "test", "iat-endorsement.sqlite")
-	endorsementDbPath, err := initDb(schemaFile)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	defer finiDb(endorsementDbPath)
-
-	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
-
-	var vc = Config{
-		PluginLocations:      []string{pluginDir},
-		PolicyEngineName:     "opa",
-		PolicyStoreName:      "sqlite",
-		EndorsementStoreHost: "localhost",
-		EndorsementStorePort: 50051,
-		PolicyStoreParams: common.PolicyStoreParams{
-			"dbpath": policyDbPath,
-		},
-	}
+	var vc *common.ParamStore
+	vc, err = NewVerifierParams()
+	require.Nil(err)
+	require.Nil(vc.SetString("pluginLocations", filepath.Join(wd, "..", "plugins", "bin")))
+	require.Nil(vc.SetStringMapString("VtsParams", map[string]string{"schemaPath": "/tmp/schema.sql"}))
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -113,48 +176,19 @@ func TestVerifier(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	err = v.Initialize(vc)
+	err = v.Init(vc, new(StubConnector), new(StubManager), new(StubEngine))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	defer v.Close()
 
-	evidenceDir := filepath.Join(wd, "test", "evidence")
-	fis, err := ioutil.ReadDir(evidenceDir)
-	if err != nil {
-		t.Errorf("%v", err)
+	token := common.AttestationToken{
+		Format: common.AttestationFormat_PSA_IOT,
+		Data:   []byte("valid-iat"),
 	}
 
-	ec := common.EvidenceContext{
-		TenantID: 1,
-		Format:   common.AttestationFormat_PSA_IOT,
-	}
-
-	for _, fi := range fis {
-		if !strings.HasSuffix(fi.Name(), ".json") {
-			continue
-		}
-
-		evidencePath := filepath.Join(evidenceDir, fi.Name())
-		var evidence map[string]interface{}
-		err = getInput(evidencePath, &evidence)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-
-		ec.Evidence = evidence
-		result, err := v.Verify(&ec, true)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-
-		assert.NotNil(result)
-
-		if strings.HasPrefix(fi.Name(), "valid-") && result.Status != common.Status_SUCCESS {
-			t.Fatalf("%v resported as invalid", fi.Name())
-		}
-		if strings.HasPrefix(fi.Name(), "invalid-") && result.Status == common.Status_SUCCESS {
-			t.Fatalf("%v resported as valid", fi.Name())
-		}
-	}
+	result, err := v.Verify(&token)
+	require.Nil(err)
+	assert.Equal(result.Status, common.Status_FAILURE)
+	assert.Equal(result.TrustVector.CertificationStatus, common.Status_FAILURE)
 }

@@ -3,3 +3,5 @@ main
 protogen
 *.pb.go
 *.pb.json.go
+tags
+provisioning/api/mocks/

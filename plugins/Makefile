@@ -5,8 +5,8 @@ SUBDIR := arangodbendorsements
 SUBDIR += opapolicyengine
 SUBDIR += sqliteendorsements
 SUBDIR += sqlitepolicy
-SUBDIR += token-dice
-SUBDIR += token-psa
+SUBDIR += scheme-dice
+SUBDIR += scheme-psa
 SUBDIR += trustanchorstore-sqlite
 
 ifeq ($(MAKECMDGOALS),test)

@@ -12,10 +12,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
-
-	"github.com/hashicorp/go-plugin"
 )
+
+type IPolicyManager interface {
+	Init(params *ParamStore) error
+	ListPolicies(tenantID int) ([]PolicyListEntry, error)
+	GetPolicy(tenantID int, tokenFormat AttestationFormat) (*Policy, error)
+	PutPolicy(tenantID int, policy *Policy) error
+	PutPolicyBytes(tenantID int, policyBytes []byte) error
+	DeletePolicy(tenantID int, tokenFormat AttestationFormat) error
+	Close() error
+}
 
 // Policy encapsulates the information that indicates how a particular token
 // should be validated.
@@ -290,11 +299,6 @@ func doReadPolicies(r *zip.Reader) ([]*Policy, error) {
 // JSONpath of the corresponding parameter in the evidence claims structure.
 type QueryMap map[string]map[string]string
 
-// PolicyStoreParams is a key-value map of configuration for initializing an
-// IPolicyStore implementation. What parameters are supported is
-// implementation-specific.
-type PolicyStoreParams map[string]string
-
 // IPolicyStore defines the interface that must be implemented by a policy
 // store. A policy store is used to store Policy's that specify how a
 // particular toke should be validated.
@@ -304,8 +308,13 @@ type IPolicyStore interface {
 	// be called without first initializing the store.
 	GetName() string
 
+	// GetParamDescriptions return a map of expected param names and their
+	// corresponding descriptions, in terms of their expected type,
+	// necessity, and location with a config file.
+	GetParamDescriptions() (map[string]*ParamDescription, error)
+
 	// Init initializes the policy store, creating the necessary database connections, etc.
-	Init(args PolicyStoreParams) error
+	Init(params *ParamStore) error
 
 	// ListPolicies returns a list of entries for policies within the
 	// store. If porvided tenantID is greater than zero, only etries for
@@ -331,9 +340,6 @@ type IPolicyStore interface {
 	Close() error
 }
 
-// PolicyEngineParams params is map of key-value parameter pairs used to
-// initialize an IPolicyEngine implementation. What parameters are supported is
-// implementation dependent.
 type PolicyEngineParams map[string]string
 
 // IPolicyEngine defines the interface that must be implemented by a policy
@@ -346,71 +352,41 @@ type IPolicyEngine interface {
 
 	// Init initializes a policy engine, creating any underlying
 	// connections, etc. This must be called before a Policy is loaded.
-	Init(args PolicyEngineParams) error
+	Init(config *ParamStore) error
 
-	// LoadPolicy loads a policy into the engine. This policy will then be
-	// used to evaluate a set of claims. A Policy must be loaded before
-	// attempting to process evidence.
-	LoadPolicy(policy []byte) error
-
-	// CheckValid returns a boolean value indicating whether the specified
-	// set of evidence claims are valid with respect to the specified
-	// endorsements.
-	CheckValid(
-		evidence map[string]interface{},
-		endorsements map[string]interface{},
-	) (Status, error)
-
-	// GetClaims generates a set of additional claims derived from the
-	// provided evidence claims and endorsements.
-	GetClaims(
-		evidence map[string]interface{},
-		endorsements map[string]interface{},
-	) (map[string]interface{}, error)
-
-	// GetAttetationResult  populates the specified attestation result,
-	// based on the provided evidence and endorsements. The simple flag
-	// indicates wither the derived claims will be generated or only the
-	// valid/invalid flag will be set.
-	GetAttetationResult(
-		evidence map[string]interface{},
-		endorsements map[string]interface{},
-		simple bool,
-		result *AttestationResult,
+	Appraise(
+		attestation *Attestation,
+		policy *Policy,
 	) error
 
-	// Stop cleanly terminates the policy engine.
-	Stop() error
+	// Fini cleanly terminates the policy engine.
+	Close() error
 }
 
-func LoadAndInitializePolicyEngine(
-	locations []string,
-	name string,
-	params PolicyEngineParams,
-	quiet bool,
-) (IPolicyEngine, *plugin.Client, plugin.ClientProtocol, error) {
-	engineName := Canonize(name)
+func NewPolicyEngineParamStore() *ParamStore {
+	store := new(ParamStore)
 
-	lp, err := LoadPlugin(locations, "policyengine", engineName, quiet)
-	if err != nil {
-		return nil, nil, nil, err
+	if err := store.AddParamDefinitions(map[string]*ParamDescription{
+		"pePluginLocations": {
+			Kind:     uint32(reflect.Slice),
+			Path:     "plugin.locations",
+			Required: ParamNecessity_REQUIRED},
+		"peName": {
+			Kind:     uint32(reflect.String),
+			Path:     "policy.engine_name",
+			Required: ParamNecessity_REQUIRED,
+		},
+		"peParams": {
+			Kind:     uint32(reflect.Map),
+			Path:     "policy.engine_params",
+			Required: ParamNecessity_OPTIONAL,
+		},
+	}); err != nil {
+		// only get here if param definitions above need to be fixed.
+		panic(err)
 	}
 
-	pe := lp.Raw.(IPolicyEngine)
-	client := lp.PluginClient
-	rpcClient := lp.RPCClient
-
-	if client == nil {
-		return nil, nil, nil, fmt.Errorf("failed to find policy engine with name '%v'", engineName)
-	}
-
-	err = pe.Init(params)
-	if err != nil {
-		client.Kill()
-		return nil, nil, nil, err
-	}
-
-	return pe, client, rpcClient, nil
+	return store
 }
 
 // PolicyListEntry contains the listing for a policy inside an IPolicyStore.

@@ -25,11 +25,28 @@ func (pe *OpaPolicyEngine) GetName() string {
 
 // Init initializes the OPA context that will be used to evaluate the policy.
 // It does not expect any arguments.
-func (pe *OpaPolicyEngine) Init(args common.PolicyEngineParams) error {
+func (pe *OpaPolicyEngine) Init(params *common.ParamStore) error {
 	ctx := context.Background()
 	pe.ctx = ctx
 	pe.policy = nil
 	return nil
+}
+
+func (pe *OpaPolicyEngine) Appraise(attestation *common.Attestation, policy *common.Policy) error {
+	err := pe.LoadPolicy(policy.Rules)
+	if err != nil {
+		return err
+	}
+
+	evidence := attestation.Evidence.Evidence.AsMap()
+	endorsements := attestation.GetEndorsements()
+
+	status, err := pe.CheckValid(evidence, endorsements)
+	if status != common.Status_SUCCESS && attestation.Result.Status == common.Status_SUCCESS {
+		attestation.Result.Status = status
+	}
+
+	return err
 }
 
 func (pe *OpaPolicyEngine) LoadPolicy(policy []byte) error {
@@ -130,7 +147,7 @@ func (pe *OpaPolicyEngine) GetAttetationResult(
 }
 
 // Stop is a no-op for this plugin.
-func (pe *OpaPolicyEngine) Stop() error {
+func (pe *OpaPolicyEngine) Close() error {
 	return nil
 }
 

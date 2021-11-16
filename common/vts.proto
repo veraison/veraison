@@ -1,0 +1,30 @@
+syntax = "proto3";
+package common;
+
+option go_package = "github.com/veraison/common";
+
+import "attestation.proto";
+import "param.proto";
+import "token.proto";
+
+
+message InitResponse {
+}
+
+message CloseArgs {
+}
+
+message CloseResponse {
+}
+
+// Client interface for the Veraison Trusted Services component.
+service VTS {
+	rpc Init(ParamStore) returns (InitResponse);
+
+	// Returns attestation information -- evidences, endorsed claims, trust
+	// vector, etc -- for the provided attestation token data.
+	rpc GetAttestation(AttestationToken) returns (Attestation);
+
+	rpc Close(CloseArgs) returns (CloseResponse);
+}
+

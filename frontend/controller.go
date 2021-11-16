@@ -14,7 +14,6 @@ import (
 	"github.com/moogar0880/problems"
 
 	"github.com/veraison/common"
-	"github.com/veraison/tokenprocessor"
 	"github.com/veraison/verifier"
 )
 
@@ -35,19 +34,17 @@ func reportProblem(g *gin.Context, status int, details ...string) {
 type Controller struct {
 	logger         ILogger
 	sessionManager *SessionManager
-	tokenProcessor *tokenprocessor.TokenProcessor
 	verifier       *verifier.Verifier
 }
 
-func NewController(logger ILogger, tp *tokenprocessor.TokenProcessor, v *verifier.Verifier) *Controller {
+func NewController(logger ILogger, v *verifier.Verifier) *Controller {
 	c := &Controller{}
-	c.Init(logger, tp, v)
+	c.Init(logger, v)
 	return c
 }
 
-func (c *Controller) Init(logger ILogger, tp *tokenprocessor.TokenProcessor, v *verifier.Verifier) {
+func (c *Controller) Init(logger ILogger, v *verifier.Verifier) {
 	c.logger = logger
-	c.tokenProcessor = tp
 	c.verifier = v
 	c.sessionManager = NewSessionManager(defaultMaxLifetime)
 }
@@ -111,9 +108,6 @@ func (c Controller) Verify(g *gin.Context) {
 	// TODO: implement multi-tenancy
 	tenantID := 1
 
-	// TODO: parameterise verification mode.
-	simpleVerif := false
-
 	sessionID, err := strconv.Atoi(g.Param("sessionId"))
 	if err != nil {
 		g.AbortWithError(http.StatusBadRequest, err)
@@ -139,13 +133,13 @@ func (c Controller) Verify(g *gin.Context) {
 		return
 	}
 
-	evidenceContext, err := c.tokenProcessor.Process(tenantID, tokenFormat, tokenData)
-	if err != nil {
-		reportProblem(g, http.StatusBadRequest, err.Error())
-		return
+	token := common.AttestationToken{
+		TenantId: int64(tenantID),
+		Format:   tokenFormat,
+		Data:     tokenData,
 	}
 
-	attestationResult, err := c.verifier.Verify(evidenceContext, simpleVerif)
+	attestationResult, err := c.verifier.Verify(&token)
 	if err != nil {
 		reportProblem(g, http.StatusInternalServerError, err.Error())
 		return
@@ -174,13 +168,13 @@ func (c Controller) Close() {
 	c.verifier.Close()
 }
 
-func contentTypeToTokenFormat(contentType string) common.TokenFormat {
+func contentTypeToTokenFormat(contentType string) common.AttestationFormat {
 	switch contentType {
 	case "application/psa-attestation-token":
-		return common.PsaIatToken
+		return common.AttestationFormat_PSA_IOT
 	case "applitation/riot-attestation-token":
-		return common.DiceToken
+		return common.AttestationFormat_DICE
 	default:
-		return common.UnknownToken
+		return common.AttestationFormat_UNKNOWN_FORMAT
 	}
 }

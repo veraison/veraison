@@ -2,8 +2,9 @@ debug: true
 plugin:
     locations:
         - ../../plugins/bin/
-endorsements:
-    store_port: 50051
-    backend_name: sqlite
-    backend_params:
-        dbPath: test/endorsement-store.db
+vts:
+  port: 50051
+endorsement:
+    store_name: memory
+trust_anchor:
+    store_name: memory
