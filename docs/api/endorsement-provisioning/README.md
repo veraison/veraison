@@ -1,8 +1,8 @@
 # Endorsement Provisioning Interface
 
 The API described here are can be used to provision 
-Endorsements into a Verifier. The API are not agnostic with regards to 
-the specific data model used to transport Endorsements. HTTP Content negotiation is used to negotiate the precise message structure and format of the information exchanged between the clients and the server. 
+Endorsements into a Verifier. The API are agnostic with regards to 
+the specific data model used to transport Endorsements. HTTP Content negotiation is used to determine the precise message structure and format of the information exchanged between the clients and the server. 
 One specific example of information exchange using
 [Concise Reference Integrity Manifest](https://datatracker.ietf.org/doc/draft-birkholz-rats-corim/) is given below.
 
