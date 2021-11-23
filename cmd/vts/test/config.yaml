@@ -1,0 +1,9 @@
+debug: true
+plugin:
+    locations:
+        - ../../plugins/bin/
+endorsements:
+    store_port: 50051
+    backend_name: sqlite
+    backend_params:
+        dbPath: test/endorsement-store.db

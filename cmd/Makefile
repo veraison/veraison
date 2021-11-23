@@ -3,6 +3,6 @@
 
 #SUBDIR := endorsements
 #SUBDIR += policy
-SUBDIR += store
+SUBDIR += vts
 
 include ../mk/subdir.mk
