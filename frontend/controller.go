@@ -101,7 +101,7 @@ func (c Controller) NewSession(g *gin.Context) {
 	basePath := path.Dir(reqURL.Path)
 	sessionPath := path.Join(basePath, "session", strconv.FormatInt(session.GetID(), 10))
 
-	g.Header("Content-Type", "application/rats-challenge-response-session+json")
+	g.Header("Content-Type", "application/vnd.veraison.challenge-response-session+json")
 	g.Header("Location", sessionPath)
 	g.Header("Cache-Control", "no-cache")
 	g.JSON(http.StatusCreated, session.SessionInfo)

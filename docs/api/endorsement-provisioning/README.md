@@ -59,7 +59,7 @@ format is CoRIM.
      \ \                            V
       \ \  (2) GET           .-------------.
        \ '------------------>| /session/01 |
-        \<-------------------|             |
+        `<-------------------|             |
              200 (OK)        '-------------'
              status= "complete"
 ```
@@ -78,7 +78,7 @@ format is CoRIM.
   
 << Response:
   HTTP/1.1 201 Created
-  Content-Type: application/provisioning-session+json
+  Content-Type: application/vnd.veraison.provisioning-session+json
   Location: /endorsement-provisioning/v1/session/1234567890
 
   {
@@ -92,11 +92,11 @@ format is CoRIM.
 >> Request:
   GET /endorsement-provisioning/v1/session/1234567890
   Host: veraison.example
-  Accept: application/provisioning-session+json
+  Accept: application/vnd.veraison.provisioning-session+json
 
 << Response:
   HTTP/1.1 200 OK
-  Content-Type: application/provisioning-session+json
+  Content-Type: application/vnd.veraison.provisioning-session+json
 
   {
     "status": "complete",
