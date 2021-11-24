@@ -52,7 +52,7 @@ paths:
                 subsequent response interaction.  (The current content of the
                resource is returned in the response body.)
           content:
-            application/rats-challenge-response-session+json:
+            application/vnd.veraison.challenge-response-session+json:
               schema:
                 $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
         default:
@@ -69,7 +69,7 @@ paths:
           description: >
             The challenge-response session resource
           content:
-            application/json:
+            application/vnd.veraison.challenge-response-session+json:
               schema:
                 $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
         default:
@@ -99,7 +99,7 @@ paths:
             explicitly DELETE the resource, or let it be garbage collected
             after its natural "expiry".
           content:
-            application/json:
+            application/vnd.veraison.challenge-response-session+json:
               schema:
                 $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
         '202':
@@ -108,7 +108,7 @@ paths:
             asynchronously. The client is supposed to poll the resource for
             updates until the state is "processing".
           content:
-            application/json:
+            application/vnd.veraison.challenge-response-session+json:
               schema:
                 $ref: './schemas/components.yaml#/components/schemas/ChallengeResponseSession'
         default:

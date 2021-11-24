@@ -49,11 +49,11 @@ session expiry has elapsed.
 >> Request:
   POST /challenge-response/v1/newSession?nonceSize=32
   Host: veraison.example
-  Accept: application/rats-challenge-response-session+json
+  Accept: application/vnd.veraison.challenge-response-session+json
 
 << Response:
   HTTP/1.1 201 Created
-  Content-Type: application/rats-challenge-response-session+json
+  Content-Type: application/vnd.veraison.challenge-response-session+json
   Location: https://veraison.example/challenge-response/v1/session/1234567890
 
   {
@@ -74,14 +74,14 @@ session expiry has elapsed.
 >> Request:
   POST /challenge-response/v1/session/1234567890
   Host: veraison.example
-  Accept: application/rats-challenge-response-session+json
+  Accept: application/vnd.veraison.challenge-response-session+json
   Content-Type: application/psa-attestation-token
 
   .....
 
 << Response:
   HTTP/1.1 202 Accepted
-  Content-format: application/rats-challenge-response-session+json
+  Content-format: application/vnd.veraison.challenge-response-session+json
 
   {
     "nonce": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=",
@@ -103,11 +103,11 @@ session expiry has elapsed.
 >> Request:
   GET /challenge-response/v1/session/1234567890
   Host: veraison.example
-  Accept: application/rats-challenge-response-session+json
+  Accept: application/vnd.veraison.challenge-response-session+json
 
 << Response:
   HTTP/1.1 200 OK
-  Content-format: application/rats-challenge-response-session+json
+  Content-format: application/vnd.veraison.challenge-response-session+json
 
   {
     "nonce": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=",
@@ -138,14 +138,14 @@ session expiry has elapsed.
 >> Request:
   POST /challenge-response/v1/session/1234567890
   Host: veraison.example
-  Accept: application/rats-challenge-response-session+json
+  Accept: application/vnd.veraison.challenge-response-session+json
   Content-Type: application/psa-attestation-token
 
   .....
 
 << Response:
   HTTP/1.1 200 OK
-  Content-format: application/rats-challenge-response-session+json
+  Content-format: application/vnd.veraison.challenge-response-session+json
 
   {
     "nonce": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=",
