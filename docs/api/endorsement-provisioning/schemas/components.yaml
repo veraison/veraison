@@ -9,12 +9,11 @@ components:
           type: string
           enum:
             - processing
-            - complete
+            - success
             - failed
           description: >
-            For a payload submission 'status' processing reflects that provisioning is in progress
-            Upon successful completion of the provisioning, status moves to completed, else
-            failed.
+            For a payload submission, a status `processing` reflects that provisioning is in progress.
+            Upon successful completion of the provisioning, status moves to `success`, else to `failed`.
         expiry:
           type: string
           format: date-time
