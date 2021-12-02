@@ -22,7 +22,7 @@ components:
             the endorsement provisioning session expires and may no longer exist. The
             client MUST assume that the endorsement provisioning session resource is
             garbage-collected at the specified time.
-        details:
+        failure-reason:
           type: string
           description: >
             Optional field to provide more details about the failure cause when provisioning status is `failed`

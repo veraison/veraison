@@ -25,6 +25,10 @@ paths:
           description: >
             The supplied CoRIM has been successfully provisioned in
             the Verifier. The transaction is complete.
+          content:
+            application/vnd.veraison.provisioning-session+json:
+              schema:
+                $ref: './schemas/components.yaml#/components/schemas/SessionResource'
         '201':
           description: >
             The submission is successful and will be processed
@@ -41,7 +45,7 @@ paths:
                 subsequent status check. (The current content of the
                 resource is returned in the response body.)
           content:
-            provisioning-session+json:
+            application/vnd.veraison.provisioning-session+json:
               schema:
                 $ref: './schemas/components.yaml#/components/schemas/SessionResource'
         default:
@@ -57,7 +61,7 @@ paths:
           description: >
             The endorsement provisioning session resource
           content:
-            provisioning-session+json:
+            application/vnd.veraison.provisioning-session+json:
               schema:
                 $ref: './schemas/components.yaml#/components/schemas/SessionResource'
         default:
