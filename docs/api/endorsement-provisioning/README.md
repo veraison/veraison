@@ -88,7 +88,7 @@ format is CoRIM.
        \ '------------------>| /session/01 |
         `<-------------------|             |
              200 OK          '-------------'
-             { "status": ... }
+             { "status": "processing|success|failed" }
 ```
 
 * Client submits the endorsement provisioning request
