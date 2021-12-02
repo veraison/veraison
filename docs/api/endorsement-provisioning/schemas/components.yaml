@@ -9,12 +9,11 @@ components:
           type: string
           enum:
             - processing
-            - complete
+            - success
             - failed
           description: >
-            For a payload submission 'status' processing reflects that provisioning is in progress
-            Upon successful completion of the provisioning, status moves to completed, else
-            failed.
+            For a payload submission, a status `processing` reflects that provisioning is in progress.
+            Upon successful completion of the provisioning, status moves to `success`, else to `failed`.
         expiry:
           type: string
           format: date-time
@@ -23,7 +22,7 @@ components:
             the endorsement provisioning session expires and may no longer exist. The
             client MUST assume that the endorsement provisioning session resource is
             garbage-collected at the specified time.
-        details:
+        failure-reason:
           type: string
           description: >
             Optional field to provide more details about the failure cause when provisioning status is `failed`
