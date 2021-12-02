@@ -27,7 +27,7 @@ format is CoRIM.
 /|\ ------------------------>| /submit     |
 / \ <------------------------|             |
             200 (OK)         '-------------' 
-            { "status": ... }
+            { "status": "success|failed" }
 ```
 
 * Client submits the endorsement provisioning request
