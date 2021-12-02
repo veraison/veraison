@@ -128,7 +128,7 @@ format is CoRIM.
   Content-Type: application/vnd.veraison.provisioning-session+json
 
   {
-    "status": "complete",
+    "status": "success",
     "expiry": "2030-10-12T07:20:50.52Z"
   }
 ```
