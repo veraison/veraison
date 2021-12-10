@@ -55,7 +55,7 @@ where:
 * `authority` encodes the tenant
 * `path-absolute` encodes the parts of the key, identified positionally.  Missing optional parts are encoded as empty path segments.
 
-Attestation techology specific code (i.e., plugins) must provide their own syntesis functions.
+Attestation technology specific code (i.e., plugins) must provide their own synthesis functions.
 
 ### Examples
 
