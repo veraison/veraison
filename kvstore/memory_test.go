@@ -68,7 +68,7 @@ func TestMemoryStore_Init_bad_store_type(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_Init_Term_cycle_ok(t *testing.T) {
+func TestMemoryStore_Init_Close_cycle_ok(t *testing.T) {
 	s := Memory{}
 
 	for _, typ := range []string{"trustanchor", "endorsement"} {
@@ -79,7 +79,7 @@ func TestMemoryStore_Init_Term_cycle_ok(t *testing.T) {
 		assert.Equal(t, s.Type.String(), typ)
 		assert.Len(t, s.Data, 0)
 
-		err = s.Term()
+		err = s.Close()
 		assert.NoError(t, err)
 	}
 }

@@ -38,7 +38,7 @@ func (o *SQL) Init(cfg Config) error {
 	return nil
 }
 
-func (o *SQL) Term() error {
+func (o *SQL) Close() error {
 	return o.DB.Close()
 }
 

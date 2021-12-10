@@ -4,7 +4,7 @@ package kvstore
 
 type KVStore interface {
 	Init(cfg Config) error
-	Term() error
+	Close() error
 	Get(key string) (string, error)
 	Set(key string, val string) error
 	Del(key string) error

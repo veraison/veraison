@@ -30,7 +30,7 @@ func (o *Memory) Init(cfg Config) error {
 	return nil
 }
 
-func (o *Memory) Term() error {
+func (o *Memory) Close() error {
 	// no-op (the map is garbage collected)
 	return nil
 }
