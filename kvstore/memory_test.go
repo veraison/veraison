@@ -16,59 +16,42 @@ var (
 	altTestVal = `[1, 2, 3]`
 )
 
-func TestMemory_Init_missing_store_type(t *testing.T) {
-	s := Memory{}
+func TestMemory_Init_negative_tests(t *testing.T) {
+	tvs := []struct {
+		desc        string
+		cfg         Config
+		expectedErr string
+	}{
+		{
+			desc:        "missing store type",
+			cfg:         Config{"some-random-directive": "blabla"},
+			expectedErr: `missing "store-type" directive`,
+		},
+		{
+			desc:        "empty store type",
+			cfg:         Config{"store-type": ""},
+			expectedErr: `invalid "store-type": unknown type ""`,
+		},
+		{
+			desc:        "unknown store type",
+			cfg:         Config{"store-type": "some-random-type"},
+			expectedErr: `invalid "store-type": unknown type "some-random-type"`,
+		},
+		{
+			desc:        "bad store type",
+			cfg:         Config{"store-type": []string{"invalid array type"}},
+			expectedErr: `"store-type" wants string values`,
+		}}
 
-	cfg := map[string]interface{}{
-		"some-random-directive": "blabla",
+	for _, tv := range tvs {
+		s := Memory{}
+
+		err := s.Init(tv.cfg)
+		assert.EqualError(t, err, tv.expectedErr)
 	}
-
-	expectedErr := `missing "store-type" directive`
-
-	err := s.Init(cfg)
-	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_Init_empty_store_type(t *testing.T) {
-	s := Memory{}
-
-	cfg := map[string]interface{}{
-		"store-type": "",
-	}
-
-	expectedErr := `invalid "store-type": unknown type ""`
-
-	err := s.Init(cfg)
-	assert.EqualError(t, err, expectedErr)
-}
-
-func TestMemoryStore_Init_unknown_store_type(t *testing.T) {
-	s := Memory{}
-
-	cfg := map[string]interface{}{
-		"store-type": "some-random-type",
-	}
-
-	expectedErr := `invalid "store-type": unknown type "some-random-type"`
-
-	err := s.Init(cfg)
-	assert.EqualError(t, err, expectedErr)
-}
-
-func TestMemoryStore_Init_bad_store_type(t *testing.T) {
-	s := Memory{}
-
-	cfg := map[string]interface{}{
-		"store-type": []string{"invalid array type"},
-	}
-
-	expectedErr := `"store-type" wants string values`
-
-	err := s.Init(cfg)
-	assert.EqualError(t, err, expectedErr)
-}
-
-func TestMemoryStore_Init_Close_cycle_ok(t *testing.T) {
+func TestMemory_Init_Close_cycle_ok(t *testing.T) {
 	s := Memory{}
 
 	for _, typ := range []string{"trustanchor", "endorsement"} {
@@ -84,7 +67,7 @@ func TestMemoryStore_Init_Close_cycle_ok(t *testing.T) {
 	}
 }
 
-func TestMemoryStore_Set_Get_Del_with_uninitialised_store(t *testing.T) {
+func TestMemory_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 	s := Memory{}
 
 	expectedErr := `memory store uninitialized`
@@ -99,7 +82,7 @@ func TestMemoryStore_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_Set_Get_ok(t *testing.T) {
+func TestMemory_Set_Get_ok(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
@@ -114,7 +97,7 @@ func TestMemoryStore_Set_Get_ok(t *testing.T) {
 	assert.Equal(t, testVal, val)
 }
 
-func TestMemoryStore_Get_empty_key(t *testing.T) {
+func TestMemory_Get_empty_key(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
@@ -128,7 +111,7 @@ func TestMemoryStore_Get_empty_key(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_Del_empty_key(t *testing.T) {
+func TestMemory_Del_empty_key(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
@@ -142,7 +125,7 @@ func TestMemoryStore_Del_empty_key(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_Set_empty_key(t *testing.T) {
+func TestMemory_Set_empty_key(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
@@ -156,7 +139,7 @@ func TestMemoryStore_Set_empty_key(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_Set_bad_json(t *testing.T) {
+func TestMemory_Set_bad_json(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
@@ -170,7 +153,7 @@ func TestMemoryStore_Set_bad_json(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_Set_using_same_key_fails(t *testing.T) {
+func TestMemory_Set_using_same_key_fails(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
@@ -198,7 +181,7 @@ func TestMemoryStore_Set_using_same_key_fails(t *testing.T) {
 	assert.Equal(t, altTestVal, val)
 }
 
-func TestMemoryStore_Get_no_such_key(t *testing.T) {
+func TestMemory_Get_no_such_key(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
@@ -211,7 +194,7 @@ func TestMemoryStore_Get_no_such_key(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemoryStore_dump_ok(t *testing.T) {
+func TestMemory_dump_ok(t *testing.T) {
 	s := Memory{}
 	cfg := map[string]interface{}{"store-type": "endorsement"}
 
