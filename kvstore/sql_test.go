@@ -71,22 +71,6 @@ func TestSQL_Init_db_open_unknown_driver_postgres(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestSQL_Init_Close_cycle_ok(t *testing.T) {
-	s := Memory{}
-
-	for _, typ := range []string{"trustanchor", "endorsement"} {
-		cfg := map[string]interface{}{"store-type": typ}
-
-		err := s.Init(cfg)
-		assert.NoError(t, err)
-		assert.Equal(t, s.Type.String(), typ)
-		assert.Len(t, s.Data, 0)
-
-		err = s.Close()
-		assert.NoError(t, err)
-	}
-}
-
 func TestSQL_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 	s := SQL{}
 
