@@ -129,6 +129,7 @@ OpenDiceInput ::= SEQUENCE {
 
 For further details regarding the Open DICE X.509 profile, see the [Certificate Details](https://pigweed.googlesource.com/open-dice/+/HEAD/docs/specification.md#certificate-details) section of the spec.
 
+Open DICE also allows encoding UDS and CDI certificates in [CBOR Web Tokens (CWT)](https://pigweed.googlesource.com/open-dice/+/HEAD/docs/specification.md#CBOR-UDS-Certificates) similar to [EAT](https://datatracker.ietf.org/doc/draft-ietf-rats-eat/).   It also allows for hybrid cert chains, with co-existing X.509 and CWT certs in the same logical chain, to support legacy component integrations.
 ## DICE from a Veraison's Perspective
 
 Miscellaneous implementation & deployment considerations.
