@@ -7,7 +7,7 @@ Device Identifier Composition Engine (DICE) is an attestation standard developed
 The DICE specification is split across the following core documents:
 
 * [Hardware Requirements](https://trustedcomputinggroup.org/resource/hardware-requirements-for-a-device-identifier-composition-engine/), describing the DICE Root of Trust (RoT) and the construction of the (unique) Compound Device Identifier (CDI). 
-* [Layering Architecture](https://trustedcomputinggroup.org/resource/dice-attestation-architecture/), describing the construction of a device's layered identity rooted in the CDI and obtained via the recursive invocation of a simple primitive based on measurements and per-device secret seeding.
+* [Layering Architecture](https://trustedcomputinggroup.org/resource/dice-layering-architecture/), describing the construction of a device's layered identity rooted in the CDI and obtained via the recursive invocation of a simple primitive based on measurements and per-device secret seeding.
 * [Attestation Architecture](https://trustedcomputinggroup.org/resource/dice-attestation-architecture/), describing how DICE-based attestation fits in the wider [RATS architecture](https://www.ietf.org/archive/id/draft-ietf-rats-architecture-12.html).
 
 Other relevant documents include:
