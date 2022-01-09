@@ -9,7 +9,7 @@
 # targets:
 # * all        - Build .pb.go file from .proto [DEFAULT]
 #
-# note: This should be includded before test.mk and/or plugin.mk
+# note: This should be included before test.mk and/or plugin.mk
 #
 
 CLEANFILES += protogen *.pb.go *.pb.json.go

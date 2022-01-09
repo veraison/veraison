@@ -1,13 +1,16 @@
 // Copyright 2021 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-//  +build  !codeanalysis
+//go:build !codeanalysis
+// +build !codeanalysis
 
 package main
 
 import (
 	"errors"
 	"testing"
+
+	mock_deps "arangodbendorsements/mocks"
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -66,7 +69,7 @@ func TestInitStore(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
@@ -105,7 +108,7 @@ func TestConnectStore(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
@@ -170,7 +173,7 @@ func TestQueryHardwareID(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 			docList := []interface{}{}
 
 			if test.wantErr != noError {
@@ -362,7 +365,7 @@ func TestQueryGetSoftwareComponents(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 			test.wantQuery, test.qRsp = test.prepare(index)
 
 			gomock.InOrder(
@@ -511,7 +514,7 @@ func TestQueryAltSoftwareComponents(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			if test.wantErr != noError {
 				retErr = errors.New("invalid syntax")
@@ -631,7 +634,7 @@ func TestQueryAllSoftwareComponents(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			if test.wantErr != noError {
 				retErr = errors.New("invalid syntax")
@@ -766,7 +769,7 @@ func TestQueryLatestLinkedSwComponent(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			test.wantQuery, test.qRsp = test.prepare(index)
 
@@ -954,7 +957,7 @@ func TestQueryMostRecentSwComp(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			test.wantQuery, test.qRsp = test.prepare(index)
 
