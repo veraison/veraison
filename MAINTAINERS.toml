@@ -11,7 +11,6 @@
       "simonfrostarm", 
       "thomasfossati",
       "yogeshdeshpande",   
-      "manugupta",
       "sergeitrofimov",
     ]
 
@@ -38,10 +37,3 @@
     Name = "Yogesh Deshpande"
     Email = "yogesh.deshpande@arm.com"
     GitHub = "yogeshbdeshpande"
-
-    [people.manugupta]
-    Name = "Manu Gupta"
-    Email = "manu.gupta@arm.com"
-    GitHub = "mangup01"
-
-
