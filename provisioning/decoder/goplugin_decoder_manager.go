@@ -52,7 +52,7 @@ func (o *GoPluginDecoderManager) Init(dir string) error {
 	return nil
 }
 
-func (o GoPluginDecoderManager) Term() error {
+func (o GoPluginDecoderManager) Close() error {
 	for _, v := range o.DispatchTable {
 		if v.client != nil {
 			log.Printf("killing client %s", v.name)

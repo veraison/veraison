@@ -34,7 +34,7 @@ func main() {
 func terminator(sigs chan os.Signal, done chan bool, pluginManager decoder.IDecoderManager) {
 	sig := <-sigs
 	log.Println(sig, "received, exiting")
-	if err := pluginManager.Term(); err != nil {
+	if err := pluginManager.Close(); err != nil {
 		log.Println("plugin manager termination failed:", err)
 	}
 	done <- true
