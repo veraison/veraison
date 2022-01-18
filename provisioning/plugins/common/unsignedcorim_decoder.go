@@ -11,6 +11,16 @@ import (
 	"github.com/veraison/veraison/provisioning/decoder"
 )
 
+// IExtractor is the interface that CoRIM plugins need to implement to hook into
+// the UnsignedCorimDecoder logics.
+// Each extractor consumes a specific CoMID triple and produces a corresponding
+// Veraison Endorsement format (or an error).
+//
+// Note: At the moment the interface is limited by the known use cases.  We
+// anticipate that in the future there will to be an extractor for each of the
+// defined CoMID triples, plus maybe a way to handle cross-triples checks as
+// well as extraction from the "global" CoRIM context.
+// See also https://github.com/veraison/veraison/issues/112
 type IExtractor interface {
 	SwCompExtractor(comid.ReferenceValue) ([]*endorsement.SwComponent, error)
 	TaExtractor(comid.AttestVerifKey) (*endorsement.TrustAnchor, error)
