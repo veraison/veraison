@@ -18,5 +18,11 @@ $(CMD): $(SRCS) $(CMD_DEPS) ; go build -o $(CMD)
 
 CLEANFILES += $(CMD)
 
+.PHONY: realall
+realall: $(CMD)
+
+.PHONY: cmd-hook-pre
+cmd-hook-pre:
+
 .PHONY: all
-all: $(CMD)
+all: cmd-hook-pre realall

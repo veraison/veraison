@@ -10,6 +10,8 @@ PROTOPATHS := ../common
 
 CLEANFILES := *.pb.go
 
+lint-hook-pre: ; $(MAKE) protogen
+
 include ../mk/common.mk
 include ../mk/pkg.mk
 include ../mk/lint.mk

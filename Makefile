@@ -10,8 +10,9 @@ SUBDIR += verifier
 SUBDIR += frontend
 SUBDIR += cmd
 SUBDIR += kvstore
+SUBDIR += provisioning
 
-# At present, the frontentd has no tests We need to remove it from the CI
+# At present, the frontend has no tests We need to remove it from the CI
 # testing because it messes up the coverage collection filter.
 SUBDIR := $(filter-out frontend,$(SUBDIR))
 

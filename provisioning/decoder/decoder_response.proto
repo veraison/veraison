@@ -1,0 +1,11 @@
+syntax = "proto3";
+package endorsement_decoder_response;
+
+option go_package = "github.com/veraison/veraison/provisioning/decoder";
+
+import "storeapi.proto";
+
+message EndorsementDecoderResponse {
+    repeated endorsement.SwComponent swComponents = 1;
+    repeated endorsement.TrustAnchor trustAnchors = 2;
+}

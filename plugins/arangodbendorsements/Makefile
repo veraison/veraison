@@ -5,8 +5,10 @@ PLUGIN := ../bin/arangodb-endorsement-store
 GOPKG := arangodbendorsements
 SRCS := main.go
 INTERFACES := store.go
-MOCKPKG := main
+MOCKPKG := mocks
 
+all-hook-pre test-hook-pre lint-hook-pre:
+	$(MAKE) -C ../../common protogen
 
 include ../../mk/common.mk
 include ../../mk/plugin.mk

@@ -16,7 +16,13 @@ GOLINT_ARGS ?= run --timeout=3m
 GOLINT_EXTRA_ARGS ?= run --timeout=3m --issues-exit-code=0 -E dupl -E gocritic -E gosimple -E lll -E prealloc
 
 .PHONY: lint
-lint: ; $(GOLINT) $(GOLINT_ARGS)
+lint: lint-hook-pre reallint
+
+.PHONY: lint-hook-pre
+lint-hook-pre:
+
+.PHONY: reallint
+reallint: ; $(GOLINT) $(GOLINT_ARGS)
 
 .PHONY: lint-extra
 lint-extra: ; $(GOLINT) $(GOLINT_EXTRA_ARGS)

@@ -14,7 +14,7 @@ MOCKGEN := $(shell go env GOPATH)/bin/mockgen
 
 define MOCK_template
 mock_$(1): $(1)
-	$$(MOCKGEN) -source=$$< -destination=$$@ -package=$$(MOCKPKG)
+	$$(MOCKGEN) -source=$$< -destination=mocks/$$$$(basename $$@) -package=$$(MOCKPKG)
 endef
 
 $(foreach m,$(INTERFACES),$(eval $(call MOCK_template,$(m))))
@@ -23,7 +23,13 @@ MOCK_FILES := $(foreach m,$(INTERFACES),$(join mock_,$(m)))
 _mocks: $(MOCK_FILES)
 .PHONY: _mocks
 
-test: _mocks $(GEN_FILES); go test $(TEST_ARGS) $(GOPKG)
+test: test-hook-pre realtest
 .PHONY: test
+
+test-hook-pre:
+.PHONY: test-hook-pre
+
+realtest: _mocks ; go test $(TEST_ARGS) $(GOPKG)
+.PHONY: realtest
 
 CLEANFILES += $(MOCK_FILES)
