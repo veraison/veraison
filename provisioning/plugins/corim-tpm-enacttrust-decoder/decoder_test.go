@@ -70,3 +70,52 @@ func TestDecoder_Decode_OK(t *testing.T) {
 		assert.NoError(t, err)
 	}
 }
+
+func TestDecoder_Decode_negative_tests(t *testing.T) {
+	tvs := []struct {
+		desc        string
+		input       string
+		expectedErr string
+	}{
+		{
+			desc:        "multiple verification keys for an instance",
+			input:       unsignedCorimComidTpmEnactTrustAKMult,
+			expectedErr: `bad key in CoMID at index 0: expecting exactly one IAK public key`,
+		},
+		{
+			desc:        "incorrect instance id in the measurement",
+			input:       unsignedCorimComidTpmEnactTrustBadInst,
+			expectedErr: `bad software component in CoMID at index 0: could not extract instance attributes: could not extract node-id (UUID) from instance-id`,
+		},
+		{
+			desc:        "no instance id specified in the measurement",
+			input:       unsignedCorimComidTpmEnactTrustNoInst,
+			expectedErr: `bad software component in CoMID at index 0: could not extract instance attributes: expecting instance in environment`,
+		},
+		{
+			desc:        "multiple digest specified in the measurement",
+			input:       unsignedCorimComidTpmEnactTrustMultDigest,
+			expectedErr: `bad software component in CoMID at index 0: extracting measurement: expecting exactly one digest`,
+		},
+		{
+			desc:        "multiple measurements in ref value triple",
+			input:       unsignedCorimComidTpmEnactTrustGoldenTwo,
+			expectedErr: `bad software component in CoMID at index 0: expecting one measurement only`,
+		},
+		{
+			desc:        "no digest specified in the measurement",
+			input:       unsignedCorimComidTpmEnactTrustNoDigest,
+			expectedErr: `bad software component in CoMID at index 0: extracting measurement: measurement value has no digests`,
+		},
+		{
+			desc:        "incorrect instance id specified in the measurement",
+			input:       unsignedCorimComidTpmEnactTrustAKBadInst,
+			expectedErr: `bad key in CoMID at index 0: could not extract node id: could not extract node-id (UUID) from instance-id`,
+		}}
+	for _, tv := range tvs {
+		data := comid.MustHexDecode(t, tv.input)
+		d := &Decoder{}
+		_, err := d.Decode(data)
+		assert.EqualError(t, err, tv.expectedErr)
+	}
+}

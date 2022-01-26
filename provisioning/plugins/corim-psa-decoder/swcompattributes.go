@@ -15,6 +15,11 @@ type PSASwCompAttributes struct {
 }
 
 func (o *PSASwCompAttributes) FromMeasurement(m comid.Measurement) error {
+
+	if m.Key == nil {
+		return fmt.Errorf("measurement key is not present")
+	}
+
 	// extract psa-swcomp-id from mkey
 	if !m.Key.IsSet() {
 		return fmt.Errorf("measurement key is not set")

@@ -74,6 +74,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 		unsignedCorimComidPsaIakPubTwo,
 		unsignedCorimComidPsaRefValOne,
 		unsignedCorimComidPsaRefValThree,
+		unsignedCorimComidPsaRefValNoLandV,
 	}
 
 	d := &Decoder{}
@@ -82,5 +83,49 @@ func TestDecoder_Decode_OK(t *testing.T) {
 		data := comid.MustHexDecode(t, tv)
 		_, err := d.Decode(data)
 		assert.NoError(t, err)
+	}
+}
+
+func TestDecoder_Decode_negative_tests(t *testing.T) {
+	tvs := []struct {
+		desc        string
+		input       string
+		expectedErr string
+	}{
+		{
+			desc:        "multiple verification keys for an instance",
+			input:       unsignedCorimComidPsaMultIak,
+			expectedErr: `bad key in CoMID at index 0: expecting exactly one IAK public key`,
+		},
+		{
+			desc:        "multiple digest for a PSA key in the measurement",
+			input:       unsignedCorimComidPsaRefValMultDigest,
+			expectedErr: `bad software component in CoMID at index 0: extracting measurement at index 0: expecting exactly one digest`,
+		},
+		{
+			desc:        "no mkey specified in the measurement",
+			input:       unsignedCorimComidPsaRefValNoMkey,
+			expectedErr: `bad software component in CoMID at index 0: extracting measurement at index 0: measurement key is not present`,
+		},
+		{
+			desc:        "no implementation id specified in the measurement",
+			input:       unsignedCorimComidPsaRefValNoImplID,
+			expectedErr: `bad software component in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: comid.TaggedUUID`,
+		},
+		{
+			desc:        "no instance id specified in the verification key triple",
+			input:       unsignedCorimComidPsaIakPubNoUeID,
+			expectedErr: `bad key in CoMID at index 0: could not extract PSA instance-id: expecting instance in environment`,
+		},
+		{
+			desc:        "no implementation id specified in the verification key triple",
+			input:       unsignedCorimComidPsaIakPubNoImplID,
+			expectedErr: `bad key in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: comid.TaggedUUID`,
+		}}
+	for _, tv := range tvs {
+		data := comid.MustHexDecode(t, tv.input)
+		d := &Decoder{}
+		_, err := d.Decode(data)
+		assert.EqualError(t, err, tv.expectedErr)
 	}
 }
