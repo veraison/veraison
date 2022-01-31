@@ -12,5 +12,4 @@ require (
 	github.com/veraison/common v0.0.0
 	github.com/veraison/policy v0.0.0
 	go.uber.org/zap v1.17.0
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

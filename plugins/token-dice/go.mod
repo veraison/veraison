@@ -9,5 +9,4 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/veraison/common v0.0.0
 	github.com/veraison/dice v0.0.1
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

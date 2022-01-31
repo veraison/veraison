@@ -13,5 +13,4 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/veraison/common v0.0.0
 	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
