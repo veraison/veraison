@@ -9,4 +9,5 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.5
 	github.com/stretchr/testify v1.7.0
 	github.com/veraison/common v0.0.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
