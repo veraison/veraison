@@ -5,7 +5,6 @@ go 1.15
 replace github.com/veraison/common => ../common
 
 require (
-	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
 	github.com/hashicorp/go-plugin v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.3
 	github.com/stretchr/testify v1.7.0
