@@ -11,5 +11,4 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.3
 	github.com/stretchr/testify v1.7.0
 	github.com/veraison/common v0.0.0
-	github.com/veraison/policy v0.0.0
 )
