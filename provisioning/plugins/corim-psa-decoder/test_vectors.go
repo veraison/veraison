@@ -104,8 +104,8 @@ e5d8bae86b01a102828201582087428fc522803d31065e7bce3cf03fe475
 ce3cf03fe475096231e5e07bbd7a0fde60c4cf25c7
 `
 
-// automatically generated from ComidPsaRefValNoLandV.json
-var unsignedCorimComidPsaRefValNoLandV = `
+// automatically generated from ComidPsaRefValOnlyMandIDAttr.json
+var unsignedCorimComidPsaRefValOnlyMandIDAttr = `
 a200505c57e8f446cd421b91c908cf93e13cfc018158dcd901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
 434d45204c74642e01d8207468747470733a2f2f61636d652e6578616d70

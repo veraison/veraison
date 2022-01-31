@@ -80,7 +80,7 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		{
 			desc:        "multiple verification keys for an instance",
 			input:       unsignedCorimComidTpmEnactTrustAKMult,
-			expectedErr: `bad key in CoMID at index 0: expecting exactly one IAK public key`,
+			expectedErr: `bad key in CoMID at index 0: expecting exactly one AK public key`,
 		},
 		{
 			desc:        "incorrect instance id in the measurement",
@@ -112,6 +112,7 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 			input:       unsignedCorimComidTpmEnactTrustAKBadInst,
 			expectedErr: `bad key in CoMID at index 0: could not extract node id: could not extract node-id (UUID) from instance-id`,
 		}}
+
 	for _, tv := range tvs {
 		data := comid.MustHexDecode(t, tv.input)
 		d := &Decoder{}

@@ -74,7 +74,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 		unsignedCorimComidPsaIakPubTwo,
 		unsignedCorimComidPsaRefValOne,
 		unsignedCorimComidPsaRefValThree,
-		unsignedCorimComidPsaRefValNoLandV,
+		unsignedCorimComidPsaRefValOnlyMandIDAttr,
 	}
 
 	d := &Decoder{}

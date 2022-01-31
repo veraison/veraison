@@ -91,7 +91,7 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*endorsement.TrustAnch
 
 	// extract AK pub
 	if len(avk.VerifKeys) != 1 {
-		return nil, errors.New("expecting exactly one IAK public key")
+		return nil, errors.New("expecting exactly one AK public key")
 	}
 
 	akPub := avk.VerifKeys[0].Key
