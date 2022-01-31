@@ -1,0 +1,36 @@
+{
+  "tag-identity": {
+    "id": "00000000-0000-0000-0000-000000000000"
+  },
+  "entities": [
+    {
+      "name": "EnactTrust",
+      "regid": "https://enacttrust.com",
+      "roles": [
+        "tagCreator",
+        "creator",
+        "maintainer"
+      ]
+    }
+  ],
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "instance": {
+            "type": "uuid",
+            "value": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          }
+        },
+        "measurements": [
+          {
+            "value": {
+							"mac-addr": "00:00:5e:00:53:01",
+							"ip-addr": "2001:4860:0:2001::68"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

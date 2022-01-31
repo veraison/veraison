@@ -17,13 +17,12 @@ func (o *InstanceAttributes) FromEnvironment(e comid.Environment) error {
 		return fmt.Errorf("expecting instance in environment")
 	}
 
-	nodeID := inst.String()
-
-	if nodeID == "" {
+	nodeID, err := e.Instance.GetUUID()
+	if err != nil {
 		return fmt.Errorf("could not extract node-id (UUID) from instance-id")
 	}
 
-	o.NodeID = nodeID
+	o.NodeID = nodeID.String()
 
 	return nil
 }
