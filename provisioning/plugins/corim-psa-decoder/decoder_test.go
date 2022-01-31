@@ -98,12 +98,12 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 			expectedErr: `bad key in CoMID at index 0: expecting exactly one IAK public key`,
 		},
 		{
-			desc:        "multiple digest for a PSA key in the measurement",
+			desc:        "multiple digests in the same measurement",
 			input:       unsignedCorimComidPsaRefValMultDigest,
 			expectedErr: `bad software component in CoMID at index 0: extracting measurement at index 0: expecting exactly one digest`,
 		},
 		{
-			desc:        "no mkey specified in the measurement",
+			desc:        "missing measurement identifier",
 			input:       unsignedCorimComidPsaRefValNoMkey,
 			expectedErr: `bad software component in CoMID at index 0: extracting measurement at index 0: measurement key is not present`,
 		},
@@ -122,6 +122,7 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 			input:       unsignedCorimComidPsaIakPubNoImplID,
 			expectedErr: `bad key in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: comid.TaggedUUID`,
 		}}
+
 	for _, tv := range tvs {
 		data := comid.MustHexDecode(t, tv.input)
 		d := &Decoder{}
