@@ -23,12 +23,14 @@ Attestation is the system by which something produces evidence about itself that
 ## What part does Veraison play in this?
 Given the above, it can be challenging to build just one Verification Service solution which can address all deployments for a technology that needs to produce Attestation reports to prove its trustworthiness. If that then implies that each deployment needs a custom service, there is a significant software barrier and hence cost of entry to establishing a system that can be used in a secure manner. Veraison aims to provide consistency and convenience to solving this problem by building the software components that can be used to build Attestation Verification Services. The Veraison project will also build some reference implementations in order to prove the integration principles of those components and to provide a convenient starting point for some implementations.
 
-For further details, see the work in progress documentation under [docs](docs)
-
 ## Why "Veraison"?
 Veraison ("ver-ayy-son") is a term used in winemaking to indicate the point at which grapes start to ripen. 
 It was chosen for this project mainly because it could fit into the project intent (verification of attestation) and because it didn't clash with any other project name.
 There is also an allegorical aspect about good/bad verifications being reflected by ripe / unripe states or even common uses of green / red colours, but musing on such interpretations is left to the reader! 
+
+# Documentation
+
+You can access Veraison documentation under [docs](https://github.com/veraison/docs/README.md).
 
 # Maintainers
 
