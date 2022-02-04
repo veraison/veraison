@@ -30,7 +30,7 @@ There is also an allegorical aspect about good/bad verifications being reflected
 
 # Documentation
 
-You can access Veraison documentation under [docs](https://github.com/veraison/docs/README.md).
+You can access Veraison documentation under [docs](https://github.com/veraison/docs/blob/main/README.md).
 
 # Maintainers
 
