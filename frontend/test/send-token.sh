@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2022 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
