@@ -20,10 +20,12 @@ endef
 $(foreach m,$(INTERFACES),$(eval $(call MOCK_template,$(m))))
 MOCK_FILES := $(foreach m,$(INTERFACES),$(join mock_,$(m)))
 
+THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
 _mocks: $(MOCK_FILES)
 .PHONY: _mocks
 
-test: test-hook-pre realtest
+test: test-hook-pre realtest checkcopyrights
 .PHONY: test
 
 test-hook-pre:
@@ -31,5 +33,12 @@ test-hook-pre:
 
 realtest: _mocks ; go test $(TEST_ARGS) $(GOPKG)
 .PHONY: realtest
+
+ifdef CI_PIPELINE
+	COPYRIGHT_FLAGS := --no-year-check
+endif
+
+checkcopyrights: ; python $(THIS_DIR)../scripts/check-copyright $(COPYRIGHT_FLAGS) .
+.PHONY: checkcopyrights
 
 CLEANFILES += $(MOCK_FILES)
