@@ -57,5 +57,5 @@ func Test_Validate(t *testing.T) {
 
 	status, err := pe.CheckValid(evidence, endorsements)
 	assert.Nil(err)
-	assert.Equal(common.Status_SUCCESS, status)
+	assert.Equal(common.AR_Status_SUCCESS, status)
 }

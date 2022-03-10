@@ -2,7 +2,6 @@ module github.com/veraison/veraison/provisioning/plugins/corim-tpm-enacttrust
 
 replace (
 	github.com/veraison/common => ../../../common
-	github.com/veraison/endorsement => ../../../endorsement
 	github.com/veraison/veraison/provisioning/decoder => ../../decoder
 	github.com/veraison/veraison/provisioning/plugins/common => ../common
 )
@@ -14,7 +13,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/veraison/common v0.0.0
 	github.com/veraison/corim v0.0.0-20220131142553-4211ff85addf
-	github.com/veraison/endorsement v0.0.0-00010101000000-000000000000
 	github.com/veraison/veraison/provisioning/decoder v0.0.0-20220118143936-7ebedb0bdf17
 	github.com/veraison/veraison/provisioning/plugins/common v0.0.0-20220118143936-7ebedb0bdf17
 	google.golang.org/protobuf v1.27.1

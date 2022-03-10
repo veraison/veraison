@@ -8,13 +8,12 @@ import (
 
 	"github.com/veraison/common"
 	"github.com/veraison/corim/comid"
-	"github.com/veraison/endorsement"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 type Extractor struct{}
 
-func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*endorsement.SwComponent, error) {
+func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwComponent, error) {
 	var psaClassAttrs PSAClassAttributes
 
 	if err := psaClassAttrs.FromEnvironment(rv.Environment); err != nil {
@@ -27,7 +26,7 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*endorsement.SwCo
 	// measurements as needed, provided they belong to the same PSA RoT
 	// identified in the subject of the "reference value" triple.  A single
 	// reference-triple-record SHALL completely describe the updatable PSA RoT.
-	var swComponents []*endorsement.SwComponent
+	var swComponents []*common.SwComponent
 
 	for i, m := range rv.Measurements {
 		var psaSwCompAttrs PSASwCompAttributes
@@ -46,8 +45,8 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*endorsement.SwCo
 			return nil, fmt.Errorf("failed to create software component attributes: %w", err)
 		}
 
-		swComponent := endorsement.SwComponent{
-			Id: &endorsement.SwComponentID{
+		swComponent := common.SwComponent{
+			Id: &common.SwComponentID{
 				Type:  common.AttestationFormat_PSA_IOT,
 				Parts: swID,
 			},
@@ -98,7 +97,7 @@ func makeSwAttrs(s PSASwCompAttributes) (*structpb.Struct, error) {
 	)
 }
 
-func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*endorsement.TrustAnchor, error) {
+func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, error) {
 	// extract instance ID
 	var psaInstanceAttrs PSAInstanceAttributes
 
@@ -130,13 +129,13 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*endorsement.TrustAnch
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
 	}
 
-	ta := &endorsement.TrustAnchor{
-		Id: &endorsement.TrustAnchorID{
+	ta := &common.TrustAnchor{
+		Id: &common.TrustAnchID{
 			Type:  common.AttestationFormat_PSA_IOT,
 			Parts: taID,
 		},
-		Value: &endorsement.TrustAnchorValue{
-			Type:  endorsement.TaType_RAWPUBLICKEY,
+		Value: &common.TrustAnchorValue{
+			Type:  common.TaType_TA_RAWPUBLICKEY,
 			Value: taKey,
 		},
 	}

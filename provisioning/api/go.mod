@@ -4,7 +4,6 @@ go 1.17
 
 replace (
 	github.com/veraison/common => ../../common
-	github.com/veraison/endorsement => ../../endorsement
 	github.com/veraison/veraison/provisioning/decoder => ../decoder
 	github.com/veraison/veraison/provisioning/storeclient => ../storeclient
 )
@@ -14,7 +13,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/moogar0880/problems v0.1.1
 	github.com/stretchr/testify v1.7.0
-	github.com/veraison/endorsement v0.0.0-00010101000000-000000000000
+	github.com/veraison/common v0.0.0
 	github.com/veraison/veraison/provisioning/decoder v0.0.0-00010101000000-000000000000
 	github.com/veraison/veraison/provisioning/storeclient v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.43.0
@@ -54,7 +53,6 @@ require (
 	github.com/spf13/viper v1.9.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
-	github.com/veraison/common v0.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420 // indirect

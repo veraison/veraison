@@ -79,12 +79,12 @@ func (s Scheme) GetAttestation(
 		Evidence: ec,
 	}
 	tv := common.TrustVector{
-		SoftwareIntegrity:    common.Status_UNKNOWN,
-		HardwareAuthenticity: common.Status_UNKNOWN,
-		SoftwareUpToDateness: common.Status_UNKNOWN,
-		ConfigIntegrity:      common.Status_UNKNOWN,
-		RuntimeIntegrity:     common.Status_UNKNOWN,
-		CertificationStatus:  common.Status_SUCCESS,
+		SoftwareIntegrity:    common.AR_Status_UNKNOWN,
+		HardwareAuthenticity: common.AR_Status_UNKNOWN,
+		SoftwareUpToDateness: common.AR_Status_UNKNOWN,
+		ConfigIntegrity:      common.AR_Status_UNKNOWN,
+		RuntimeIntegrity:     common.AR_Status_UNKNOWN,
+		CertificationStatus:  common.AR_Status_SUCCESS,
 	}
 
 	attestation.Result.TrustVector = &tv

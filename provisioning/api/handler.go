@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/veraison/endorsement"
+	"github.com/veraison/common"
 	"github.com/veraison/veraison/provisioning/decoder"
 	"github.com/veraison/veraison/provisioning/storeclient"
 )
@@ -116,7 +116,7 @@ func (o *Handler) Submit(c *gin.Context) {
 
 func (o *Handler) store(rsp *decoder.EndorsementDecoderResponse) error {
 	for _, ta := range rsp.TrustAnchors {
-		taReq := &endorsement.AddTrustAnchorRequest{TrustAnchor: ta}
+		taReq := &common.AddTrustAnchorRequest{TrustAnchor: ta}
 
 		taRes, err := o.StoreClient.AddTrustAnchor(context.TODO(), taReq)
 		if err != nil {
@@ -132,8 +132,8 @@ func (o *Handler) store(rsp *decoder.EndorsementDecoderResponse) error {
 	}
 
 	for _, swComp := range rsp.SwComponents {
-		swCompReq := &endorsement.AddSwComponentsRequest{
-			Info: []*endorsement.SwComponent{
+		swCompReq := &common.AddSwComponentsRequest{
+			Info: []*common.SwComponent{
 				swComp,
 			},
 		}

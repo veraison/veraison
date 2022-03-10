@@ -4,7 +4,6 @@ go 1.17
 
 replace (
 	github.com/veraison/common => ../../common
-	github.com/veraison/endorsement => ../../endorsement
 	github.com/veraison/veraison/provisioning/api => ../api
 	github.com/veraison/veraison/provisioning/decoder => ../decoder
 	github.com/veraison/veraison/provisioning/storeclient => ../storeclient
@@ -51,7 +50,6 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/veraison/common v0.0.0 // indirect
-	github.com/veraison/endorsement v0.0.0-00010101000000-000000000000 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420 // indirect

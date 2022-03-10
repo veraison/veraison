@@ -7,7 +7,6 @@ SRCS := $(wildcard *.go)
 
 all-hook-pre all-test-pre all-lint-pre:
 	$(MAKE) -C ../../../common protogen
-	$(MAKE) -C ../../../endorsement protogen
 	$(MAKE) -C ../../decoder protogen
 
 include ../../../mk/common.mk

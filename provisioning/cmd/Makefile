@@ -13,7 +13,6 @@ CMD_DEPS += $(wildcard ../storeclient/*.go)
 
 cmd-hook-pre test-hook-pre lint-hook-pre:
 	$(MAKE) -C ../../common protogen
-	$(MAKE) -C ../../endorsement protogen
 	$(MAKE) -C ../decoder protogen
 
 include ../../mk/common.mk

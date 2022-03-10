@@ -39,14 +39,14 @@ func TestResult_RoundTrip(t *testing.T) {
 	require := require.New(t)
 
 	result := AttestationResult{
-		Status: Status_SUCCESS,
+		Status: AR_Status_SUCCESS,
 		TrustVector: &TrustVector{
-			HardwareAuthenticity: Status_SUCCESS,
-			SoftwareIntegrity:    Status_SUCCESS,
-			SoftwareUpToDateness: Status_SUCCESS,
-			ConfigIntegrity:      Status_SUCCESS,
-			RuntimeIntegrity:     Status_SUCCESS,
-			CertificationStatus:  Status_UNKNOWN,
+			HardwareAuthenticity: AR_Status_SUCCESS,
+			SoftwareIntegrity:    AR_Status_SUCCESS,
+			SoftwareUpToDateness: AR_Status_SUCCESS,
+			ConfigIntegrity:      AR_Status_SUCCESS,
+			RuntimeIntegrity:     AR_Status_SUCCESS,
+			CertificationStatus:  AR_Status_UNKNOWN,
 		},
 		RawEvidence:       []byte{0xDE, 0xAD, 0xBE, 0xEF},
 		Timestamp:         &timestamppb.Timestamp{},

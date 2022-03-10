@@ -8,40 +8,38 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/moogar0880/problems"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/veraison/endorsement"
+	"github.com/veraison/common"
 	mock_deps "github.com/veraison/veraison/provisioning/api/mocks"
 	"github.com/veraison/veraison/provisioning/decoder"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 var (
 	testGoodDecoderResponse = decoder.EndorsementDecoderResponse{
-		TrustAnchors: []*endorsement.TrustAnchor{
-			&endorsement.TrustAnchor{},
+		TrustAnchors: []*common.TrustAnchor{
+			&common.TrustAnchor{},
 		},
-		SwComponents: []*endorsement.SwComponent{
-			&endorsement.SwComponent{},
+		SwComponents: []*common.SwComponent{
+			&common.SwComponent{},
 		},
 	}
-	testFailedTaRes = endorsement.AddTrustAnchorResponse{
-		Status: &endorsement.Status{Result: false},
+	testFailedTaRes = common.AddTrustAnchorResponse{
+		Status: &common.Status{Result: false},
 	}
-	testGoodTaRes = endorsement.AddTrustAnchorResponse{
-		Status: &endorsement.Status{Result: true},
+	testGoodTaRes = common.AddTrustAnchorResponse{
+		Status: &common.Status{Result: true},
 	}
-	testFailedSwCompRes = endorsement.AddSwComponentsResponse{
-		Status: &endorsement.Status{Result: false},
+	testFailedSwCompRes = common.AddSwComponentsResponse{
+		Status: &common.Status{Result: false},
 	}
-	testGoodSwCompRes = endorsement.AddSwComponentsResponse{
-		Status: &endorsement.Status{Result: true},
+	testGoodSwCompRes = common.AddSwComponentsResponse{
+		Status: &common.Status{Result: true},
 	}
 )
 
@@ -242,7 +240,7 @@ func TestHandler_Submit_store_AddTrustAnchor_failure1(t *testing.T) {
 		AddTrustAnchor(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddTrustAnchorRequest{
+				&common.AddTrustAnchorRequest{
 					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
 				},
 			),
@@ -305,7 +303,7 @@ func TestHandler_Submit_store_AddTrustAnchor_failure2(t *testing.T) {
 		AddTrustAnchor(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddTrustAnchorRequest{
+				&common.AddTrustAnchorRequest{
 					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
 				},
 			),
@@ -367,7 +365,7 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 		AddTrustAnchor(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddTrustAnchorRequest{
+				&common.AddTrustAnchorRequest{
 					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
 				},
 			),
@@ -377,9 +375,9 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 		AddSwComponents(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddSwComponentsRequest{
-					Info: []*endorsement.SwComponent{
-						&endorsement.SwComponent{},
+				&common.AddSwComponentsRequest{
+					Info: []*common.SwComponent{
+						&common.SwComponent{},
 					},
 				},
 			),
@@ -442,7 +440,7 @@ func TestHandler_Submit_store_AddSwComponents_failure2(t *testing.T) {
 		AddTrustAnchor(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddTrustAnchorRequest{
+				&common.AddTrustAnchorRequest{
 					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
 				},
 			),
@@ -452,9 +450,9 @@ func TestHandler_Submit_store_AddSwComponents_failure2(t *testing.T) {
 		AddSwComponents(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddSwComponentsRequest{
-					Info: []*endorsement.SwComponent{
-						&endorsement.SwComponent{},
+				&common.AddSwComponentsRequest{
+					Info: []*common.SwComponent{
+						&common.SwComponent{},
 					},
 				},
 			),
@@ -515,7 +513,7 @@ func TestHandler_Submit_ok(t *testing.T) {
 		AddTrustAnchor(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddTrustAnchorRequest{
+				&common.AddTrustAnchorRequest{
 					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
 				},
 			),
@@ -525,9 +523,9 @@ func TestHandler_Submit_ok(t *testing.T) {
 		AddSwComponents(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&endorsement.AddSwComponentsRequest{
-					Info: []*endorsement.SwComponent{
-						&endorsement.SwComponent{},
+				&common.AddSwComponentsRequest{
+					Info: []*common.SwComponent{
+						&common.SwComponent{},
 					},
 				},
 			),
