@@ -15,7 +15,7 @@ type IEvidenceExtractor interface {
 	// GetTrustAnchorID returns the TrustAnchorID associated with this
 	// token. This is used to retrieve a trust anchor form a store that may
 	// be used to decrypt and/or verify the signature on the token.
-	GetTrustAnchorID(token []byte) (TrustAnchorID, error)
+	GetTrustAnchorID(token []byte) (TrustAnchID, error)
 
 	// ExtractEvidence verifies the token structure and signature using the
 	// provided trust anchor and extracts evidence claims. The claims are

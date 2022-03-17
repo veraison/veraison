@@ -21,7 +21,6 @@ var PluginMap = map[string]plugin.Plugin{
 	"policyengine":     &PolicyEnginePlugin{},
 	"policystore":      &PolicyStorePlugin{},
 	"scheme":           &SchemePlugin{},
-	"trustanchorstore": &TrustAnchorStorePlugin{},
 }
 
 // LoadedPlugin encapsulates a loaded Hashicorp plugin.
