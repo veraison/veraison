@@ -29,7 +29,7 @@ message OpenResponse {
     Status status = 1;
 }
 
-enum TaType {
+enum TAType {
     TA_UNSPECIFIED = 0;
     TA_RAWPUBLICKEY = 1;
     // Refer https://github.com/veraison/veraison/issues/76, to introduce certs here!
@@ -90,18 +90,18 @@ message GetSwComponentResponse {
     google.protobuf.Struct attributes = 2;
 }
 
-message TrustAnchID {
+message TrustAnchorID {
     AttestationFormat type = 1;
     google.protobuf.Struct parts = 2;
 }
 
 message TrustAnchorValue {
-    TaType type = 1;
+    TAType type = 1;
     google.protobuf.Struct value = 2;
 }
 
 message TrustAnchor {
-    TrustAnchID id = 1;
+    TrustAnchorID id = 1;
     TrustAnchorValue value = 2;
 }
 
@@ -114,7 +114,7 @@ message AddTrustAnchorResponse {
 }
 
 message GetTrustAnchorRequest {
-    TrustAnchID ta_id = 1;
+    TrustAnchorID ta_id = 1;
 }
 
 message GetTrustAnchorResponse {

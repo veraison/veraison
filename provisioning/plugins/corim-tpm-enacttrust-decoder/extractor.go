@@ -103,12 +103,12 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, e
 	}
 
 	ta := &common.TrustAnchor{
-		Id: &common.TrustAnchID{
+		Id: &common.TrustAnchorID{
 			Type:  common.AttestationFormat_PSA_IOT,
 			Parts: taID,
 		},
 		Value: &common.TrustAnchorValue{
-			Type:  common.TaType_TA_RAWPUBLICKEY,
+			Type:  common.TAType_TA_RAWPUBLICKEY,
 			Value: taKey,
 		},
 	}
