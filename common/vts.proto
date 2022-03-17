@@ -62,7 +62,6 @@ message GetEndorsementsResponse {
     google.protobuf.Struct endorsements = 4;
 }
 
-
 message SwComponentID {
     AttestationFormat type = 1;
     google.protobuf.Struct parts = 2;
