@@ -42,7 +42,7 @@ func (pe *OpaPolicyEngine) Appraise(attestation *common.Attestation, policy *com
 	endorsements := attestation.GetEndorsements()
 
 	status, err := pe.CheckValid(evidence, endorsements)
-	if status != common.Status_SUCCESS && attestation.Result.Status == common.Status_SUCCESS {
+	if status != common.AR_Status_SUCCESS && attestation.Result.Status == common.AR_Status_SUCCESS {
 		attestation.Result.Status = status
 	}
 
@@ -57,9 +57,9 @@ func (pe *OpaPolicyEngine) LoadPolicy(policy []byte) error {
 func (pe *OpaPolicyEngine) CheckValid(
 	evidence map[string]interface{},
 	endorsements map[string]interface{},
-) (common.Status, error) {
+) (common.AR_Status, error) {
 	if pe.policy == nil {
-		return common.Status_FAILURE, fmt.Errorf("policy not set")
+		return common.AR_Status_FAILURE, fmt.Errorf("policy not set")
 	}
 
 	input := map[string]interface{}{"evidence": evidence, "endorsements": endorsements}
@@ -71,19 +71,19 @@ func (pe *OpaPolicyEngine) CheckValid(
 
 	rs, err := rego.Eval(pe.ctx)
 	if err != nil {
-		return common.Status_FAILURE, err
+		return common.AR_Status_FAILURE, err
 	}
 
 	result := rs[0].Expressions[0].Value
 	switch t := result.(type) {
 	case bool:
 		if result.(bool) {
-			return common.Status_SUCCESS, nil
+			return common.AR_Status_SUCCESS, nil
 		}
 
-		return common.Status_FAILURE, nil
+		return common.AR_Status_FAILURE, nil
 	default:
-		return common.Status_FAILURE, fmt.Errorf("query evaluated to %v; expected bool", t)
+		return common.AR_Status_FAILURE, fmt.Errorf("query evaluated to %v; expected bool", t)
 	}
 }
 

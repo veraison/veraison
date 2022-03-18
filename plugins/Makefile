@@ -7,7 +7,7 @@ SUBDIR += sqliteendorsements
 SUBDIR += sqlitepolicy
 SUBDIR += scheme-dice
 SUBDIR += scheme-psa
-SUBDIR += trustanchorstore-sqlite
+
 
 ifeq ($(MAKECMDGOALS),test)
 ifdef CI_PIPELINE

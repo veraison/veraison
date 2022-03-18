@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/veraison/common";
 
-enum Status {
+enum AR_Status {
     FAILURE = 0;
     SUCCESS = 1;
     UNKNOWN = 2;
@@ -14,12 +14,12 @@ enum Status {
 }
 
 message TrustVector {
-    Status hardware_authenticity = 1 [json_name = "hw-authenticity"];
-    Status software_integrity = 2 [json_name = "sw-integrity"];
-    Status software_up_to_dateness = 3 [json_name = "sw-up-to-dateness"];
-    Status config_integrity = 4 [json_name = "config-integrity"];
-    Status runtime_integrity = 5 [json_name = "runtime-integrity"];
-    Status certification_status = 6 [json_name = "certification-status"];
+    AR_Status hardware_authenticity = 1 [json_name = "hw-authenticity"];
+    AR_Status software_integrity = 2 [json_name = "sw-integrity"];
+    AR_Status software_up_to_dateness = 3 [json_name = "sw-up-to-dateness"];
+    AR_Status config_integrity = 4 [json_name = "config-integrity"];
+    AR_Status runtime_integrity = 5 [json_name = "runtime-integrity"];
+    AR_Status certification_status = 6 [json_name = "certification-status"];
 }
 
 message EndorsedClaims {
@@ -30,7 +30,7 @@ message EndorsedClaims {
 }
 
 message AttestationResult {
-    Status status = 1 [json_name = "status"];
+    AR_Status status = 1 [json_name = "status"];
     TrustVector trust_vector = 2 [json_name = "trust-vector"];
     bytes raw_evidence = 3 [json_name = "raw-evidence"];
     google.protobuf.Timestamp timestamp = 4 [json_name = "timestamp"];

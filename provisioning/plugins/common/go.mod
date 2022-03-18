@@ -2,15 +2,14 @@ module github.com/veraison/veraison/provisioning/plugins/common
 
 replace (
 	github.com/veraison/common => ../../../common
-	github.com/veraison/endorsement => ../../../endorsement
 	github.com/veraison/veraison/provisioning/decoder => ../../decoder
 )
 
 go 1.17
 
 require (
+	github.com/veraison/common v0.0.0
 	github.com/veraison/corim v0.0.0-20211208184228-467df6558f2c
-	github.com/veraison/endorsement v0.0.0-00010101000000-000000000000
 	github.com/veraison/veraison/provisioning/decoder v0.0.0-00010101000000-000000000000
 )
 
@@ -50,7 +49,6 @@ require (
 	github.com/spf13/viper v1.9.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	github.com/veraison/common v0.0.0 // indirect
 	github.com/veraison/eat v0.0.0-20210331113810-3da8a4dd42ff // indirect
 	github.com/veraison/go-cose v0.0.0-20201125131510-de93f6091ed4 // indirect
 	github.com/veraison/swid v0.0.1-beta.6 // indirect

@@ -142,10 +142,10 @@ func mapToClaims(in map[string]interface{}) (*psatoken.PSATokenClaims, error) {
 
 func populateAttestationResult(attestation *common.Attestation, endorsements []Endorsements) error {
 	tv := common.TrustVector{
-		SoftwareUpToDateness: common.Status_UNKNOWN,
-		ConfigIntegrity:      common.Status_UNKNOWN,
-		RuntimeIntegrity:     common.Status_UNKNOWN,
-		CertificationStatus:  common.Status_UNKNOWN,
+		SoftwareUpToDateness: common.AR_Status_UNKNOWN,
+		ConfigIntegrity:      common.AR_Status_UNKNOWN,
+		RuntimeIntegrity:     common.AR_Status_UNKNOWN,
+		CertificationStatus:  common.AR_Status_UNKNOWN,
 	}
 
 	claims, err := mapToClaims(attestation.Evidence.Evidence.AsMap())
@@ -155,28 +155,28 @@ func populateAttestationResult(attestation *common.Attestation, endorsements []E
 
 	match := matchSoftware(claims, endorsements)
 	if match == nil {
-		tv.SoftwareIntegrity = common.Status_FAILURE
-		tv.HardwareAuthenticity = common.Status_UNKNOWN
+		tv.SoftwareIntegrity = common.AR_Status_FAILURE
+		tv.HardwareAuthenticity = common.AR_Status_UNKNOWN
 	} else {
-		tv.SoftwareIntegrity = common.Status_SUCCESS
+		tv.SoftwareIntegrity = common.AR_Status_SUCCESS
 
 		if claims.HwVersion == nil {
-			tv.HardwareAuthenticity = common.Status_UNKNOWN
+			tv.HardwareAuthenticity = common.AR_Status_UNKNOWN
 		} else {
 			if *claims.HwVersion == "" || *claims.HwVersion == *match.HwVersion {
-				tv.HardwareAuthenticity = common.Status_SUCCESS
+				tv.HardwareAuthenticity = common.AR_Status_SUCCESS
 			} else {
-				tv.HardwareAuthenticity = common.Status_FAILURE
+				tv.HardwareAuthenticity = common.AR_Status_FAILURE
 			}
 		}
 	}
 
 	attestation.Result.TrustVector = &tv
 
-	if tv.SoftwareIntegrity != common.Status_FAILURE && tv.HardwareAuthenticity != common.Status_FAILURE {
-		attestation.Result.Status = common.Status_SUCCESS
+	if tv.SoftwareIntegrity != common.AR_Status_FAILURE && tv.HardwareAuthenticity != common.AR_Status_FAILURE {
+		attestation.Result.Status = common.AR_Status_SUCCESS
 	} else {
-		attestation.Result.Status = common.Status_FAILURE
+		attestation.Result.Status = common.AR_Status_FAILURE
 	}
 
 	attestation.Result.ProcessedEvidence = attestation.Evidence.Evidence

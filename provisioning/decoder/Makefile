@@ -4,13 +4,11 @@
 PROTOSRCS := decoder_response.proto
 
 PROTOPATHS := ../../common
-PROTOPATHS += ../../endorsement
 
 CLEANFILES += *.pb.go
 
 all-hook-pre test-hook-pre lint-hook-pre:
 	$(MAKE) -C ../../common protogen
-	$(MAKE) -C ../../endorsement protogen
 	$(MAKE) protogen
 
 include ../../mk/common.mk

@@ -3,10 +3,10 @@
 package storeclient
 
 import (
-	"github.com/veraison/endorsement"
+	"github.com/veraison/common"
 )
 
 type IStoreClient interface {
-	endorsement.StoreClient
-	endorsement.ProvisionerClient
+	common.ProvisionerClient
+	common.StoreClient
 }

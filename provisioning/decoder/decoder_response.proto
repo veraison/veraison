@@ -3,9 +3,9 @@ package endorsement_decoder_response;
 
 option go_package = "github.com/veraison/veraison/provisioning/decoder";
 
-import "storeapi.proto";
+import "vts.proto";
 
 message EndorsementDecoderResponse {
-    repeated endorsement.SwComponent swComponents = 1;
-    repeated endorsement.TrustAnchor trustAnchors = 2;
+    repeated common.SwComponent swComponents = 1;
+    repeated common.TrustAnchor trustAnchors = 2;
 }

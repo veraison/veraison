@@ -1,15 +1,12 @@
 module github.com/veraison/veraison/provisioning/decoder
 
-replace (
-	github.com/veraison/common => ../../common
-	github.com/veraison/endorsement => ../../endorsement
-)
+replace github.com/veraison/common => ../../common
 
 go 1.17
 
 require (
 	github.com/hashicorp/go-plugin v1.4.3
-	github.com/veraison/endorsement v0.0.0-00010101000000-000000000000
+	github.com/veraison/common v0.0.0
 	google.golang.org/protobuf v1.27.1
 )
 
@@ -36,7 +33,6 @@ require (
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	github.com/veraison/common v0.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420 // indirect
 	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect

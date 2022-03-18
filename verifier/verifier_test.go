@@ -21,7 +21,7 @@ import (
 )
 
 type StubVtsClient struct {
-	dbPath      string
+	dbPath      string //nolint
 	evidenceDir string
 }
 
@@ -57,14 +57,14 @@ func (c StubVtsClient) GetAttestation(
 	attestation := common.Attestation{
 		Result: &common.AttestationResult{
 			TrustVector: &common.TrustVector{
-				HardwareAuthenticity: common.Status_SUCCESS,
-				SoftwareIntegrity:    common.Status_SUCCESS,
-				SoftwareUpToDateness: common.Status_UNKNOWN,
-				RuntimeIntegrity:     common.Status_UNKNOWN,
-				ConfigIntegrity:      common.Status_UNKNOWN,
-				CertificationStatus:  common.Status_SUCCESS,
+				HardwareAuthenticity: common.AR_Status_SUCCESS,
+				SoftwareIntegrity:    common.AR_Status_SUCCESS,
+				SoftwareUpToDateness: common.AR_Status_UNKNOWN,
+				RuntimeIntegrity:     common.AR_Status_UNKNOWN,
+				ConfigIntegrity:      common.AR_Status_UNKNOWN,
+				CertificationStatus:  common.AR_Status_SUCCESS,
 			},
-			Status:      common.Status_SUCCESS,
+			Status:      common.AR_Status_SUCCESS,
 			RawEvidence: token.Data,
 			Timestamp:   timestamppb.Now(),
 			EndorsedClaims: &common.EndorsedClaims{
@@ -141,8 +141,8 @@ func (m *StubEngine) Init(params *common.ParamStore) error {
 
 func (m *StubEngine) Appraise(attestation *common.Attestation, policy *common.Policy) error {
 
-	attestation.Result.TrustVector.CertificationStatus = common.Status_FAILURE
-	attestation.Result.Status = common.Status_FAILURE
+	attestation.Result.TrustVector.CertificationStatus = common.AR_Status_FAILURE
+	attestation.Result.Status = common.AR_Status_FAILURE
 
 	return nil
 }
@@ -189,6 +189,6 @@ func TestVerifier(t *testing.T) {
 
 	result, err := v.Verify(&token)
 	require.Nil(err)
-	assert.Equal(result.Status, common.Status_FAILURE)
-	assert.Equal(result.TrustVector.CertificationStatus, common.Status_FAILURE)
+	assert.Equal(result.Status, common.AR_Status_FAILURE)
+	assert.Equal(result.TrustVector.CertificationStatus, common.AR_Status_FAILURE)
 }

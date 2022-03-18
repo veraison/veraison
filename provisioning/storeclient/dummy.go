@@ -6,7 +6,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/veraison/endorsement"
+	"github.com/veraison/common"
 	"google.golang.org/grpc"
 )
 
@@ -18,13 +18,13 @@ func NewDummy() IStoreClient {
 
 func (o *Dummy) AddSwComponents(
 	ctx context.Context,
-	in *endorsement.AddSwComponentsRequest,
+	in *common.AddSwComponentsRequest,
 	opts ...grpc.CallOption,
-) (*endorsement.AddSwComponentsResponse, error) {
+) (*common.AddSwComponentsResponse, error) {
 	log.Println("><> AddSwComponents()")
 	// always return a successful response
-	return &endorsement.AddSwComponentsResponse{
-		Status: &endorsement.Status{
+	return &common.AddSwComponentsResponse{
+		Status: &common.Status{
 			Result: true,
 		},
 	}, nil
@@ -32,13 +32,13 @@ func (o *Dummy) AddSwComponents(
 
 func (o *Dummy) AddTrustAnchor(
 	ctx context.Context,
-	in *endorsement.AddTrustAnchorRequest,
+	in *common.AddTrustAnchorRequest,
 	opts ...grpc.CallOption,
-) (*endorsement.AddTrustAnchorResponse, error) {
+) (*common.AddTrustAnchorResponse, error) {
 	log.Println("><> AddTrustAnchor()")
 	// always return a successful response
-	return &endorsement.AddTrustAnchorResponse{
-		Status: &endorsement.Status{
+	return &common.AddTrustAnchorResponse{
+		Status: &common.Status{
 			Result: true,
 		},
 	}, nil
@@ -46,11 +46,11 @@ func (o *Dummy) AddTrustAnchor(
 
 func (o *Dummy) GetTrustAnchor(
 	ctx context.Context,
-	in *endorsement.GetTrustAnchorRequest,
+	in *common.GetTrustAnchorRequest,
 	opts ...grpc.CallOption,
-) (*endorsement.GetTrustAnchorResponse, error) {
-	return &endorsement.GetTrustAnchorResponse{
-		Status: &endorsement.Status{
+) (*common.GetTrustAnchorResponse, error) {
+	return &common.GetTrustAnchorResponse{
+		Status: &common.Status{
 			Result: true,
 		},
 	}, nil
@@ -58,12 +58,12 @@ func (o *Dummy) GetTrustAnchor(
 
 func (o *Dummy) GetSwComponent(
 	ctx context.Context,
-	in *endorsement.GetSwComponentRequest,
+	in *common.GetSwComponentRequest,
 	opts ...grpc.CallOption,
-) (*endorsement.GetSwComponentResponse, error) {
+) (*common.GetSwComponentResponse, error) {
 	// always return a successful response
-	return &endorsement.GetSwComponentResponse{
-		Status: &endorsement.Status{
+	return &common.GetSwComponentResponse{
+		Status: &common.Status{
 			Result: true,
 		},
 	}, nil
@@ -71,24 +71,25 @@ func (o *Dummy) GetSwComponent(
 
 func (o *Dummy) Open(
 	ctx context.Context,
-	in *endorsement.OpenRequest,
+	in *common.OpenArgs,
 	opts ...grpc.CallOption,
-) (*endorsement.OpenResponse, error) {
+) (*common.OpenResponse, error) {
 	// always return a successful response
-	return &endorsement.OpenResponse{
-		Status: &endorsement.Status{
+	return &common.OpenResponse{
+		Status: &common.Status{
 			Result: true,
 		},
 	}, nil
 }
+
 func (o *Dummy) Close(
 	ctx context.Context,
-	in *endorsement.CloseRequest,
+	in *common.CloseArgs,
 	opts ...grpc.CallOption,
-) (*endorsement.CloseResponse, error) {
+) (*common.CloseResponse, error) {
 	// always return a successful response
-	return &endorsement.CloseResponse{
-		Status: &endorsement.Status{
+	return &common.CloseResponse{
+		Status: &common.Status{
 			Result: true,
 		},
 	}, nil
