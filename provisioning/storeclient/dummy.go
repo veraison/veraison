@@ -4,6 +4,7 @@ package storeclient
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/veraison/common"
@@ -69,28 +70,10 @@ func (o *Dummy) GetSwComponent(
 	}, nil
 }
 
-func (o *Dummy) Open(
+func (o *Dummy) GetAttestation(
 	ctx context.Context,
-	in *common.OpenArgs,
+	in *common.AttestationToken,
 	opts ...grpc.CallOption,
-) (*common.OpenResponse, error) {
-	// always return a successful response
-	return &common.OpenResponse{
-		Status: &common.Status{
-			Result: true,
-		},
-	}, nil
-}
-
-func (o *Dummy) Close(
-	ctx context.Context,
-	in *common.CloseArgs,
-	opts ...grpc.CallOption,
-) (*common.CloseResponse, error) {
-	// always return a successful response
-	return &common.CloseResponse{
-		Status: &common.Status{
-			Result: true,
-		},
-	}, nil
+) (*common.Attestation, error) {
+	return nil, errors.New("not implemented")
 }

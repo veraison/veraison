@@ -8,6 +8,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/moogar0880/problems"
@@ -15,18 +19,15 @@ import (
 	"github.com/veraison/common"
 	mock_deps "github.com/veraison/veraison/provisioning/api/mocks"
 	"github.com/veraison/veraison/provisioning/decoder"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 var (
 	testGoodDecoderResponse = decoder.EndorsementDecoderResponse{
 		TrustAnchors: []*common.TrustAnchor{
-			&common.TrustAnchor{},
+			{},
 		},
 		SwComponents: []*common.SwComponent{
-			&common.SwComponent{},
+			{},
 		},
 	}
 	testFailedTaRes = common.AddTrustAnchorResponse{
@@ -377,7 +378,7 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 			gomock.Eq(
 				&common.AddSwComponentsRequest{
 					Info: []*common.SwComponent{
-						&common.SwComponent{},
+						{},
 					},
 				},
 			),
@@ -452,7 +453,7 @@ func TestHandler_Submit_store_AddSwComponents_failure2(t *testing.T) {
 			gomock.Eq(
 				&common.AddSwComponentsRequest{
 					Info: []*common.SwComponent{
-						&common.SwComponent{},
+						{},
 					},
 				},
 			),
@@ -525,7 +526,7 @@ func TestHandler_Submit_ok(t *testing.T) {
 			gomock.Eq(
 				&common.AddSwComponentsRequest{
 					Info: []*common.SwComponent{
-						&common.SwComponent{},
+						{},
 					},
 				},
 			),

@@ -7,6 +7,5 @@ import (
 )
 
 type IStoreClient interface {
-	common.ProvisionerClient
-	common.StoreClient
+	common.VTSClient
 }

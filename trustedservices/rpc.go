@@ -31,17 +31,9 @@ type RPCServer struct {
 	Client *LocalClient
 }
 
-func (c *RPCServer) Init(ctx context.Context, params *common.ParamStore) (*common.InitResponse, error) {
-	return nil, nil
-}
 func (c *RPCServer) GetAttestation(
 	ctx context.Context,
 	token *common.AttestationToken,
 ) (*common.Attestation, error) {
 	return c.Client.GetAttestation(token)
-}
-
-func (c *RPCServer) Close(ctx context.Context, args *common.CloseArgs) (*common.CloseResponse, error) {
-	err := c.Client.Close()
-	return nil, err
 }
