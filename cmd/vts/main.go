@@ -3,7 +3,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -16,7 +15,6 @@ import (
 
 // TODO this a very minimal "frontend" implementation.
 func main() {
-
 	configPaths := common.NewConfigPaths()
 
 	flag.Var(configPaths, "config", "Path to direcotory containing the config file(s).")
@@ -45,11 +43,6 @@ func main() {
 	}
 
 	server := trustedservices.RPCServer{}
-	ctx := context.Background()
-
-	if _, err := server.Init(ctx, clientParams); err != nil {
-		log.Fatalf("could not initialize store: %v", err)
-	}
 
 	grpcServer := grpc.NewServer()
 	common.RegisterVTSServer(grpcServer, &server)
@@ -57,6 +50,4 @@ func main() {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
-
-	server.Close(ctx, nil)
 }

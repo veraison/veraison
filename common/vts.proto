@@ -12,23 +12,6 @@ import "param.proto";
 import "token.proto";
 
 
-message InitResponse {
-}
-
-message CloseArgs {
-}
-
-message CloseResponse {
-    Status status = 1;
-}
-
-message OpenArgs {
-}
-
-message OpenResponse {
-    Status status = 1;
-}
-
 enum TAType {
     TA_UNSPECIFIED = 0;
     TA_RAWPUBLICKEY = 1;
@@ -121,29 +104,17 @@ message GetTrustAnchorResponse {
     TrustAnchorValue value = 2;
 }
 
-// Provisioner is the Service end point that is used to store
-// and retrieve Software Components and Trust Anchors to and from
-// the Endorsement Store
-service Provisioner {
+// Client interface for the Veraison Trusted Services component.
+service VTS {
+    // Returns attestation information -- evidences, endorsed claims, trust
+    // vector, etc -- for the provided attestation token data.
+    rpc GetAttestation(AttestationToken) returns (Attestation);
+
+    // Service endpoints that are used to store and retrieve Software Components
+    // and Trust Anchors to and from the endorsement store
     rpc AddSwComponents(AddSwComponentsRequest) returns (AddSwComponentsResponse);
     rpc GetSwComponent(GetSwComponentRequest)  returns (GetSwComponentResponse);
     rpc AddTrustAnchor(AddTrustAnchorRequest) returns (AddTrustAnchorResponse);
     rpc GetTrustAnchor(GetTrustAnchorRequest) returns (GetTrustAnchorResponse);
-}
-
-service Store {
-	rpc Open(OpenArgs) returns (OpenResponse);
-	rpc Close(CloseArgs) returns (CloseResponse);
-}
-
-// Client interface for the Veraison Trusted Services component.
-service VTS {
-	rpc Init(ParamStore) returns (InitResponse);
-
-	// Returns attestation information -- evidences, endorsed claims, trust
-	// vector, etc -- for the provided attestation token data.
-	rpc GetAttestation(AttestationToken) returns (Attestation);
-
-	rpc Close(CloseArgs) returns (CloseResponse);
 }
 
