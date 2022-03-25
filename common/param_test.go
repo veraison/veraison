@@ -95,6 +95,31 @@ func TestParamStore_Constraints(t *testing.T) {
 	assert.Equal("missing required parameter(s): name, numCats", err.Error())
 }
 
+func TestParamStore_Viper_Map(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	v := viper.GetViper()
+	v.SetConfigType("yaml")
+
+	var configText = []byte(`
+trust_anchor:
+  store_name: memory
+  store_params:
+    store-type: memory
+`)
+	require.Nil(v.ReadConfig(bytes.NewBuffer(configText)))
+	assert.Nil(nil)
+
+	params := NewParamStore("kvstore")
+	require.Nil(params.DefineParam("name", reflect.String, "trust_anchor.store_name", ParamNecessity_REQUIRED))
+	require.Nil(params.DefineParam("params", reflect.Map, "trust_anchor.store_params", ParamNecessity_OPTIONAL))
+	require.Nil(params.PopulateFromViper(v))
+	require.Nil(params.Validate(false))
+
+	assert.Equal(map[string]string{"store-type": "memory"}, params.GetStringMapString("params"))
+}
+
 func TestParamStore_Viper(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

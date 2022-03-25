@@ -169,7 +169,7 @@ func (s *ParamStore) PopulateFromViper(v *viper.Viper) error {
 			}
 			value = genSlice
 		case reflect.Map:
-			value = v.GetStringMapString(desc.Path)
+			value = v.GetStringMap(desc.Path)
 		default:
 			value = v.Get(desc.Path)
 		}
