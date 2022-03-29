@@ -1,10 +1,24 @@
 debug: true
+
 plugin:
-    locations:
-        - ../../plugins/bin/
+  locations:
+    - ../../plugins/bin/
+
 vts:
   port: 50051
+
 endorsement:
-    store_name: memory
+  kvstore_config:
+    type: endorsement
+    backend: sql
+    sql_driver: sqlite3
+    sql_datasource: test/veraison-endorsement.sql
+
 trust_anchor:
-    store_name: memory
+  kvstore_config:
+    type: trustanchor
+    backend: sql
+    sql_driver: sqlite3
+    sql_datasource: test/veraison-trustanchor.sql
+
+

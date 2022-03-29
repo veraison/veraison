@@ -11,11 +11,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 
 	plugin "github.com/hashicorp/go-plugin"
-	psatoken "github.com/veraison/psatoken"
-
 	"github.com/veraison/common"
+	psatoken "github.com/veraison/psatoken"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 type Endorsements struct {
@@ -33,6 +35,89 @@ func (s Scheme) GetName() string {
 
 func (s Scheme) GetFormat() common.AttestationFormat {
 	return common.AttestationFormat_PSA_IOT
+}
+
+func appendMandatoryPathSegment(
+	path []string, key string, fields map[string]*structpb.Value,
+) ([]string, error) {
+	v, ok := fields[key]
+	if !ok {
+		return path, fmt.Errorf("missing mandatory %s", key)
+	}
+
+	segment := v.GetStringValue()
+	if segment == "" {
+		return path, fmt.Errorf("empty mandatory %s", key)
+	}
+
+	return append(path, segment), nil
+}
+
+func getFieldsFromParts(parts *structpb.Struct) (map[string]*structpb.Value, error) {
+	if parts == nil {
+		return nil, errors.New("no parts found")
+	}
+
+	fields := parts.GetFields()
+	if fields == nil {
+		return nil, errors.New("no fields found")
+	}
+
+	return fields, nil
+}
+
+func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.SwComponent) ([]string, error) {
+	var (
+		absPath []string
+		fields  map[string]*structpb.Value
+		err     error
+	)
+
+	fields, err = getFieldsFromParts(swComp.GetId().GetParts())
+	if err != nil {
+		return nil, fmt.Errorf("unable to synthesize software component abs-path: %w", err)
+	}
+
+	absPath, err = appendMandatoryPathSegment(absPath, "psa.impl-id", fields)
+	if err != nil {
+		return nil, fmt.Errorf("unable to synthesize software component abs-path: %w", err)
+	}
+
+	verificationLookupKey := url.URL{
+		Scheme: "psa-iot",
+		Host:   tenantID,
+		Path:   strings.Join(absPath, "/"),
+	}
+
+	return []string{verificationLookupKey.String()}, nil
+}
+
+func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.TrustAnchor) ([]string, error) {
+	var (
+		absPath []string
+		fields  map[string]*structpb.Value
+		err     error
+	)
+
+	fields, err = getFieldsFromParts(ta.GetId().GetParts())
+	if err != nil {
+		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
+	}
+
+	for _, k := range []string{"psa.impl-id", "psa.inst-id"} {
+		absPath, err = appendMandatoryPathSegment(absPath, k, fields)
+		if err != nil {
+			return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
+		}
+	}
+
+	taLookupKey := url.URL{
+		Scheme: "psa-iot",
+		Host:   tenantID,
+		Path:   strings.Join(absPath, "/"),
+	}
+
+	return []string{taLookupKey.String()}, nil
 }
 
 func (s Scheme) GetTrustAnchorID(token *common.AttestationToken) (string, error) {
@@ -98,7 +183,7 @@ func (s Scheme) ExtractEvidence(
 
 func (s Scheme) GetAttestation(
 	ec *common.EvidenceContext,
-	endorsementsString string,
+	endorsementsStrings []string,
 ) (*common.Attestation, error) {
 
 	attestation := common.Attestation{
@@ -107,8 +192,12 @@ func (s Scheme) GetAttestation(
 	}
 
 	var endorsements []Endorsements
-	if err := json.Unmarshal([]byte(endorsementsString), &endorsements); err != nil {
-		return nil, fmt.Errorf("could not decode endorsements: %s", err.Error())
+	for i, e := range endorsementsStrings {
+		var endorsement Endorsements
+		if err := json.Unmarshal([]byte(e), &endorsement); err != nil {
+			return nil, fmt.Errorf("could not decode endorsement at index %d: %w", i, err)
+		}
+		endorsements = append(endorsements, endorsement)
 	}
 
 	err := populateAttestationResult(&attestation, endorsements)

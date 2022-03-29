@@ -1,19 +1,21 @@
 # KV Store
 
-The key-value (KV) store is Veraison storage layer.  It is used for both endorsements and trust anchors.
+The key-values (KV) store is Veraison storage layer.  It is used for both endorsements and trust anchors.
 
-It is intentionally "dumb": we assume that the filtering smarts are provided by the plugin.
+It is intentionally "dumb": we assume that the filtering smarts are provided by the plugins.
 
-The key is a string synthesised deterministically from a structured endorsement / trustanchor identifier.  It is formatted according to a custom URI format -- [see below](#uri-format)).
+The key is a string synthesised deterministically from a structured endorsement / trustanchor "identifier".  It is formatted according to a custom URI format -- [see below](#uri-format)).
 
-The value is a string containing the endorsement or trust anchor data in JSON.  This data varies depending on the attestation format.
+The value is an array of JSON strings each containing an endorsement or trust anchor data associated with that key.  The data is opaque to the KV store and varies depending on the attestation format.  The only invariant enforced by the KV store is that it is valid JSON.
 
-The `KVStore` interface defines the required methods for storing, fetching and deleting KV objects.  Note that there is no method for patching data in place.  Methods for initialising and orderly terminating the underlying DB are also provided.
+The `IKVStore` interface defines the required methods for storing, fetching and deleting KV objects.  Note that (for the moment) there is no method for patching data in place.  Interface methods for initialising and orderly terminating the underlying DB are also exposed.
 
-This package contains two implementations of the `KVStore`:
+This package contains two implementations of the `IKVStore`:
 
 1. `SQL`, supporting different SQL engines (e.g., SQLite, PostgreSQL, etc. -- [see below](#sql-drivers)),
 1. `Memory`, a thread-safe in-memory associative array intended for testing.
+
+A `New` method can be used to create either of these from a `Config` object.
 
 ## SQL drivers
 
@@ -32,13 +34,13 @@ import _ "github.com/mattn/go-sqlite3"
 
 ```sql
 CREATE TABLE endorsement (
-  key text PRIMARY KEY,
-  val text NOT NULL
+  key text NOT NULL,
+  vals text NOT NULL
 );
 
 CREATE TABLE trustanchor (
-  key text PRIMARY KEY,
-  val text NOT NULL
+  key text NOT NULL,
+  vals text NOT NULL
 );
 ```
 
@@ -62,10 +64,10 @@ Attestation technology specific code (i.e., plugins) must provide their own synt
 PSA
 
 * Trust Anchor ID
-  * `psa://`TenantID.Fmt()`/`ImplID.Fmt()`/`InstID.Fmt()`
+  * `psa-iot://`TenantID.Fmt()`/`ImplID.Fmt()`/`InstID.Fmt()`
 * Software ID (Model is optional)
-  * `psa://`TenantID.Fmt()`/`ImplID.Fmt()`/`Model.Fmt()
-  * `psa://`TenantID.Fmt()`/`ImplID.Fmt()`/`
+  * `psa-iot://`TenantID.Fmt()`/`ImplID.Fmt()`/`Model.Fmt()
+  * `psa-iot://`TenantID.Fmt()`/`ImplID.Fmt()`/`
 
 
 EnactTrust TPM

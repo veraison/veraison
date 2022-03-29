@@ -1,5 +1,6 @@
 // Copyright 2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
@@ -14,14 +15,17 @@ import (
 )
 
 // TODO(tho) make these configurable
-const (
-	PluginDir  = "../plugins/bin/"
-	ListenAddr = "localhost:8888"
+var (
+	PluginDir         = "../plugins/bin/"
+	ListenAddr        = "localhost:8888"
+	StoreClientConfig = storeclient.GRPCConfig{
+		"store-server.addr": "dns:127.0.0.1:50051",
+	}
 )
 
 func main() {
 	pluginManager := NewGoPluginManager(PluginDir)
-	storeClient := storeclient.NewDummy()
+	storeClient := storeclient.NewGRPC(StoreClientConfig)
 	apiHandler := api.NewHandler(pluginManager, storeClient)
 	go apiServer(apiHandler, ListenAddr)
 
@@ -33,12 +37,20 @@ func main() {
 	log.Println("bye!")
 }
 
-func terminator(sigs chan os.Signal, done chan bool, pluginManager decoder.IDecoderManager) {
+func terminator(
+	sigs chan os.Signal,
+	done chan bool,
+	pluginManager decoder.IDecoderManager,
+) {
 	sig := <-sigs
+
 	log.Println(sig, "received, exiting")
+
+	log.Println("stopping the plugin manager")
 	if err := pluginManager.Close(); err != nil {
 		log.Println("plugin manager termination failed:", err)
 	}
+
 	done <- true
 }
 

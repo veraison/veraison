@@ -7,6 +7,7 @@ SUBDIR += sqliteendorsements
 SUBDIR += sqlitepolicy
 SUBDIR += scheme-dice
 SUBDIR += scheme-psa
+SUBDIR += scheme-tpm-enacttrust
 
 
 ifeq ($(MAKECMDGOALS),test)

@@ -8,7 +8,6 @@ import "google/protobuf/struct.proto";
 import "result.proto";
 import "attestation_format.proto";
 import "attestation.proto";
-import "param.proto";
 import "token.proto";
 
 

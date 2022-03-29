@@ -32,6 +32,14 @@ func (s Scheme) GetTrustAnchorID(token *common.AttestationToken) (string, error)
 	return "dice://", nil
 }
 
+func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.SwComponent) ([]string, error) {
+	return nil, errors.New("TODO")
+}
+
+func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.TrustAnchor) ([]string, error) {
+	return nil, errors.New("TODO")
+}
+
 func (s Scheme) ExtractEvidence(token *common.AttestationToken, trustAnchor string) (*common.ExtractedEvidence, error) {
 	roots := x509.NewCertPool()
 	intermediates := x509.NewCertPool()
@@ -72,7 +80,7 @@ func (s Scheme) ExtractEvidence(token *common.AttestationToken, trustAnchor stri
 
 func (s Scheme) GetAttestation(
 	ec *common.EvidenceContext,
-	endorsementsString string,
+	endorsementsString []string,
 ) (*common.Attestation, error) {
 
 	attestation := common.Attestation{

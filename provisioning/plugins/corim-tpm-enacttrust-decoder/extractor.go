@@ -46,7 +46,7 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwCompone
 
 	swComponent := common.SwComponent{
 		Id: &common.SwComponentID{
-			Type:  common.AttestationFormat_PSA_IOT,
+			Type:  common.AttestationFormat_TPM_ENACTTRUST,
 			Parts: swID,
 		},
 		Attributes: swAttrs,
@@ -104,7 +104,7 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, e
 
 	ta := &common.TrustAnchor{
 		Id: &common.TrustAnchorID{
-			Type:  common.AttestationFormat_PSA_IOT,
+			Type:  common.AttestationFormat_TPM_ENACTTRUST,
 			Parts: taID,
 		},
 		Value: &common.TrustAnchorValue{

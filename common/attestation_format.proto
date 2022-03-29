@@ -15,5 +15,8 @@ enum AttestationFormat {
 	// DICE is the attestation format based on the TCG DICE specification
 	// https://trustedcomputinggroup.org/wp-content/uploads/TCG_DICE_Attestation_Architecture_r22_02dec2020.pdf
 	DICE = 2;
+
+	// TPM EnactTrust
+	TPM_ENACTTRUST = 3;
 }
 
