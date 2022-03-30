@@ -1,0 +1,13 @@
+
+syntax = "proto3";
+package common;
+
+option go_package = "github.com/veraison/common";
+
+import "evidence.proto";
+import "result.proto";
+
+message Attestation {
+	EvidenceContext evidence = 1;
+	AttestationResult result = 2;
+}

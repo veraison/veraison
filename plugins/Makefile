@@ -5,9 +5,9 @@ SUBDIR := arangodbendorsements
 SUBDIR += opapolicyengine
 SUBDIR += sqliteendorsements
 SUBDIR += sqlitepolicy
-SUBDIR += token-dice
-SUBDIR += token-psa
-SUBDIR += trustanchorstore-sqlite
+SUBDIR += scheme-dice
+SUBDIR += scheme-psa
+
 
 ifeq ($(MAKECMDGOALS),test)
 ifdef CI_PIPELINE
@@ -16,6 +16,9 @@ ifdef CI_PIPELINE
 # https://github.com/veraison/veraison/issues/17).  We need to remove
 # it from the CI testing because it messes up the coverage collection filter.
 SUBDIR := $(filter-out opapolicyengine,$(SUBDIR))
+# remove arango from the pipeline as it takes a lot of resources and
+# is not currently relevant
+SUBDIR := $(filter-out arangodbendorsements,$(SUBDIR))
 
 endif # test
 endif # in CI pipeline

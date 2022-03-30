@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package common
@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
@@ -16,11 +17,10 @@ import (
 
 // PluginMap maps the name of a plugin type onto the corresponding plugin struct.
 var PluginMap = map[string]plugin.Plugin{
-	"endorsementstore":  &EndorsementStorePlugin{},
-	"policyengine":      &PolicyEnginePlugin{},
-	"policystore":       &PolicyStorePlugin{},
-	"evidenceextractor": &EvidenceExtractorPlugin{},
-	"trustanchorstore":  &TrustAnchorStorePlugin{},
+	"endorsementstore": &EndorsementBackendPlugin{},
+	"policyengine":     &PolicyEnginePlugin{},
+	"policystore":      &PolicyStorePlugin{},
+	"scheme":           &SchemePlugin{},
 }
 
 // LoadedPlugin encapsulates a loaded Hashicorp plugin.
@@ -40,7 +40,7 @@ type INamed interface {
 // LoadPlugin returns a pointer to a LoadedPlugin based on the plugin type and
 // names specfied, by search for a suitable plugin binary inside the provided
 // locations.
-func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, error) {
+func LoadPlugin(locations []string, plugType, plugName string, quiet bool) (*LoadedPlugin, error) {
 
 	handshakeConfig := plugin.HandshakeConfig{
 		ProtocolVersion:  1,
@@ -48,10 +48,17 @@ func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, e
 		MagicCookieValue: "VERAISON",
 	}
 
+	var logLevel hclog.Level
+	if quiet {
+		logLevel = hclog.Error
+	} else {
+		logLevel = hclog.Warn
+	}
+
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   plugName,
 		Output: os.Stdout,
-		Level:  hclog.Warn,
+		Level:  logLevel,
 	})
 
 	for _, location := range locations {
@@ -84,7 +91,7 @@ func LoadPlugin(locations []string, plugType, plugName string) (*LoadedPlugin, e
 			}
 
 			named := raw.(INamed)
-			if named.GetName() != plugName {
+			if !strings.EqualFold(named.GetName(), strings.ToLower(plugName)) {
 				hclog.Default().Debug("wrong name in %v.\n", pluginPath)
 				client.Kill()
 				continue

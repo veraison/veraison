@@ -1,122 +1,122 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package verifier
 
 import (
-	"fmt"
-
-	"github.com/hashicorp/go-plugin"
-
-	"github.com/veraison/common"
-	"github.com/veraison/endorsement"
-	"github.com/veraison/policy"
+	"reflect"
 
 	"go.uber.org/zap"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/veraison/common"
 )
 
-type Verifier struct {
-	pm        *policy.Manager
-	em        *endorsement.Manager
-	pe        common.IPolicyEngine
-	rpcClient plugin.ClientProtocol
-	client    *plugin.Client
-	logger    *zap.Logger
+func NewVerifierParams() (*common.ParamStore, error) {
+	store := common.NewParamStore("verifier")
+	err := store.AddParamDefinitions(map[string]*common.ParamDescription{
+		"pluginLocations": {
+			Kind:     uint32(reflect.String),
+			Path:     "plugin.locations",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"policyEngineName": {
+			Kind:     uint32(reflect.String),
+			Path:     "policy.engine_name",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"policyStoreName": {
+			Kind:     uint32(reflect.String),
+			Path:     "policy.store_name",
+			Required: common.ParamNecessity_REQUIRED,
+		},
+		"policyStoreParams": {
+			Kind:     uint32(reflect.Map),
+			Path:     "policy.store_name",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+		"vtsHost": {
+			Kind:     uint32(reflect.String),
+			Path:     "vts.host",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+		"vtsPort": {
+			Kind:     uint32(reflect.Int),
+			Path:     "vts.port",
+			Required: common.ParamNecessity_OPTIONAL,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	store.Freeze()
+
+	return store, nil
 }
 
 func NewVerifier(logger *zap.Logger) (*Verifier, error) {
 	v := new(Verifier)
 
 	v.logger = logger
-	v.pm = policy.NewManager()
-	v.em = endorsement.NewManager()
 
 	return v, nil
 }
 
-// Initialize bootstraps the verifier
-func (v *Verifier) Initialize(vc Config) error {
-	if err := v.em.InitializeStore(vc.PluginLocations, vc.EndorsementStoreName, vc.EndorsementStoreParams); err != nil {
-		return err
-	}
+type Verifier struct {
+	config *common.ParamStore
+	vts    common.ITrustedServicesClient
+	pm     common.IPolicyManager
+	pe     common.IPolicyEngine
+	logger *zap.Logger
+}
 
-	if err := v.pm.InitializeStore(vc.PluginLocations, vc.PolicyStoreName, vc.PolicyStoreParams); err != nil {
-		return err
-	}
+func (v *Verifier) Init(
+	config *common.ParamStore,
+	conn common.ITrustedServicesConnector,
+	pm common.IPolicyManager,
+	pe common.IPolicyEngine,
+) error {
+	v.config = config
+	v.pm = pm
+	v.pe = pe
 
-	engineName := common.Canonize(vc.PolicyEngineName)
-
-	lp, err := common.LoadPlugin(vc.PluginLocations, "policyengine", engineName)
+	var err error
+	v.vts, err = conn.Connect(
+		v.config.GetString("VtsHost"),
+		v.config.GetInt("VtsPort"),
+		v.config.GetStringMapString("VtsParams"),
+	)
 	if err != nil {
-		return err
-	}
-
-	v.pe = lp.Raw.(common.IPolicyEngine)
-	v.client = lp.PluginClient
-	v.rpcClient = lp.RPCClient
-
-	if v.client == nil {
-		return fmt.Errorf("failed to find policy engine with name '%v'", engineName)
-	}
-
-	err = v.pe.Init(vc.PolicyEngineParams)
-	if err != nil {
-		v.client.Kill()
 		return err
 	}
 
 	return nil
 }
 
-// Verify verifies the supplied Evidence
-func (v *Verifier) Verify(ec *common.EvidenceContext, simple bool) (*common.AttestationResult, error) {
-	v.logger.Debug("verify params", zap.Reflect("evidence context", ec), zap.Bool("simple", simple))
-	policy, err := v.pm.GetPolicy(ec.TenantID, ec.Format)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = v.pe.LoadPolicy(policy.Rules); err != nil {
-		return nil, err
-	}
-
-	qds, err := policy.GetQueryDesriptors(ec.Evidence, common.QcNone)
-	if err != nil {
-		return nil, err
-	}
-
-	matches, err := v.em.GetEndorsements(qds...)
-	if err != nil {
-		return nil, err
-	}
-
-	endorsements := make(map[string]interface{})
-	for name, qr := range matches {
-		if len(qr) == 1 {
-			endorsements[name] = qr[0]
-		} else if len(qr) == 0 {
-			return nil, fmt.Errorf("no matches for '%v'", name)
-		} else {
-			return nil, fmt.Errorf("too many matches for '%v'", name)
-		}
-	}
-
-	result := new(common.AttestationResult)
-
-	v.logger.Debug("fetched endorsements", zap.Reflect("endorsements", endorsements))
-	v.logger.Debug("extracted evidence", zap.Reflect("evidence", ec.Evidence))
-
-	if err := v.pe.GetAttetationResult(ec.Evidence, endorsements, simple, result); err != nil {
-		return nil, err
-	}
-
-	v.logger.Debug("attestation result", zap.Reflect("result", result))
-	return result, nil
+func (v *Verifier) Close() error {
+	return v.vts.Close()
 }
 
-func (v *Verifier) Close() {
-	v.em.Close()
-	v.pm.Close()
-	v.client.Kill()
-	v.rpcClient.Close()
+func (v *Verifier) Verify(
+	token *common.AttestationToken,
+) (*common.AttestationResult, error) {
+	policy, err := v.pm.GetPolicy(int(token.TenantId), token.Format)
+	if err != nil {
+		return nil, err
+	}
+
+	attestation, err := v.vts.GetAttestation(token)
+	if err != nil {
+		return nil, err
+	}
+
+	attestation.Result.RawEvidence = token.Data
+	attestation.Result.Timestamp = timestamppb.Now()
+
+	err = v.pe.Appraise(attestation, policy)
+	if err != nil {
+		return nil, err
+	}
+
+	return attestation.Result, nil
 }

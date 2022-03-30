@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package main
@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/open-policy-agent/opa/rego"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/veraison/common"
 )
@@ -19,16 +20,33 @@ type OpaPolicyEngine struct {
 }
 
 func (pe *OpaPolicyEngine) GetName() string {
-	return "opa"
+	return "OPA"
 }
 
 // Init initializes the OPA context that will be used to evaluate the policy.
 // It does not expect any arguments.
-func (pe *OpaPolicyEngine) Init(args common.PolicyEngineParams) error {
+func (pe *OpaPolicyEngine) Init(params *common.ParamStore) error {
 	ctx := context.Background()
 	pe.ctx = ctx
 	pe.policy = nil
 	return nil
+}
+
+func (pe *OpaPolicyEngine) Appraise(attestation *common.Attestation, policy *common.Policy) error {
+	err := pe.LoadPolicy(policy.Rules)
+	if err != nil {
+		return err
+	}
+
+	evidence := attestation.Evidence.Evidence.AsMap()
+	endorsements := attestation.GetEndorsements()
+
+	status, err := pe.CheckValid(evidence, endorsements)
+	if status != common.AR_Status_SUCCESS && attestation.Result.Status == common.AR_Status_SUCCESS {
+		attestation.Result.Status = status
+	}
+
+	return err
 }
 
 func (pe *OpaPolicyEngine) LoadPolicy(policy []byte) error {
@@ -39,9 +57,9 @@ func (pe *OpaPolicyEngine) LoadPolicy(policy []byte) error {
 func (pe *OpaPolicyEngine) CheckValid(
 	evidence map[string]interface{},
 	endorsements map[string]interface{},
-) (bool, error) {
+) (common.AR_Status, error) {
 	if pe.policy == nil {
-		return false, fmt.Errorf("policy not set")
+		return common.AR_Status_FAILURE, fmt.Errorf("policy not set")
 	}
 
 	input := map[string]interface{}{"evidence": evidence, "endorsements": endorsements}
@@ -53,15 +71,19 @@ func (pe *OpaPolicyEngine) CheckValid(
 
 	rs, err := rego.Eval(pe.ctx)
 	if err != nil {
-		return false, err
+		return common.AR_Status_FAILURE, err
 	}
 
 	result := rs[0].Expressions[0].Value
 	switch t := result.(type) {
 	case bool:
-		return result.(bool), nil
+		if result.(bool) {
+			return common.AR_Status_SUCCESS, nil
+		}
+
+		return common.AR_Status_FAILURE, nil
 	default:
-		return false, fmt.Errorf("query evaluated to %v; expected bool", t)
+		return common.AR_Status_FAILURE, fmt.Errorf("query evaluated to %v; expected bool", t)
 	}
 }
 
@@ -102,7 +124,7 @@ func (pe *OpaPolicyEngine) GetAttetationResult(
 ) error {
 	var err error
 
-	result.IsValid, err = pe.CheckValid(evidence, endorsements)
+	result.Status, err = pe.CheckValid(evidence, endorsements)
 	if err != nil {
 		return err
 	}
@@ -111,7 +133,12 @@ func (pe *OpaPolicyEngine) GetAttetationResult(
 		return nil
 	}
 
-	result.Claims, err = pe.GetClaims(evidence, endorsements)
+	claimsMap, err := pe.GetClaims(evidence, endorsements)
+	if err != nil {
+		return err
+	}
+
+	result.ProcessedEvidence, err = structpb.NewStruct(claimsMap)
 	if err != nil {
 		return err
 	}
@@ -120,7 +147,7 @@ func (pe *OpaPolicyEngine) GetAttetationResult(
 }
 
 // Stop is a no-op for this plugin.
-func (pe *OpaPolicyEngine) Stop() error {
+func (pe *OpaPolicyEngine) Close() error {
 	return nil
 }
 

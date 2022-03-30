@@ -1,44 +1,16 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package common
-
-// EvidenceContext is the wrapper for evidence extracted from a token.
-type EvidenceContext struct {
-
-	// TenantID identifies the tenant on multi-tenancy deployment for
-	// which the evidence should be evaluated.
-	TenantID int
-
-	// Format indicates the format of the token from which evidence was
-	// extracted. This is used to specify how the Evidence structure should
-	// be interpreted, and to identify which endorsements will be necessary
-	// for verification.
-	Format TokenFormat
-
-	// Evidence contains the evidence claims extracted from the token.
-	// Claims can be simple key-value pairs or more complicated nested
-	// structures. This is specific to the TokenFormat. The only constraint
-	// is that the resulting structure must be serializable as JSON.
-	Evidence map[string]interface{}
-}
-
-// EvidenceExtractorParams is a map of key-value pairs of parameters used to
-// initialize an IEvidenceExtractor implementation. Which parameters are
-// supported is specific to each implementation.
-type EvidenceExtractorParams map[string]string
 
 // IEvidenceExtractor defined the interface that must be implemented by
 // plugins used to extract evidence from attestation tokens.
 type IEvidenceExtractor interface {
 
-	// GetName returns the name of the IEvidenceExtractor implementation.
-	GetName() string
-
 	// Init initializes the token extractor, performing any one-time setup.
 	// This must be invoked before attempting to GetTrustAnchorID or
 	// ExtractEvidence.
-	Init(params EvidenceExtractorParams) error
+	Init(params *ParamStore) error
 
 	// GetTrustAnchorID returns the TrustAnchorID associated with this
 	// token. This is used to retrieve a trust anchor form a store that may

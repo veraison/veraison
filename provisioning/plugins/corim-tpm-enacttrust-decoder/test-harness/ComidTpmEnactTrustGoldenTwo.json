@@ -1,0 +1,44 @@
+{
+  "tag-identity": {
+    "id": "00000000-0000-0000-0000-000000000000"
+  },
+  "entities": [
+    {
+      "name": "EnactTrust",
+      "regid": "https://enacttrust.com",
+      "roles": [
+        "tagCreator",
+        "creator",
+        "maintainer"
+      ]
+    }
+  ],
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "instance": {
+            "type": "uuid",
+            "value": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          }
+        },
+        "measurements": [
+          {
+            "value": {
+              "digests": [
+                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
+              ]
+            }
+          },
+          {
+            "value": {
+              "digests": [
+                "sha-256:AmOCmYm2/ZVPcrqvL8ZLwuLwHWktTecphuqAj26ZgT8="
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

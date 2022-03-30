@@ -1,0 +1,25 @@
+syntax = "proto3";
+package common;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/veraison/common";
+
+enum ParamNecessity {
+	OPTIONAL = 0;
+	REQUIRED = 1;
+}
+
+message ParamDescription {
+	uint32 kind = 1;
+	string path = 2;
+	ParamNecessity required = 3 [json_name = "required"];
+}
+
+message ParamStore {
+	string name = 1;
+	bool is_frozen = 2;
+	google.protobuf.Struct data = 3;
+	map<string, ParamDescription> params = 4;
+	repeated string required = 5;
+}

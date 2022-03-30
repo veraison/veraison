@@ -1,3 +1,5 @@
+// Copyright 2022 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
@@ -46,15 +48,14 @@ func Test_Validate(t *testing.T) {
 	require.Nil(err)
 
 	var pe OpaPolicyEngine
-	var peParams common.PolicyEngineParams
 
-	err = pe.Init(peParams)
+	err = pe.Init(nil)
 	require.Nil(err)
 
 	err = pe.LoadPolicy(policyData)
 	require.Nil(err)
 
-	isValid, err := pe.CheckValid(evidence, endorsements)
+	status, err := pe.CheckValid(evidence, endorsements)
 	assert.Nil(err)
-	assert.True(isValid)
+	assert.Equal(common.AR_Status_SUCCESS, status)
 }

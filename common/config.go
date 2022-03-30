@@ -1,7 +1,12 @@
+// Copyright 2022 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
 package common
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"reflect"
 
 	"github.com/spf13/viper"
 )
@@ -13,112 +18,187 @@ var DefaultConfigPaths = []string{
 	".",
 }
 
-var expectedConfigKey = []string{
-	"plugin.locations",
-	"policy.store_name",
-	"policy.engine_name",
-	"endorsements.store_name",
+type ConfigPaths []string
+
+func (p *ConfigPaths) Set(value string) error {
+	*p = append(*p, value)
+	return nil
+}
+
+func (p *ConfigPaths) String() string {
+	result, err := json.Marshal(p)
+	if err == nil {
+		return string(result)
+	}
+
+	return ""
+}
+
+func NewConfigPaths() *ConfigPaths {
+	paths := new(ConfigPaths)
+	for _, p := range DefaultConfigPaths {
+		*paths = append(*paths, p)
+	}
+
+	return paths
 }
 
 // Config encapsulates Veraison configuration, maintaining the complete set of
 // configuration points and populating them from config files discovered in
 // pre-defined locations.
 type Config struct {
-
-	// If set to "true" enable debug level logging.
-	Debug bool
-
-	// A slice of paths that will be checked when searching for plugins.
-	PluginLocations []string
-
-	// The name of the PolicStorePlugin implementation that should be loaded
-	// for this deployment.
-	PolicyStoreName string
-
-	// The name of the PolicyEnginePlugin that should be loaded for this
-	// deployment.
-	PolicyEngineName string
-
-	// The name of the EndorsementStorePlugin that should be loaded for
-	// this deployment.
-	EndorsementStoreName string
-
-	// Parameters to be passed for initializing the policy store. See the
-	// documentation for a particular store implementation for which
-	// parameters are valid, and what values are accepted.
-	PolicyStoreParams PolicyStoreParams
-
-	// Parameters to be passed for initializing the policy engine. See the
-	// documentation for a particular engine implementation for which
-	// parameters are valid, and what values are accepted.
-	PolicyEngineParams PolicyEngineParams
-
-	// Parameters to be passed for initializing the endorsements store. See the
-	// documentation for a particular store implementation for which
-	// parameters are valid, and what values are accepted.
-	EndorsementStoreParams EndorsementStoreParams
-
-	viper *viper.Viper
+	v      *viper.Viper
+	params map[string]*ParamStore
+	stores map[string]*ParamStore
 }
 
-// NewConfig creates a new Config instance initialized with the default set of
-// config paths.
-func NewConfig() *Config {
-	config := &Config{}
-	config.Init(DefaultConfigPaths)
-	return config
+func NewConfig(paths []string, stores ...*ParamStore) (*Config, error) {
+	c := &Config{}
+	err := c.Init(paths, stores...)
+	return c, err
 }
 
 // Init initializes a Config instances, setting the search paths to the
 // specified locations and setting configuration type and file name.
-func (c *Config) Init(paths []string) {
-	c.viper = viper.New()
-	c.viper.SetConfigName("config.yaml")
-	c.viper.SetConfigType("yaml")
+func (c *Config) Init(paths []string, stores ...*ParamStore) error {
+	c.v = viper.New()
+	c.v.SetConfigName("config.yaml")
+	c.v.SetConfigType("yaml")
 	for _, path := range paths {
-		c.viper.AddConfigPath(path)
+		c.v.AddConfigPath(path)
 	}
+
+	c.params = make(map[string]*ParamStore)
+	c.stores = make(map[string]*ParamStore)
+
+	for _, store := range stores {
+		if err := c.AddStore(store); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // AddPath adds an additional path to search for config files without removing
 // paths added during Init().
 func (c Config) AddPath(path string) {
-	c.viper.AddConfigPath(path)
+	c.v.AddConfigPath(path)
 }
 
-// Update the name of the file that contains configuration from the default config.yaml.
+// SetFileName update the name of the file that contains configuration from the default config.yaml.
 func (c Config) SetFileName(name string) {
-	c.viper.SetConfigName(name)
+	c.v.SetConfigName(name)
 }
 
-// Reload re-runs configuration discovery based on config paths currently set,
-// and repo-poulates the config with discovered values.
-func (c *Config) Reload() error {
-	if err := c.viper.ReadInConfig(); err != nil {
+func (c Config) AddStore(store *ParamStore) error {
+	storeName := store.GetName()
+	if _, ok := c.stores[storeName]; ok {
+		return fmt.Errorf("store with name %q already added", storeName)
+	}
+
+	for _, name := range store.GetParamNames() {
+		otherStore, ok := c.params[name]
+		if ok {
+			return fmt.Errorf("param %q already registered by store %q", name, otherStore.GetName())
+		}
+	}
+
+	store.Freeze() // prevent subsequent modifications to parameter definitions.
+
+	c.stores[storeName] = store
+	for _, name := range store.GetParamNames() {
+		c.params[name] = store
+	}
+
+	return nil
+}
+
+func (c *Config) ReadInConfig() error {
+	if err := c.v.ReadInConfig(); err != nil {
 		return err
+	}
+
+	return c.Reload()
+}
+
+func (c *Config) ReadConfig(in io.Reader) error {
+	if err := c.v.ReadConfig(in); err != nil {
+		return err
+	}
+
+	return c.Reload()
+}
+
+// Reload re-populates the config with discovered values, and validates to make
+// sure that read values match expected types, and all mandatory parameters
+// have been created.
+func (c *Config) Reload() error {
+	for _, store := range c.stores {
+		if err := store.PopulateFromViper(c.v); err != nil {
+			return err
+		}
 	}
 
 	if err := c.validate(); err != nil {
 		return err
 	}
 
-	c.Debug = c.viper.GetBool("debug")
-	c.PluginLocations = c.viper.GetStringSlice("plugin.locations")
-	c.PolicyStoreName = c.viper.GetString("policy.store_name")
-	c.PolicyStoreParams = c.viper.GetStringMapString("policy.store_params")
-	c.PolicyEngineName = c.viper.GetString("policy.engine_name")
-	c.PolicyEngineParams = c.viper.GetStringMapString("policy.engine_params")
-	c.EndorsementStoreName = c.viper.GetString("endorsements.store_name")
-	c.EndorsementStoreParams = c.viper.GetStringMap("endorsements.store_params")
-
 	return nil
 }
 
+func (c Config) Get(name string) interface{} {
+	cv := reflect.ValueOf(c)
+	retv := cv.FieldByName(name)
+	return retv.Interface()
+}
+
+func (c Config) GetInt(name string) int {
+	store, ok := c.params[name]
+	if !ok {
+		return 0
+	}
+
+	return store.GetInt(name)
+}
+
+func (c Config) GetString(name string) string {
+	store, ok := c.params[name]
+	if !ok {
+		return ""
+	}
+
+	return store.GetString(name)
+}
+
+func (c Config) GetStringSlice(name string) []string {
+	store, ok := c.params[name]
+	if !ok {
+		return nil
+	}
+
+	return store.GetStringSlice(name)
+}
+
+func (c Config) GetStringMapString(name string) map[string]string {
+	store, ok := c.params[name]
+	if !ok {
+		return nil
+	}
+
+	return store.GetStringMapString(name)
+}
+
+func (c Config) GetParamStore(name string) *ParamStore {
+	return c.stores[name]
+}
+
 func (c Config) validate() error {
-	for _, key := range expectedConfigKey {
-		if !c.viper.IsSet(key) {
-			return fmt.Errorf("key %q not set in configuration", key)
+	for _, store := range c.stores {
+		if err := store.Validate(true); err != nil {
+			return fmt.Errorf("%s params validation failed: %s", store.Name, err.Error())
 		}
 	}
+
 	return nil
 }

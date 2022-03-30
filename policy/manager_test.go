@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package policy
@@ -16,6 +16,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func initDb(schemaFile string) (string, error) {
@@ -56,6 +57,7 @@ func finiDb(path string) {
 }
 
 func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
+	require := require.New(t)
 	assert := assert.New(t)
 
 	pm := NewManager()
@@ -74,8 +76,20 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 
 	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
 
-	params := common.PolicyStoreParams{"dbpath": dbPath}
-	err = pm.InitializeStore([]string{pluginDir}, "sqlite", params)
+	managerParams, err := NewManagerParamStore()
+	require.Nil(err)
+
+	err = managerParams.PopulateFromMap(map[string]interface{}{
+		"PluginLocations":   []string{pluginDir},
+		"PolicyStoreName":   "sqlite",
+		"PolicyStoreParams": map[string]interface{}{"dbpath": dbPath},
+		"Quiet":             true,
+	})
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	err = pm.Init(managerParams)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -93,11 +107,11 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	policy, err := pm.GetPolicy(1, common.PsaIatToken)
+	policy, err := pm.GetPolicy(1, common.AttestationFormat_PSA_IOT)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	assert.Equal(common.PsaIatToken, policy.TokenFormat)
+	assert.Equal(common.AttestationFormat_PSA_IOT, policy.AttestationFormat)
 	assert.Equal("$.implementation_id", policy.QueryMap["hardware_id"]["platform_id"])
 	assert.Equal("$.sw_components[*].measurement_value",
 		policy.QueryMap["software_components"]["measurements"])

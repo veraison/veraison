@@ -1,0 +1,331 @@
+#!/usr/bin/env python
+# Copyright 2022 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+
+import argparse
+import fnmatch
+import logging
+import os
+import re
+import string
+import subprocess
+import sys
+from collections import namedtuple
+from datetime import datetime
+from functools import partial
+
+
+# Returns a function that tests whether the extension of specified path is ext.
+def ext_is(ext):
+    return partial((lambda e, p: os.path.splitext(p.lower())[1] == e), ext)
+
+
+# Returns True if the specified file is a shell script (bourne-compatible).
+def is_shell(path):
+    if ext_is('.sh')(path):
+        return True
+    return _check_commands(path, ['/bin/bash', '/bin/sh', '/bin/zsh'])
+
+
+# Returns True if the specified file is a Python script.
+def is_python(path):
+    if ext_is('.py')(path):
+        return True
+    return _check_commands(path, ['/usr/bin/env python', '/usr/bin/python'])
+
+
+def _check_commands(path, commands):
+    with open(path, 'rb') as fh:
+        line = fh.readline().strip()
+    if line.startswith(b'#!'):
+        cmd = line[2:]
+        for candidate in commands:
+            if cmd.startswith(candidate.encode('utf-8')):
+                return True
+    return False
+
+
+# Returns True if the specified file contains text, rather than binary data.
+# This is done by checking for non-printable characters in the first 1024 bytes
+# of the file. Similar to file(1) behavior.
+def is_text(path):
+    textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
+    max_data = 1024
+    with open(path, 'rb') as fh:
+        data = fh.read(max_data)
+        return not bool(data.translate(None, textchars))
+
+
+# name -- the name of the file type
+# ident_func --  a function that, given a file path, returns True iff the file
+#                matches this file type
+# requires_copyright -- True if this file type should have a copyright header
+# comment_symbol -- either a string with the single-line comment symbol, or a
+#                   three-tuple with (start, end, middle) symbols
+_FileType = namedtuple('filetype', 'name, ident_func, requires_copyright, comment_symbol')
+class FileType(_FileType):
+    pass
+
+
+FILE_TYPES = [
+        FileType('go', ext_is('.go'), True, '//'),
+        FileType('shell', is_shell, True, '#'),
+        FileType('python', is_python, True, '#'),
+        FileType('text', is_text, False, '#'),  # must be last
+]
+
+
+def get_type(path):
+    for ft in FILE_TYPES:
+        if ft.ident_func(path):
+            return ft
+    return FileType('UNKNOWN', lambda p: True, False, '#')
+
+
+HAVE_GIT = subprocess.getstatusoutput('git --version')[0] == 0
+
+
+# Return the year of the latest git commit (excluding commits to do with copyrights.)
+def get_git_year(path):
+    if not HAVE_GIT:
+        return None
+
+    info = subprocess.check_output('git log -n 1 {}'.format(os.path.basename(path)),
+                                   shell=True, cwd=os.path.dirname(path)).decode('utf-8')
+    if not info.strip():
+        return None
+
+    i = 1
+    while 'copyright' in info.lower() or '  Merge' in info:
+        info = subprocess.check_output('git log -n 1 --skip {} {}'.format(i, os.path.basename(path)),
+                                    shell=True, cwd=os.path.dirname(path)).decode('utf-8')
+        if not info.strip():
+            return None
+
+    info_split_lines = info.split('\n')
+    info_split_words = info_split_lines[2].split()
+    return int(info_split_words[5])
+
+
+def get_mtime_year(path):
+    seconds = os.path.getmtime(path)
+    return datetime.fromtimestamp(seconds).year
+
+
+def should_ignore(path, ignorelist):
+    for entry in ignorelist:
+        if fnmatch.fnmatch(path, entry):
+            return True
+    return False
+
+
+def iterfiles(path, ignorelist=[]):
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            filepath = os.path.join(root, f)
+            if not should_ignore(filepath, ignorelist):
+                yield filepath
+            else:
+                logging.debug('Skipping {}'.format(filepath))
+
+
+COPYRIGHT_REGEX = re.compile(r"^[\W]*Copyright(?:\s+\([Cc]\)|©)?\s+(\d+(?:-(\d+))?)")
+COPYRIGHT_TEMPLATE = string.Template('''
+${startsym} Copyright ${year} Contributors to the Veraison project.
+${sym} SPDX-License-Identifier: Apache-2.0${endsym}
+'''.lstrip('\n'))
+
+
+class CopyrightInfo:
+
+    def __init__(self, path, max_lines=100):
+        self.path = path
+        self.max_lines = max_lines
+        self.cr_line = ''
+        self.cr_line_no = 0
+        self.type = None
+        self.year = None
+
+    def reload(self):
+        self.type = get_type(self.path)
+        match = None
+        with open(self.path) as fh:
+            for i, line in enumerate(fh, 1):
+                match = COPYRIGHT_REGEX.search(line)
+                if match:
+                    self.cr_line = line
+                    self.cr_line_no = i
+                    self.year = CopyrightYear(match.group(1))
+                    break
+            else:
+                logging.debug('No copyright inside {}'.format(self.path))
+
+    def has_copyright(self):
+        return bool(self.cr_line)
+
+    def add_copyright(self):
+        if self.year is None:
+            self.year = CopyrightYear(str(datetime.now().year))
+
+        with open(self.path) as fh:
+            first_line = fh.readline()
+            rest = fh.read()
+
+        if not first_line:
+            return False # empty file
+
+        copyright_text = self._get_copyright_text()
+        with open(self.path, 'w') as wfh:
+            if first_line.startswith('#!'):
+                wfh.write(first_line)
+                wfh.write(copyright_text)
+                wfh.write(rest)
+            else:
+                wfh.write(copyright_text)
+                wfh.write(first_line)
+                wfh.write(rest)
+        return True
+
+    def update_copyright(self):
+        with open(self.path) as fh:
+            lines = [l for l in fh]
+
+        copyright_text = self._get_copyright_text()
+        outlines_before = lines[:self.cr_line_no-1]
+        outlines_after = lines[self.cr_line_no+1:]
+
+        with open(self.path, 'w') as wfh:
+            wfh.write(''.join(outlines_before))
+            wfh.write(copyright_text)
+            wfh.write(''.join(outlines_after))
+
+    def _get_copyright_text(self):
+        cs = self.type.comment_symbol
+        if isinstance(cs, str):
+            return COPYRIGHT_TEMPLATE.substitute(startsym=cs, sym=cs, endsym='', year=self.year)
+        else:
+            return COPYRIGHT_TEMPLATE.substitute(startsym=cs[0], sym=cs[1], endsym=cs[2], year=self.year)
+
+
+class CopyrightYear:
+
+    def __init__(self, text):
+        self.text = text
+        self.first = 0
+        self.last = 0
+        self._parse()
+
+    def _parse(self):
+        if '-' not in self.text:
+            self.first = int(self.text.strip())
+            self.last = self.first
+        else:
+            f, l = self.text.split('-', 1)
+            self.first = int(f.strip())
+            self.last = int(l.strip())
+
+    def __str__(self):
+        if self.first == self.last:
+            return str(self.first)
+        else:
+            return '{}-{}'.format(self.first, self.last)
+
+    __repr__=__str__
+
+
+def parse_copyright(path):
+    ci = CopyrightInfo(path)
+    ci.reload()
+    return ci
+
+
+DEFAULT_EGNORE_PATHS = ['*.git*', '*pb.go', '*.pb.json.go', '*mocks*']
+
+
+def main(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('paths', nargs='*', help='Locations to scan.')
+    parser.add_argument('-u', '--update', action='store_true',
+            help='Update files by adding missing copyright headers and updating years if needed.')
+    parser.add_argument('-m', '--mtime', action='store_true',
+                        help='Use mtime to establish whether year needs to be updated.')
+    parser.add_argument('-i', '--ignore', action='append', help='Specify a glob pattern to ignore when scanning.')
+    parser.add_argument('-I', '--ignore-file', help='File containing')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output.')
+    parser.add_argument('--no-year-check', action='store_true',
+                        help='Only check for presence of copyright but not up-to-dateness.')
+    args = parser.parse_args(argv)
+
+    ignore_paths = DEFAULT_EGNORE_PATHS
+    if args.ignore:
+        ignore_paths.extend(args.ignore)
+    if args.ignore_file:
+        with open(args.ignore_file) as fh:
+            for line in fh:
+                ignore_paths.append(line.rstrip('\n'))
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    current_year = datetime.now().year
+    have_errors = False
+    for path in args.paths:
+        for p in iterfiles(path, ignore_paths):
+            p = os.path.abspath(p)
+            t = get_type(p)
+            if t.requires_copyright:
+                ci = parse_copyright(p)
+                if not ci.has_copyright():
+                    if args.update:
+                        if ci.add_copyright():
+                            logging.info('{}: wrote copyright header'.format(p))
+                        else:
+                            logging.debug('{}: file empty'.format(p))
+                    else:
+                        if open(p).read(10):
+                            logging.error('{}: NO COPYRIGHT'.format(p))
+                            have_errors = True
+                        else:
+                            logging.debug('{}: file empty'.format(p))
+                    continue
+
+                if 'Veraison' not in ci.cr_line:
+                    msg = '{} containts non-Veraison copyright: {} (line {})'
+                    logging.debug(msg.format(p, ci.cr_line, ci.cr_line_no))
+                    continue
+
+                if args.no_year_check:
+                    continue
+
+                if args.mtime:
+                    mod_year = get_mtime_year(p)
+                else:
+                    mod_year = get_git_year(p)
+
+                if not mod_year:
+                    logging.debug('{}: could not get modification year'.format(p))
+                    continue
+
+                if mod_year and mod_year <= ci.year.last:
+                    logging.debug('{}: Copyright year already up-to-date ({})'.format(p, ci.year.last))
+                    continue
+
+                if ci.year.last < current_year:
+                    if args.update:
+                        ci.year.last = current_year
+                        ci.update_copyright()
+                        logging.info('{}: updated copyright year {} -> {}'.format(p, ci.year.last, current_year))
+                    else:
+                        msg = '{}: copyright out-of-date (currently {}, modified {})'
+                        logging.error(msg.format(p, ci.year.last, mod_year))
+                        have_errors = True
+
+    if have_errors:
+        sys.exit(1)
+    else:
+        sys.exit(0)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

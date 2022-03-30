@@ -1,13 +1,16 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-//  +build  !codeanalysis
+//go:build !codeanalysis
+// +build !codeanalysis
 
 package main
 
 import (
 	"errors"
 	"testing"
+
+	mock_deps "arangodbendorsements/mocks"
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -66,8 +69,8 @@ func TestInitStore(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
-			argList := common.EndorsementStoreParams{
+			ms := mock_deps.NewMockStore(ctrl)
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -105,8 +108,8 @@ func TestConnectStore(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
-			argList := common.EndorsementStoreParams{
+			ms := mock_deps.NewMockStore(ctrl)
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -170,7 +173,7 @@ func TestQueryHardwareID(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 			docList := []interface{}{}
 
 			if test.wantErr != noError {
@@ -191,7 +194,7 @@ func TestQueryHardwareID(t *testing.T) {
 				)
 			}
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -362,7 +365,7 @@ func TestQueryGetSoftwareComponents(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 			test.wantQuery, test.qRsp = test.prepare(index)
 
 			gomock.InOrder(
@@ -393,7 +396,7 @@ func TestQueryGetSoftwareComponents(t *testing.T) {
 				ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[5]), gomock.Any(), gomock.Any()).Return(test.qRsp[5], retErr),
 			)
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -511,7 +514,7 @@ func TestQueryAltSoftwareComponents(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			if test.wantErr != noError {
 				retErr = errors.New("invalid syntax")
@@ -542,7 +545,7 @@ func TestQueryAltSoftwareComponents(t *testing.T) {
 					)
 				}
 			}
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"AltAlgorithm":  "Normal",
 				"storeInstance": ms,
 			}
@@ -631,7 +634,7 @@ func TestQueryAllSoftwareComponents(t *testing.T) {
 			var retErr error
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			if test.wantErr != noError {
 				retErr = errors.New("invalid syntax")
@@ -668,7 +671,7 @@ func TestQueryAllSoftwareComponents(t *testing.T) {
 				ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[5]), gomock.Any(), gomock.Any()).Return(test.qRsp[5], retErr),
 			)
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -766,7 +769,7 @@ func TestQueryLatestLinkedSwComponent(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			test.wantQuery, test.qRsp = test.prepare(index)
 
@@ -793,7 +796,7 @@ func TestQueryLatestLinkedSwComponent(t *testing.T) {
 					ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[3]), gomock.Any(), gomock.Any()).Return(test.qRsp[3], nil),
 				)
 			}
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}
@@ -954,7 +957,7 @@ func TestQueryMostRecentSwComp(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ms := NewMockStore(ctrl)
+			ms := mock_deps.NewMockStore(ctrl)
 
 			test.wantQuery, test.qRsp = test.prepare(index)
 
@@ -986,7 +989,7 @@ func TestQueryMostRecentSwComp(t *testing.T) {
 				ms.EXPECT().RunQuery(gomock.Any(), gomock.Eq(test.wantQuery[5]), gomock.Any(), gomock.Any()).Return(test.qRsp[3], nil),
 			)
 
-			argList := common.EndorsementStoreParams{
+			argList := common.EndorsementBackendParams{
 				"storeInstance": ms,
 			}
 			fetcher := &EndorsementStore{}

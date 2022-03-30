@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package main
@@ -69,14 +69,53 @@ func TestSqliteGetPolicy(t *testing.T) {
 	defer finiDb(dbPath)
 
 	var pm PolicyStore
-	err = pm.Init(common.PolicyStoreParams{"dbpath": dbPath})
+
+	params, err := CreatePolicyStoreParams()
+	require.Nil(err)
+	require.Nil(params.SetString("dbpath", dbPath))
+
+	err = pm.Init(params)
 	require.Nil(err)
 
-	policy, err := pm.GetPolicy(1, common.PsaIatToken)
+	policy, err := pm.GetPolicy(1, common.AttestationFormat_PSA_IOT)
 	require.Nil(err)
 
-	assert.Equal(common.PsaIatToken, policy.TokenFormat)
+	assert.Equal(common.AttestationFormat_PSA_IOT, policy.AttestationFormat)
 	assert.Equal("$.implementation_id", policy.QueryMap["hardware_id"]["platform_id"])
 	assert.Equal("$.sw_components[*].measurement_value",
 		policy.QueryMap["software_components"]["measurements"])
+
+	policy, err = pm.GetPolicy(1, common.AttestationFormat(123))
+	require.NotNil(err)
+	assert.Contains(err.Error(), "no rows")
+	assert.Nil(policy)
+}
+
+func TestSqliteDeletePolicy(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	wd, err := os.Getwd()
+	require.Nil(err)
+
+	schemaFile := filepath.Join(wd, "test", "iat-policy.sqlite")
+	dbPath, err := initDb(schemaFile)
+	require.Nil(err)
+	defer finiDb(dbPath)
+
+	var pm PolicyStore
+
+	params, err := CreatePolicyStoreParams()
+	require.Nil(err)
+	require.Nil(params.SetString("dbpath", dbPath))
+
+	err = pm.Init(params)
+	require.Nil(err)
+
+	err = pm.DeletePolicy(1, common.AttestationFormat_PSA_IOT)
+	assert.Nil(err)
+
+	err = pm.DeletePolicy(1, common.AttestationFormat_PSA_IOT)
+	require.NotNil(err)
+	assert.Contains(err.Error(), "no rows")
 }

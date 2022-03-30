@@ -35,7 +35,7 @@ const (
 
 // EndorsementStore is the abstraction of Endorsement store
 type EndorsementStore struct {
-	common.BaseEndorsementStore
+	common.BaseEndorsementBackend
 	store Store
 }
 
@@ -100,11 +100,11 @@ const FirstIndex = 0
 
 // GetName method returns the Arango Store name
 func (e *EndorsementStore) GetName() string {
-	return "arangodb"
+	return "ARANGODB"
 }
 
 // Init is invoked to initialize the store params
-func (e *EndorsementStore) Init(args common.EndorsementStoreParams) error {
+func (e *EndorsementStore) Init(args common.EndorsementBackendParams) error {
 
 	e.Queries = map[string]common.Query{
 		"hardware_id":           e.GetHardwareID,
@@ -880,7 +880,7 @@ func main() {
 	}
 
 	var pluginMap = map[string]plugin.Plugin{
-		"endorsementstore": &common.EndorsementStorePlugin{
+		"endorsementstore": &common.EndorsementBackendPlugin{
 			Impl: &EndorsementStore{},
 		},
 	}

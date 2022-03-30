@@ -1,0 +1,6 @@
+CREATE TABLE policy(
+    tenant_id integer,
+    token_format text,
+    query_map blob,
+    rules blob
+);

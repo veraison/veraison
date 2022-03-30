@@ -25,7 +25,13 @@ endif
 $(PLUGIN): $(SRCS) ; go build $(DFLAGS) -o $(PLUGIN)
 
 .PHONY: all
-all: $(PLUGIN)
+all: all-hook-pre realall
+
+.PHONY: all-hook-pre
+all-hook-pre:
+
+.PHONY: realall
+realall: $(PLUGIN)
 
 .PHONY: clean
 clean: ; $(RM) $(PLUGIN) $(CLEANFILES)

@@ -14,16 +14,32 @@ MOCKGEN := $(shell go env GOPATH)/bin/mockgen
 
 define MOCK_template
 mock_$(1): $(1)
-	$$(MOCKGEN) -source=$$< -destination=$$@ -package=$$(MOCKPKG)
+	$$(MOCKGEN) -source=$$< -destination=mocks/$$$$(basename $$@) -package=$$(MOCKPKG)
 endef
 
 $(foreach m,$(INTERFACES),$(eval $(call MOCK_template,$(m))))
 MOCK_FILES := $(foreach m,$(INTERFACES),$(join mock_,$(m)))
 
+THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
 _mocks: $(MOCK_FILES)
 .PHONY: _mocks
 
-test: _mocks; go test $(TEST_ARGS) $(GOPKG)
+test: test-hook-pre realtest checkcopyrights
 .PHONY: test
+
+test-hook-pre:
+.PHONY: test-hook-pre
+
+realtest: _mocks ; go test $(TEST_ARGS) $(GOPKG)
+.PHONY: realtest
+
+COPYRIGHT_FLAGS :=
+ifdef CI_PIPELINE
+	COPYRIGHT_FLAGS += --no-year-check
+endif
+
+checkcopyrights: ; python3 $(THIS_DIR)../scripts/check-copyright $(COPYRIGHT_FLAGS) .
+.PHONY: checkcopyrights
 
 CLEANFILES += $(MOCK_FILES)

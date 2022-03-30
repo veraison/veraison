@@ -12,7 +12,7 @@ import (
 // This is intended to be used on user-provided specifiers to allow for some
 // flexibility therein.
 func Canonize(name string) string {
-	name = strings.ToLower(name)
+	name = strings.ToUpper(name)
 	name = strings.ReplaceAll(name, "-", "_")
 	return name
 }

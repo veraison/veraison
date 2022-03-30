@@ -1,10 +1,11 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/rpc"
 
@@ -25,7 +26,7 @@ func (p *PolicyStorePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interfac
 
 type GetPolicyArgs struct {
 	TenantID    int
-	TokenFormat TokenFormat
+	TokenFormat AttestationFormat
 }
 
 type PutPolicyArgs struct {
@@ -42,18 +43,51 @@ func (s *PolicyStoreServer) GetName(args interface{}, resp *string) error {
 	return nil
 }
 
-func (s *PolicyStoreServer) Init(args PolicyStoreParams, resp *string) error {
-	return s.Impl.Init(args)
+func (s *PolicyStoreServer) GetParamDescriptions(args interface{}, resp *[]byte) error {
+	result, err := s.Impl.GetParamDescriptions()
+	if err != nil {
+		return err
+	}
+
+	*resp, err = json.Marshal(result)
+	return err
+}
+
+func (s *PolicyStoreServer) Init(bytes []byte, resp *string) error {
+	var params ParamStore
+	if err := json.Unmarshal(bytes, &params); err != nil {
+		return err
+	}
+
+	return s.Impl.Init(&params)
+}
+
+func (s *PolicyStoreServer) ListPolicies(tenantID int, resp *[]byte) error {
+	result, err := s.Impl.ListPolicies(tenantID)
+	if err != nil {
+		return err
+	}
+
+	*resp, err = json.Marshal(result)
+	return err
 }
 
 func (s *PolicyStoreServer) GetPolicy(args GetPolicyArgs, resp *Policy) error {
 	policy, err := s.Impl.GetPolicy(args.TenantID, args.TokenFormat)
-	*resp = *policy
+
+	if policy != nil {
+		*resp = *policy
+	}
+
 	return err
 }
 
 func (s *PolicyStoreServer) PutPolicy(args PutPolicyArgs, resp *interface{}) error {
 	return s.Impl.PutPolicy(args.TenantID, args.Policy)
+}
+
+func (s *PolicyStoreServer) DeletePolicy(args GetPolicyArgs, resp *interface{}) error {
+	return s.Impl.DeletePolicy(args.TenantID, args.TokenFormat)
 }
 
 func (s *PolicyStoreServer) Close(args interface{}, resp *interface{}) error {
@@ -74,11 +108,49 @@ func (e *PolicyStoreRPC) GetName() string {
 	return resp
 }
 
-func (e *PolicyStoreRPC) Init(args PolicyStoreParams) error {
-	return e.client.Call("Plugin.Init", args, nil)
+func (e *PolicyStoreRPC) GetParamDescriptions() (map[string]*ParamDescription, error) {
+	result := make(map[string]*ParamDescription)
+
+	var resp []byte
+	if err := e.client.Call("Plugin.GetParamDescriptions", new(interface{}), &resp); err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
-func (e *PolicyStoreRPC) GetPolicy(tenantID int, tokenFormat TokenFormat) (*Policy, error) {
+func (e *PolicyStoreRPC) Init(params *ParamStore) error {
+	bytes, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	return e.client.Call("Plugin.Init", bytes, nil)
+}
+
+func (e *PolicyStoreRPC) ListPolicies(tenantID int) ([]PolicyListEntry, error) {
+	var result []PolicyListEntry
+
+	var resp []byte
+
+	if err := e.client.Call("Plugin.ListPolicies", tenantID, &resp); err != nil {
+		return nil, err
+	}
+
+	// NOTE: encoding/gob used to serialize objects by net/rpc cannot handle []interface{}, which
+	//       necessitates pre-serialing any objects that may contain arbitrary JSON decodings.
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (e *PolicyStoreRPC) GetPolicy(tenantID int, tokenFormat AttestationFormat) (*Policy, error) {
 	var resp Policy
 
 	args := GetPolicyArgs{TenantID: tenantID, TokenFormat: tokenFormat}
@@ -93,12 +165,20 @@ func (e *PolicyStoreRPC) PutPolicy(tenantID int, policy *Policy) error {
 	return e.client.Call("Plugin.PutPolicy", args, new(interface{}))
 }
 
+func (e *PolicyStoreRPC) DeletePolicy(tenantID int, tokenFormat AttestationFormat) error {
+	args := GetPolicyArgs{TenantID: tenantID, TokenFormat: tokenFormat}
+	// TODO: figure out why the last argument here must be non-nil
+	return e.client.Call("Plugin.DeletePolicy", args, new(interface{}))
+}
+
 func (e *PolicyStoreRPC) Close() error {
 	return e.client.Call("Plugin.Close", new(interface{}), nil)
 }
 
 type PolicyEnginePlugin struct {
-	Impl IPolicyEngine
+	Impl         IPolicyEngine
+	PluginClient *plugin.Client
+	RPCClient    plugin.ClientProtocol
 }
 
 func (p *PolicyEnginePlugin) Server(*plugin.MuxBroker) (interface{}, error) {
@@ -109,14 +189,45 @@ func (p *PolicyEnginePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interfa
 	return &PolicyEngineRPC{client: c}, nil
 }
 
-type PolicyEngineArgs struct {
-	Evidence     map[string]interface{}
-	Endorsements map[string]interface{}
+func (p *PolicyEnginePlugin) Load(lp *LoadedPlugin) error {
+	p.Impl = lp.Raw.(IPolicyEngine)
+	p.RPCClient = lp.RPCClient
+	p.PluginClient = lp.PluginClient
+
+	return nil
 }
 
-type GetAttetationResultArgs struct {
-	PolicyEngineArgs
-	Simple bool
+func (p *PolicyEnginePlugin) Init(params *ParamStore) error {
+	return p.Impl.Init(params)
+}
+
+func (p *PolicyEnginePlugin) Close() error {
+	p.PluginClient.Kill()
+	return p.RPCClient.Close()
+}
+
+func (p *PolicyEnginePlugin) GetName() string {
+	return p.Impl.GetName()
+}
+
+func (p *PolicyEnginePlugin) Appraise(attestation *Attestation, policy *Policy) error {
+	return p.Impl.Appraise(attestation, policy)
+}
+
+func LoadPolicyEnginePlugin(locations []string, name string) (*PolicyEnginePlugin, error) {
+	lp, err := LoadPlugin(locations, "policyenginge", name, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var policyEnginePlugin PolicyEnginePlugin
+	err = policyEnginePlugin.Load(lp)
+	return &policyEnginePlugin, err
+}
+
+type AppraiseArgs struct {
+	Attestation []byte
+	Policy      []byte
 }
 
 type PolicyEngineServer struct {
@@ -128,46 +239,36 @@ func (s *PolicyEngineServer) GetName(args interface{}, resp *string) error {
 	return nil
 }
 
-func (s *PolicyEngineServer) Init(args PolicyEngineParams, resp *interface{}) error {
-	return s.Impl.Init(args)
+func (s *PolicyEngineServer) Init(params *ParamStore, resp *interface{}) error {
+	return s.Impl.Init(params)
 }
 
-func (s *PolicyEngineServer) LoadPolicy(policy []byte, resp *interface{}) error {
-	return s.Impl.LoadPolicy(policy)
-}
+func (s *PolicyEngineServer) Appraise(args AppraiseArgs, resp *[]byte) error {
+	var attestation Attestation
+	var policy Policy
 
-func (s *PolicyEngineServer) GetClaims(args PolicyEngineArgs, resp *map[string]interface{}) error {
-	var err error
-	*resp, err = s.Impl.GetClaims(args.Evidence, args.Endorsements)
-	return err
-}
-
-func (s *PolicyEngineServer) CheckValid(args PolicyEngineArgs, resp *bool) error {
-	var err error
-	*resp, err = s.Impl.CheckValid(args.Evidence, args.Endorsements)
-	return err
-}
-
-func (s *PolicyEngineServer) GetAttetationResult(argBlob []byte, resp *[]byte) error {
-	var args GetAttetationResultArgs
-	// NOTE: encoding/gob used to serialize objects by net/rpc cannot handle []interface{}, which
-	//       necessitates pre-serialing any objects that may contain arbitrary JSON decodings.
-	if err := json.Unmarshal(argBlob, &args); err != nil {
+	err := json.Unmarshal(args.Attestation, &attestation)
+	if err != nil {
 		return err
 	}
 
-	var result AttestationResult
-	if err := s.Impl.GetAttetationResult(args.Evidence, args.Endorsements, args.Simple, &result); err != nil {
+	err = json.Unmarshal(args.Policy, &policy)
+	if err != nil {
 		return err
 	}
 
-	var err error
-	*resp, err = json.Marshal(result)
+	err = s.Impl.Appraise(&attestation, &policy)
+	if err != nil {
+		return err
+	}
+
+	*resp, err = json.Marshal(&attestation)
+
 	return err
 }
 
-func (s *PolicyEngineServer) Stop(args interface{}, resp *interface{}) error {
-	return s.Impl.Stop()
+func (s *PolicyEngineServer) Close(args interface{}, resp *interface{}) error {
+	return s.Impl.Close()
 }
 
 type PolicyEngineRPC struct {
@@ -184,69 +285,95 @@ func (e *PolicyEngineRPC) GetName() string {
 	return resp
 }
 
-func (e *PolicyEngineRPC) Init(args PolicyEngineParams) error {
-	return e.client.Call("Plugin.Init", args, new(interface{}))
+func (e *PolicyEngineRPC) Init(params *ParamStore) error {
+	return e.client.Call("Plugin.Init", params, new(interface{}))
 }
 
-func (e *PolicyEngineRPC) LoadPolicy(policy []byte) error {
-	return e.client.Call("Plugin.LoadPolicy", policy, new(interface{}))
-}
-
-func (e *PolicyEngineRPC) CheckValid(
-	evidence map[string]interface{},
-	endorsements map[string]interface{},
-) (bool, error) {
-	var resp bool
-
-	args := PolicyEngineArgs{Evidence: evidence, Endorsements: endorsements}
-	err := e.client.Call("Plugin.CheckValid", args, &resp)
-
-	return resp, err
-}
-
-func (e *PolicyEngineRPC) GetClaims(
-	evidence map[string]interface{},
-	endorsements map[string]interface{},
-) (map[string]interface{}, error) {
-	resp := make(map[string]interface{})
-
-	args := PolicyEngineArgs{Evidence: evidence, Endorsements: endorsements}
-	err := e.client.Call("Plugin.GetClaims", args, &resp)
-
-	return resp, err
-}
-
-func (e *PolicyEngineRPC) GetAttetationResult(
-	evidence map[string]interface{},
-	endorsements map[string]interface{},
-	simple bool,
-	result *AttestationResult,
-) error {
-
-	args := GetAttetationResultArgs{
-		PolicyEngineArgs: PolicyEngineArgs{
-			Evidence:     evidence,
-			Endorsements: endorsements,
-		},
-		Simple: simple,
-	}
-
+func (e *PolicyEngineRPC) Appraise(attestation *Attestation, policy *Policy) error {
 	// NOTE: encoding/gob used to serialize objects by net/rpc cannot handle []interface{}, which
 	//       necessitates pre-serialing any objects that may contain arbitrary JSON decodings.
-	argsBlob, err := json.Marshal(args)
+
+	var err error
+	args := AppraiseArgs{}
+
+	args.Attestation, err = json.Marshal(attestation)
+	if err != nil {
+		return err
+	}
+
+	args.Policy, err = json.Marshal(policy)
 	if err != nil {
 		return err
 	}
 
 	var resultBlob []byte
-	err = e.client.Call("Plugin.GetAttetationResult", argsBlob, &resultBlob)
+	err = e.client.Call("Plugin.Appraise", args, &resultBlob)
 	if err != nil {
 		return err
 	}
 
-	return json.Unmarshal(resultBlob, result)
+	return json.Unmarshal(resultBlob, attestation)
 }
 
-func (e *PolicyEngineRPC) Stop() error {
-	return e.client.Call("Plugin.Stop", new(interface{}), new(interface{}))
+func (e *PolicyEngineRPC) Close() error {
+	return e.client.Call("Plugin.Fini", new(interface{}), new(interface{}))
+}
+
+type PolicyEnginePluginContainer struct {
+	Engine   IPolicyEngine
+	Client   *plugin.Client
+	Protocol plugin.ClientProtocol
+}
+
+func (c PolicyEnginePluginContainer) GetName() string {
+	return c.Engine.GetName()
+}
+
+func (c PolicyEnginePluginContainer) Init(params *ParamStore) error {
+	return c.Engine.Init(params)
+}
+
+func (c PolicyEnginePluginContainer) Appraise(
+	attestation *Attestation,
+	policy *Policy,
+) error {
+	return c.Engine.Appraise(attestation, policy)
+}
+
+func (c PolicyEnginePluginContainer) Close() error {
+	err := c.Engine.Close()
+	c.Client.Kill()
+	c.Protocol.Close()
+	return err
+}
+
+func LoadAndInitializePolicyEnginePlugin(
+	params *ParamStore,
+) (IPolicyEngine, error) {
+	engineName := Canonize(params.GetString("PolicyEngineName"))
+	pluginLocations := params.GetStringSlice("PluginLocations")
+	quiet := params.GetBool("Quiet")
+
+	pc := new(PolicyEnginePluginContainer)
+
+	lp, err := LoadPlugin(pluginLocations, "policyengine", engineName, quiet)
+	if err != nil {
+		return nil, err
+	}
+
+	pc.Engine = lp.Raw.(IPolicyEngine)
+	pc.Client = lp.PluginClient
+	pc.Protocol = lp.RPCClient
+
+	if pc.Client == nil {
+		return nil, fmt.Errorf("failed to find policy engine with name '%v'", engineName)
+	}
+
+	err = pc.Init(params)
+	if err != nil {
+		pc.Client.Kill()
+		return nil, err
+	}
+
+	return pc, nil
 }

@@ -1,0 +1,10 @@
+debug: true
+plugin:
+    locations:
+        - ../../plugins/bin/
+vts:
+  port: 50051
+endorsement:
+    store_name: memory
+trust_anchor:
+    store_name: memory

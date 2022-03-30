@@ -1,3 +1,5 @@
+// Copyright 2022 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
 package frontend
 
 import (
@@ -7,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/veraison/tokenprocessor"
 	"github.com/veraison/verifier"
 )
 
@@ -46,8 +47,8 @@ func initGin() *gin.Engine {
 	return r
 }
 
-func NewRouter(logger *zap.Logger, tp *tokenprocessor.TokenProcessor, v *verifier.Verifier) *gin.Engine {
-	ctrl := NewController(logger, tp, v)
+func NewRouter(logger *zap.Logger, v *verifier.Verifier) *gin.Engine {
+	ctrl := NewController(logger, v)
 
 	r := initGin()
 
