@@ -196,7 +196,7 @@ func (s *SchemeRPC) GetName() string {
 	var resp string
 	err := s.client.Call("Plugin.GetName", new(interface{}), &resp)
 	if err != nil {
-		log.Printf("ERROR during GetName RPC: %v\n", err)
+		log.Printf("Plugin.GetName RPC call failed: %v", err)
 		return ""
 	}
 	return resp
@@ -206,7 +206,7 @@ func (s *SchemeRPC) GetFormat() AttestationFormat {
 	var resp AttestationFormat
 	err := s.client.Call("Plugin.GetFormat", new(interface{}), &resp)
 	if err != nil {
-		log.Printf("ERROR during GetFormat RPC: %v\n", err)
+		log.Printf("Plugin.GetFormat RPC call failed: %v", err)
 		return AttestationFormat_UNKNOWN_FORMAT
 	}
 	return resp
@@ -278,7 +278,6 @@ func (s *SchemeRPC) ExtractEvidence(token *AttestationToken, trustAnchor string)
 	)
 	args.Token, err = json.Marshal(token)
 	if err != nil {
-		log.Printf("ERROR during token marshing: %v\n", err)
 		return nil, err
 	}
 	args.TrustAnchor = trustAnchor
@@ -286,14 +285,12 @@ func (s *SchemeRPC) ExtractEvidence(token *AttestationToken, trustAnchor string)
 	var resp []byte
 	err = s.client.Call("Plugin.ExtractedEvidence", args, &resp)
 	if err != nil {
-		log.Printf("ERROR extracting evidence: %v\n", err)
 		return nil, err
 	}
 
 	var extracted ExtractedEvidence
 	err = json.Unmarshal(resp, &extracted)
 	if err != nil {
-		log.Printf("ERROR unmarshaling extracted evidence: %v\n", err)
 		return nil, err
 	}
 
