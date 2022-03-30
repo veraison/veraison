@@ -7,7 +7,6 @@ import (
 	"reflect"
 
 	"go.uber.org/zap"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/veraison/common"
 )
@@ -111,7 +110,6 @@ func (v *Verifier) Verify(
 	}
 
 	attestation.Result.RawEvidence = token.Data
-	attestation.Result.Timestamp = timestamppb.Now()
 
 	err = v.pe.Appraise(attestation, policy)
 	if err != nil {
