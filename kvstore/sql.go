@@ -54,7 +54,7 @@ func (o SQL) Get(key string) ([]string, error) {
 	// the lint warning here is spurious because o.Type.String() is not really
 	// under the control of the caller -- there is a very limited set of fixed
 	// outputs that it can produce
-	q := fmt.Sprintf("SELECT vals FROM %s WHERE key = ?", o.Type.String())
+	q := fmt.Sprintf("SELECT vals FROM %s WHERE key = ?", o.Type.String()) // nolint: gosec
 
 	rows, err := o.DB.Query(q, key)
 	if err != nil {
