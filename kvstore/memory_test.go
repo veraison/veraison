@@ -1,8 +1,9 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,22 +26,22 @@ func TestMemory_Init_negative_tests(t *testing.T) {
 		{
 			desc:        "missing store type",
 			cfg:         Config{"some-random-directive": "blabla"},
-			expectedErr: `missing "store-type" directive`,
+			expectedErr: `missing "type" directive`,
 		},
 		{
 			desc:        "empty store type",
-			cfg:         Config{"store-type": ""},
-			expectedErr: `invalid "store-type": unknown type ""`,
+			cfg:         Config{"type": ""},
+			expectedErr: `invalid value for "type": unknown type ""`,
 		},
 		{
 			desc:        "unknown store type",
-			cfg:         Config{"store-type": "some-random-type"},
-			expectedErr: `invalid "store-type": unknown type "some-random-type"`,
+			cfg:         Config{"type": "some-random-type"},
+			expectedErr: `invalid value for "type": unknown type "some-random-type"`,
 		},
 		{
 			desc:        "bad store type",
-			cfg:         Config{"store-type": []string{"invalid array type"}},
-			expectedErr: `"store-type" wants string values`,
+			cfg:         Config{"type": []string{"invalid array type"}},
+			expectedErr: `"type" wants string values`,
 		}}
 
 	for _, tv := range tvs {
@@ -55,7 +56,7 @@ func TestMemory_Init_Close_cycle_ok(t *testing.T) {
 	s := Memory{}
 
 	for _, typ := range []string{"trustanchor", "endorsement"} {
-		cfg := map[string]interface{}{"store-type": typ}
+		cfg := Config{"type": typ}
 
 		err := s.Init(cfg)
 		assert.NoError(t, err)
@@ -84,7 +85,7 @@ func TestMemory_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 
 func TestMemory_Set_Get_ok(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -92,14 +93,16 @@ func TestMemory_Set_Get_ok(t *testing.T) {
 	err = s.Set(testKey, testVal)
 	assert.NoError(t, err)
 
+	expectedVal := []string{testVal}
+
 	val, err := s.Get(testKey)
 	assert.NoError(t, err)
-	assert.Equal(t, testVal, val)
+	assert.Equal(t, expectedVal, val)
 }
 
 func TestMemory_Get_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -113,7 +116,7 @@ func TestMemory_Get_empty_key(t *testing.T) {
 
 func TestMemory_Del_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -127,7 +130,7 @@ func TestMemory_Del_empty_key(t *testing.T) {
 
 func TestMemory_Set_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -141,7 +144,7 @@ func TestMemory_Set_empty_key(t *testing.T) {
 
 func TestMemory_Set_bad_json(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -153,9 +156,9 @@ func TestMemory_Set_bad_json(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemory_Set_using_same_key_fails(t *testing.T) {
+func TestMemory_Set_using_same_key_appends(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -163,32 +166,50 @@ func TestMemory_Set_using_same_key_fails(t *testing.T) {
 	err = s.Set(testKey, testVal)
 	require.NoError(t, err)
 
-	expectedErr := `key "psa://tenant-1/deadbeef/beefdead" already exist, delete it first`
-
-	// try to set with the same key fails
-	err = s.Set(testKey, altTestVal)
-	assert.EqualError(t, err, expectedErr)
-
-	// delete key and retry
-	err = s.Del(testKey)
-	assert.NoError(t, err)
-
+	// try to set with the same key is OK (values are appended)
 	err = s.Set(testKey, altTestVal)
 	assert.NoError(t, err)
+
+	expectedVal := []string{testVal, altTestVal}
 
 	val, err := s.Get(testKey)
 	assert.NoError(t, err)
-	assert.Equal(t, altTestVal, val)
+	assert.Equal(t, expectedVal, val)
 }
 
-func TestMemory_Get_no_such_key(t *testing.T) {
+func TestMemory_Del_ok(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
 
-	expectedErr := `key "psa://tenant-1/deadbeef/beefdead" not found`
+	err = s.Set(testKey, testVal)
+	require.NoError(t, err)
+
+	expectedVal := []string{testVal}
+
+	val, err := s.Get(testKey)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedVal, val)
+
+	err = s.Del(testKey)
+	assert.NoError(t, err)
+
+	expectedErr := fmt.Sprintf("key %q not found", testKey)
+
+	_, err = s.Get(testKey)
+	assert.EqualError(t, err, expectedErr)
+}
+
+func TestMemory_Get_no_such_key(t *testing.T) {
+	s := Memory{}
+	cfg := Config{"type": "endorsement"}
+
+	err := s.Init(cfg)
+	require.NoError(t, err)
+
+	expectedErr := fmt.Sprintf("key %q not found", testKey)
 
 	_, err = s.Get(testKey)
 	assert.EqualError(t, err, expectedErr)
@@ -196,7 +217,7 @@ func TestMemory_Get_no_such_key(t *testing.T) {
 
 func TestMemory_dump_ok(t *testing.T) {
 	s := Memory{}
-	cfg := map[string]interface{}{"store-type": "endorsement"}
+	cfg := Config{"type": "endorsement"}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -208,8 +229,8 @@ func TestMemory_dump_ok(t *testing.T) {
 
 	expectedTbl := `Key                              Val
 ---                              ---
-psa://tenant-1/deadbeef/beefdead {"some": "json"}
-psa://tenant-2/cafecafe/cafecafe [1, 2, 3]
+psa://tenant-1/deadbeef/beefdead [{"some": "json"}]
+psa://tenant-2/cafecafe/cafecafe [[1, 2, 3]]
 `
 	tbl := s.dump()
 	assert.Equal(t, expectedTbl, tbl)

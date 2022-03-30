@@ -84,7 +84,7 @@ func TestGetAttestation(t *testing.T) {
 
 	scheme := new(Scheme)
 
-	attestation, err := scheme.GetAttestation(&ec, string(endorsementsBytes))
+	attestation, err := scheme.GetAttestation(&ec, []string{string(endorsementsBytes)})
 	require.Nil(err)
 
 	assert.Equal(common.AR_Status_SUCCESS, attestation.Result.Status)

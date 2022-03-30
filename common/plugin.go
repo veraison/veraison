@@ -78,21 +78,21 @@ func LoadPlugin(locations []string, plugType, plugName string, quiet bool) (*Loa
 
 			rpcClient, err := client.Client()
 			if err != nil {
-				hclog.Default().Error("failed to load RPC client from %v: %v\n", pluginPath, err)
+				logger.Debug("failed to load RPC client from", pluginPath, ":", err)
 				client.Kill()
 				continue
 			}
 
 			raw, err := rpcClient.Dispense(plugType)
 			if err != nil {
-				hclog.Default().Debug("plugin %v does not implement a %v\n", pluginPath, plugType)
+				logger.Debug("plugin", pluginPath, "does not implement a", plugType)
 				client.Kill()
 				continue
 			}
 
 			named := raw.(INamed)
 			if !strings.EqualFold(named.GetName(), strings.ToLower(plugName)) {
-				hclog.Default().Debug("wrong name in %v.\n", pluginPath)
+				logger.Debug("wrong name in", pluginPath)
 				client.Kill()
 				continue
 			}

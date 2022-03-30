@@ -4,6 +4,7 @@
 package trustedservices
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -12,6 +13,10 @@ import (
 	"github.com/veraison/common"
 	"github.com/veraison/veraison/kvstore"
 	"google.golang.org/protobuf/types/known/structpb"
+)
+
+const (
+	DummyTenantID = "0"
 )
 
 // Local VTS client, used by executable that the VTS component is part of. All
@@ -30,59 +35,44 @@ func PopulateLocalClientParams(store *common.ParamStore) error {
 			Path:     "plugin.locations",
 			Required: common.ParamNecessity_REQUIRED,
 		},
-		"EndorsementStoreName": {
-			Kind:     uint32(reflect.String),
-			Path:     "endorsement.store_name",
+		"EndorsementKVStoreConfig": {
+			Kind:     uint32(reflect.Map),
+			Path:     "endorsement.kvstore_config",
 			Required: common.ParamNecessity_REQUIRED,
 		},
-		"EndorsementStoreParams": {
+		"TrustAnchorKVStoreConfig": {
 			Kind:     uint32(reflect.Map),
-			Path:     "endorsement.store_params",
-			Required: common.ParamNecessity_OPTIONAL,
-		},
-		"TrustAnchorStoreName": {
-			Kind:     uint32(reflect.String),
-			Path:     "trust_anchor.store_name",
+			Path:     "trust_anchor.kvstore_config",
 			Required: common.ParamNecessity_REQUIRED,
-		},
-		"TrustAnchorStoreParams": {
-			Kind:     uint32(reflect.Map),
-			Path:     "trust_anchor.store_params",
-			Required: common.ParamNecessity_OPTIONAL,
 		},
 	})
-}
-
-type LocalClientConnector struct {
-}
-
-func (c LocalClientConnector) Connect(
-	host string,
-	port int,
-	params map[string]string,
-) (common.ITrustedServicesClient, error) {
-	paramStore, err := NewLocalClientParamStore()
-	if err != nil {
-		return nil, err
-	}
-
-	err = paramStore.PopulateFromStringMapString(params)
-	if err != nil {
-		return nil, err
-	}
-
-	var client LocalClient
-
-	err = client.Init(paramStore)
-
-	return &client, err
 }
 
 type LocalClient struct {
 	PluginLocations  []string
 	Schemes          map[common.AttestationFormat]*common.SchemePlugin
-	TrustAnchorStore kvstore.KVStore
-	EndorsementStore kvstore.KVStore
+	TrustAnchorStore kvstore.IKVStore
+	EndorsementStore kvstore.IKVStore
+}
+
+func initStore(params *common.ParamStore, basename string) (kvstore.IKVStore, error) {
+	var (
+		store       kvstore.IKVStore
+		storeConfig kvstore.Config
+		err         error
+	)
+
+	storeConfig, err = params.TryGetStringMap(basename + "KVStoreConfig")
+	if err != nil {
+		return nil, err
+	}
+
+	store, err = kvstore.New(storeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return store, nil
 }
 
 func (c *LocalClient) Init(params *common.ParamStore) error {
@@ -95,55 +85,128 @@ func (c *LocalClient) Init(params *common.ParamStore) error {
 
 	c.Schemes = make(map[common.AttestationFormat]*common.SchemePlugin)
 
-	storeName, err := params.TryGetString("TrustAnchorStoreName")
+	c.TrustAnchorStore, err = initStore(params, "TrustAnchor")
 	if err != nil {
 		return err
 	}
 
-	switch storeName {
-	case "memory":
-		c.TrustAnchorStore = new(kvstore.Memory)
-	case "sql":
-		c.TrustAnchorStore = new(kvstore.SQL)
-	default:
-		return fmt.Errorf("unknown TrustAnchorStoreName: %q", storeName)
-	}
-
-	storeParams, err := params.TryGetStringMap("TrustAnchorStoreParams")
-	if err != nil {
-		return err
-	}
-
-	err = c.TrustAnchorStore.Init(kvstore.Config(storeParams))
-	if err != nil {
-		return err
-	}
-
-	storeName, err = params.TryGetString("EndorsementStoreName")
-	if err != nil {
-		return err
-	}
-
-	switch storeName {
-	case "memory":
-		c.EndorsementStore = new(kvstore.Memory)
-	case "sql":
-		c.EndorsementStore = new(kvstore.SQL)
-	default:
-		return fmt.Errorf("unknown EndorsementStoreName: %q", storeName)
-	}
-
-	storeParams, err = params.TryGetStringMap("EndorsementStoreParams")
-	if err != nil {
-		return err
-	}
-
-	err = c.EndorsementStore.Init(kvstore.Config(storeParams))
+	c.EndorsementStore, err = initStore(params, "Endorsement")
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (o *LocalClient) AddSwComponents(req *common.AddSwComponentsRequest) (*common.AddSwComponentsResponse, error) {
+	var (
+		err    error
+		keys   []string
+		scheme *common.SchemePlugin
+		val    []byte
+	)
+
+	for _, swComp := range req.GetInfo() {
+		scheme, err = o.getSchemePlugin(swComp.GetId().GetType())
+		if err != nil {
+			return addSwComponentErrorResponse(err), nil
+		}
+
+		keys, err = scheme.SynthKeysFromSwComponent(DummyTenantID, swComp)
+		if err != nil {
+			return addSwComponentErrorResponse(err), nil
+		}
+
+		val, err = json.Marshal(swComp)
+		if err != nil {
+			return addSwComponentErrorResponse(err), nil
+		}
+	}
+
+	for _, key := range keys {
+		if err := o.EndorsementStore.Set(key, string(val)); err != nil {
+			if err != nil {
+				return addSwComponentErrorResponse(err), nil
+			}
+		}
+	}
+
+	return addSwComponentSuccessResponse(), nil
+}
+
+func addSwComponentSuccessResponse() *common.AddSwComponentsResponse {
+	return &common.AddSwComponentsResponse{
+		Status: &common.Status{
+			Result: true,
+		},
+	}
+}
+
+func addSwComponentErrorResponse(err error) *common.AddSwComponentsResponse {
+	return &common.AddSwComponentsResponse{
+		Status: &common.Status{
+			Result:      false,
+			ErrorDetail: fmt.Sprintf("%v", err),
+		},
+	}
+}
+
+func (o *LocalClient) AddTrustAnchor(req *common.AddTrustAnchorRequest) (*common.AddTrustAnchorResponse, error) {
+	var (
+		err    error
+		keys   []string
+		scheme *common.SchemePlugin
+		ta     *common.TrustAnchor
+		val    []byte
+	)
+
+	ta = req.TrustAnchor
+	if ta == nil {
+		err = errors.New("nil TrustAnchor in request")
+		return addTrustAnchorErrorResponse(err), nil
+	}
+
+	scheme, err = o.getSchemePlugin(ta.GetId().GetType())
+	if err != nil {
+		return addTrustAnchorErrorResponse(err), nil
+	}
+
+	keys, err = scheme.SynthKeysFromTrustAnchor(DummyTenantID, ta)
+	if err != nil {
+		return addTrustAnchorErrorResponse(err), nil
+	}
+
+	val, err = json.Marshal(ta.GetValue())
+	if err != nil {
+		return addTrustAnchorErrorResponse(err), nil
+	}
+
+	for _, key := range keys {
+		if err := o.TrustAnchorStore.Set(key, string(val)); err != nil {
+			if err != nil {
+				return addTrustAnchorErrorResponse(err), nil
+			}
+		}
+	}
+
+	return addTrustAnchorSuccessResponse(), nil
+}
+
+func addTrustAnchorSuccessResponse() *common.AddTrustAnchorResponse {
+	return &common.AddTrustAnchorResponse{
+		Status: &common.Status{
+			Result: true,
+		},
+	}
+}
+
+func addTrustAnchorErrorResponse(err error) *common.AddTrustAnchorResponse {
+	return &common.AddTrustAnchorResponse{
+		Status: &common.Status{
+			Result:      false,
+			ErrorDetail: fmt.Sprintf("%v", err),
+		},
+	}
 }
 
 func (c *LocalClient) GetAttestation(token *common.AttestationToken) (*common.Attestation, error) {
@@ -153,20 +216,27 @@ func (c *LocalClient) GetAttestation(token *common.AttestationToken) (*common.At
 	}
 
 	ec, err := c.extractEvidence(scheme, token)
-
-	endorsementString, err := c.EndorsementStore.Get(ec.SoftwareId)
 	if err != nil {
 		return nil, err
 	}
 
-	return scheme.GetAttestation(ec, endorsementString)
+	endorsements, err := c.EndorsementStore.Get(ec.SoftwareId)
+	if err != nil {
+		return nil, err
+	}
+
+	return scheme.GetAttestation(ec, endorsements)
 }
 
 func (c LocalClient) Close() error {
-	var msg []string
-	err := c.TrustAnchorStore.Close()
+	var (
+		msg []string
+		err error
+	)
+
+	err = c.TrustAnchorStore.Close()
 	if err != nil {
-		msg = append(msg, fmt.Sprintf("probelm closing trust anchor store: %s", err.Error()))
+		msg = append(msg, fmt.Sprintf("problem closing trust anchor store: %s", err.Error()))
 	}
 
 	err = c.EndorsementStore.Close()
@@ -175,7 +245,7 @@ func (c LocalClient) Close() error {
 	}
 
 	for format, sp := range c.Schemes {
-		err := sp.Close()
+		err = sp.Close()
 		if err != nil {
 			msg = append(msg, fmt.Sprintf("error closing %q: %s", format.String(), err.Error()))
 		}
@@ -184,10 +254,9 @@ func (c LocalClient) Close() error {
 
 	if len(msg) > 0 {
 		return errors.New(strings.Join(msg, "; "))
-	} else {
-		return nil
 	}
 
+	return nil
 }
 
 func (c *LocalClient) getSchemePlugin(format common.AttestationFormat) (*common.SchemePlugin, error) {
@@ -224,7 +293,11 @@ func (c *LocalClient) extractEvidence(
 		return nil, err
 	}
 
-	extracted, err := scheme.ExtractEvidence(token, trustAnchor)
+	if len(trustAnchor) != 1 {
+		return nil, fmt.Errorf("found %d trust anchors, want 1", len(trustAnchor))
+	}
+
+	extracted, err := scheme.ExtractEvidence(token, trustAnchor[0])
 	if err != nil {
 		return nil, err
 	}
@@ -237,5 +310,4 @@ func (c *LocalClient) extractEvidence(
 	ec.SoftwareId = extracted.SoftwareID
 
 	return ec, nil
-
 }

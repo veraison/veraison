@@ -11,13 +11,15 @@ import (
 	"github.com/veraison/common"
 	"github.com/veraison/trustedservices"
 	"google.golang.org/grpc"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-// TODO this a very minimal "frontend" implementation.
+// This a very minimal implementation of the VTS service
 func main() {
 	configPaths := common.NewConfigPaths()
 
-	flag.Var(configPaths, "config", "Path to direcotory containing the config file(s).")
+	flag.Var(configPaths, "config", "Path to directory containing the config file(s).")
 	flag.Parse()
 
 	clientParams, err := trustedservices.NewLocalClientParamStore()
@@ -43,6 +45,9 @@ func main() {
 	}
 
 	server := trustedservices.RPCServer{}
+	if err := server.Init(clientParams); err != nil {
+		log.Fatalf("RPC server initialization failed: %v", err)
+	}
 
 	grpcServer := grpc.NewServer()
 	common.RegisterVTSServer(grpcServer, &server)

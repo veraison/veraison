@@ -4,6 +4,7 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/rpc"
 
@@ -25,7 +26,13 @@ func (p SchemePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, e
 }
 
 func (p *SchemePlugin) Init(lp *LoadedPlugin) error {
-	p.Impl = lp.Raw.(IScheme)
+	var ok bool
+
+	p.Impl, ok = lp.Raw.(IScheme)
+	if !ok {
+		return fmt.Errorf("the loaded plugin (%T) does not implement common.IScheme", lp.Raw)
+	}
+
 	p.RPCClient = lp.RPCClient
 	p.PluginClient = lp.PluginClient
 
@@ -49,6 +56,14 @@ func (p *SchemePlugin) GetTrustAnchorID(token *AttestationToken) (string, error)
 	return p.Impl.GetTrustAnchorID(token)
 }
 
+func (p *SchemePlugin) SynthKeysFromSwComponent(tenantID string, swComp *SwComponent) ([]string, error) {
+	return p.Impl.SynthKeysFromSwComponent(tenantID, swComp)
+}
+
+func (p *SchemePlugin) SynthKeysFromTrustAnchor(tenantID string, ta *TrustAnchor) ([]string, error) {
+	return p.Impl.SynthKeysFromTrustAnchor(tenantID, ta)
+}
+
 func (p *SchemePlugin) ExtractEvidence(
 	token *AttestationToken,
 	trustAnchor string,
@@ -56,7 +71,7 @@ func (p *SchemePlugin) ExtractEvidence(
 	return p.Impl.ExtractEvidence(token, trustAnchor)
 }
 
-func (p *SchemePlugin) GetAttestation(ec *EvidenceContext, endorsements string) (*Attestation, error) {
+func (p *SchemePlugin) GetAttestation(ec *EvidenceContext, endorsements []string) (*Attestation, error) {
 	return p.Impl.GetAttestation(ec, endorsements)
 }
 
@@ -74,13 +89,54 @@ func (s *SchemeServer) GetFormat(args interface{}, resp *AttestationFormat) erro
 	return nil
 }
 
-func (s *SchemeServer) GetTrustAnchorID(data []byte, resp *string) error {
-	var token AttestationToken
-	if err := json.Unmarshal(data, &token); err != nil {
-		return err
+type SynthKeysArgs struct {
+	TenantID        string
+	EndorsementJSON []byte
+}
+
+func (s *SchemeServer) SynthKeysFromSwComponent(args SynthKeysArgs, resp *[]string) error {
+	var (
+		err    error
+		swComp SwComponent
+	)
+
+	err = json.Unmarshal(args.EndorsementJSON, &swComp)
+	if err != nil {
+		return fmt.Errorf("unmarshaling software component: %w", err)
 	}
 
-	var err error
+	*resp, err = s.Impl.SynthKeysFromSwComponent(args.TenantID, &swComp)
+
+	return err
+}
+
+func (s *SchemeServer) SynthKeysFromTrustAnchor(args SynthKeysArgs, resp *[]string) error {
+	var (
+		err error
+		ta  TrustAnchor
+	)
+
+	err = json.Unmarshal(args.EndorsementJSON, &ta)
+	if err != nil {
+		return fmt.Errorf("unmarshaling trust anchor: %w", err)
+	}
+
+	*resp, err = s.Impl.SynthKeysFromTrustAnchor(args.TenantID, &ta)
+
+	return err
+}
+
+func (s *SchemeServer) GetTrustAnchorID(data []byte, resp *string) error {
+	var (
+		err   error
+		token AttestationToken
+	)
+
+	err = json.Unmarshal(data, &token)
+	if err != nil {
+		return fmt.Errorf("unmarshaling attestation token: %w", err)
+	}
+
 	*resp, err = s.Impl.GetTrustAnchorID(&token)
 
 	return err
@@ -94,7 +150,7 @@ type ExtractEvidenceArgs struct {
 func (s *SchemeServer) ExtractEvidence(args ExtractEvidenceArgs, resp *[]byte) error {
 	var token AttestationToken
 	if err := json.Unmarshal(args.Token, &token); err != nil {
-		return err
+		return fmt.Errorf("unmarshaling token: %w", err)
 	}
 
 	extracted, err := s.Impl.ExtractEvidence(&token, args.TrustAnchor)
@@ -108,16 +164,18 @@ func (s *SchemeServer) ExtractEvidence(args ExtractEvidenceArgs, resp *[]byte) e
 
 type GetAttestationArgs struct {
 	Evidence     []byte
-	Endorsements string
+	Endorsements []string
 }
 
 func (s *SchemeServer) GetAttestation(args GetAttestationArgs, resp *[]byte) error {
-	var ec EvidenceContext
-	var err error
+	var (
+		ec  EvidenceContext
+		err error
+	)
 
 	err = json.Unmarshal(args.Evidence, &ec)
 	if err != nil {
-		return err
+		return fmt.Errorf("unmarshaling evidence: %w", err)
 	}
 
 	attestation, err := s.Impl.GetAttestation(&ec, args.Endorsements)
@@ -138,7 +196,7 @@ func (s *SchemeRPC) GetName() string {
 	var resp string
 	err := s.client.Call("Plugin.GetName", new(interface{}), &resp)
 	if err != nil {
-		log.Printf("ERROR during GetName RPC: %v\n", err)
+		log.Printf("Plugin.GetName RPC call failed: %v", err) // nolint
 		return ""
 	}
 	return resp
@@ -148,84 +206,127 @@ func (s *SchemeRPC) GetFormat() AttestationFormat {
 	var resp AttestationFormat
 	err := s.client.Call("Plugin.GetFormat", new(interface{}), &resp)
 	if err != nil {
-		log.Printf("ERROR during GetName RPC: %v\n", err)
+		log.Printf("Plugin.GetFormat RPC call failed: %v", err)
 		return AttestationFormat_UNKNOWN_FORMAT
 	}
 	return resp
 }
 
-func (s *SchemeRPC) GetTrustAnchorID(token *AttestationToken) string {
+func (s *SchemeRPC) SynthKeysFromSwComponent(tenantID string, swComp *SwComponent) ([]string, error) {
+	var (
+		err  error
+		resp []string
+		args SynthKeysArgs
+	)
+
+	args.TenantID = tenantID
+
+	args.EndorsementJSON, err = json.Marshal(swComp)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling software component: %w", err)
+	}
+
+	err = s.client.Call("Plugin.SynthKeysFromSwComponent", args, &resp)
+	if err != nil {
+		return nil, fmt.Errorf("Plugin.SynthKeysFromSwComponent RPC call failed: %w", err) // nolint
+	}
+
+	return resp, nil
+}
+
+func (s *SchemeRPC) SynthKeysFromTrustAnchor(tenantID string, ta *TrustAnchor) ([]string, error) {
+	var (
+		err  error
+		resp []string
+		args SynthKeysArgs
+	)
+
+	args.TenantID = tenantID
+
+	args.EndorsementJSON, err = json.Marshal(ta)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling trust anchor: %w", err)
+	}
+
+	err = s.client.Call("Plugin.SynthKeysFromTrustAnchor", args, &resp)
+	if err != nil {
+		return nil, fmt.Errorf("Plugin.SynthKeysFromTrustAnchor RPC call failed: %w", err) // nolint
+	}
+
+	return resp, nil
+}
+
+func (s *SchemeRPC) GetTrustAnchorID(token *AttestationToken) (string, error) {
 	data, err := json.Marshal(token)
 	if err != nil {
-		log.Printf("ERROR during token marshing: %v\n", err)
-		return ""
+		return "", fmt.Errorf("marshaling token: %w", err)
 	}
 
 	var resp string
 	err = s.client.Call("Plugin.GetTrustAnchorID", data, &resp)
 	if err != nil {
-		log.Printf("ERROR getting trust anchor ID: %v\n", err)
-		return ""
+		return "", fmt.Errorf("Plugin.GetTrustAnchorID RCP call failed: %w", err) // nolint
 	}
 
-	return resp
+	return resp, nil
 }
 
 func (s *SchemeRPC) ExtractEvidence(token *AttestationToken, trustAnchor string) (*ExtractedEvidence, error) {
-	var err error
-	var args ExtractEvidenceArgs
+	var (
+		err  error
+		args ExtractEvidenceArgs
+	)
 	args.Token, err = json.Marshal(token)
 	if err != nil {
-		log.Printf("ERROR during token marshing: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("marshaling token: %w", err)
 	}
 	args.TrustAnchor = trustAnchor
 
 	var resp []byte
-	err = s.client.Call("Plugin.ExtractedEvidence", args, &resp)
+	err = s.client.Call("Plugin.ExtractEvidence", args, &resp)
 	if err != nil {
-		log.Printf("ERROR extracting evidence: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("Plugin.ExtractEvidence RCP call failed: %w", err) // nolint
 	}
 
 	var extracted ExtractedEvidence
 	err = json.Unmarshal(resp, &extracted)
 	if err != nil {
-		log.Printf("ERROR unmarshaling extracted evidence: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("unmarshaling extracted evidence: %w", err)
 	}
 
 	return &extracted, nil
 }
 
-func (s *SchemeRPC) GetAttestation(ec *EvidenceContext, endorsements string) (*Attestation, error) {
-	var args GetAttestationArgs
-	var err error
+func (s *SchemeRPC) GetAttestation(ec *EvidenceContext, endorsements []string) (*Attestation, error) {
+	var (
+		args        GetAttestationArgs
+		attestation Attestation
+		err         error
+		resp        []byte
+	)
 
 	args.Evidence, err = json.Marshal(ec)
 	if err != nil {
-		log.Printf("ERROR unmarshaling evidence: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("marshaling evidence: %w", err)
 	}
 	args.Endorsements = endorsements
 
-	var resp []byte
 	err = s.client.Call("Plugin.GetAttestation", args, &resp)
 	if err != nil {
-		log.Printf("ERROR getting attestaton: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("Plugin.GetAttestation RCP call failed: %w", err) // nolint
 	}
 
-	var attestation Attestation
 	err = json.Unmarshal(resp, &attestation)
 
 	return &attestation, err
 }
 
 func LoadSchemePlugin(locations []string, format AttestationFormat) (*SchemePlugin, error) {
+	log.Printf("loading plugin for scheme: %s", format.String())
+
 	lp, err := LoadPlugin(locations, "scheme", format.String(), false)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("loading plugin for scheme %s: %w", format.String(), err)
 	}
 
 	var schemePlugin SchemePlugin

@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -17,7 +17,7 @@ var (
 
 type Memory struct {
 	Type Type
-	Data map[string]string
+	Data map[string][]string
 }
 
 func (o *Memory) Init(cfg Config) error {
@@ -25,7 +25,7 @@ func (o *Memory) Init(cfg Config) error {
 		return err
 	}
 
-	o.Data = make(map[string]string)
+	o.Data = make(map[string][]string)
 
 	return nil
 }
@@ -35,24 +35,24 @@ func (o *Memory) Close() error {
 	return nil
 }
 
-func (o Memory) Get(key string) (string, error) {
+func (o Memory) Get(key string) ([]string, error) {
 	if o.Data == nil {
-		return "", errors.New("memory store uninitialized")
+		return nil, errors.New("memory store uninitialized")
 	}
 
 	if err := sanitizeK(key); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	lk.RLock()
 	defer lk.RUnlock()
 
-	val, ok := o.Data[key]
+	vals, ok := o.Data[key]
 	if !ok {
-		return "", fmt.Errorf("key %q not found", key)
+		return nil, fmt.Errorf("key %q not found", key)
 	}
 
-	return val, nil
+	return vals, nil
 }
 
 func (o *Memory) Set(key string, val string) error {
@@ -67,12 +67,13 @@ func (o *Memory) Set(key string, val string) error {
 	lk.Lock()
 	defer lk.Unlock()
 
-	_, ok := o.Data[key]
+	data, ok := o.Data[key]
 	if ok {
-		return fmt.Errorf("key %q already exist, delete it first", key)
+		// TODO(tho) -- check if the value is already stored, if so do not append
+		o.Data[key] = append(data, val)
+	} else {
+		o.Data[key] = []string{val}
 	}
-
-	o.Data[key] = val
 
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -8,7 +8,8 @@ type Config map[string]interface{}
 
 // Common directives -- MUST NOT be reused by specialisations
 const (
-	TypeDirective string = "store-type"
+	DirectiveType    = "type"
+	DirectiveBackend = "backend"
 )
 
 func (cfg Config) ReadVarString(directive string) (string, error) {
@@ -65,14 +66,14 @@ func (o *Type) FromString(s string) error {
 }
 
 func (o *Type) SetFromConfig(cfg Config) error {
-	s, err := cfg.ReadVarString(TypeDirective)
+	s, err := cfg.ReadVarString(DirectiveType)
 	if err != nil {
 		return err
 	}
 
 	err = o.FromString(s)
 	if err != nil {
-		return fmt.Errorf("invalid %q: %w", TypeDirective, err)
+		return fmt.Errorf("invalid value for %q: %w", DirectiveType, err)
 	}
 
 	return nil

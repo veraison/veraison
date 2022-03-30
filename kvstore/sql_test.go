@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -15,13 +15,13 @@ import (
 func TestSQL_Init_missing_store_type(t *testing.T) {
 	s := SQL{}
 
-	cfg := map[string]interface{}{
-		"no-type-directive":         "whatever",
-		"store-sql-driver-name":     "sqlite",
-		"store-sql-datasource-name": "db=veraison",
+	cfg := Config{
+		"not_type_directive": "whatever",
+		"sql_driver":         "sqlite3",
+		"sql_datasource":     "db=veraison.sql",
 	}
 
-	expectedErr := `missing "store-type" directive`
+	expectedErr := `missing "type" directive`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -30,12 +30,12 @@ func TestSQL_Init_missing_store_type(t *testing.T) {
 func TestSQL_Init_missing_driver_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := map[string]interface{}{
-		"store-type":                "trustanchor",
-		"store-sql-datasource-name": "db=veraison",
+	cfg := Config{
+		"type":           "trustanchor",
+		"sql_datasource": "db=veraison-trustanchor.sql",
 	}
 
-	expectedErr := `missing "store-sql-driver-name" directive`
+	expectedErr := `missing "sql_driver" directive`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -44,12 +44,12 @@ func TestSQL_Init_missing_driver_name(t *testing.T) {
 func TestSQL_Init_missing_datasource_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := map[string]interface{}{
-		"store-type":            "trustanchor",
-		"store-sql-driver-name": "postgres",
+	cfg := Config{
+		"type":       "trustanchor",
+		"sql_driver": "postgres",
 	}
 
-	expectedErr := `missing "store-sql-datasource-name" directive`
+	expectedErr := `missing "sql_datasource" directive`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -59,10 +59,10 @@ func TestSQL_Init_missing_datasource_name(t *testing.T) {
 func TestSQL_Init_db_open_unknown_driver_postgres(t *testing.T) {
 	s := SQL{}
 
-	cfg := map[string]interface{}{
-		"store-type":                "trustanchor",
-		"store-sql-driver-name":     "postgres",
-		"store-sql-datasource-name": "db=veraison",
+	cfg := Config{
+		"type":           "trustanchor",
+		"sql_driver":     "postgres",
+		"sql_datasource": "db=veraison-trustanchor.sql",
 	}
 
 	expectedErr := `sql: unknown driver "postgres" (forgotten import?)`
@@ -110,7 +110,7 @@ func TestSQL_Get_db_layer_failure(t *testing.T) {
 
 	dbErrorString := "a DB error"
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT val FROM endorsement WHERE key = ?"))
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT vals FROM endorsement WHERE key = ?"))
 	e.WithArgs("key")
 	e.WillReturnError(errors.New(dbErrorString))
 
@@ -131,10 +131,10 @@ func TestSQL_Get_broken_invariant_null_val_panic(t *testing.T) {
 
 	s := SQL{Type: TypeEndorsement, DB: db}
 
-	rows := sqlmock.NewRows([]string{"val"})
+	rows := sqlmock.NewRows([]string{"vals"})
 	rows.AddRow(nil)
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT val FROM endorsement WHERE key = ?"))
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT vals FROM endorsement WHERE key = ?"))
 	e.WithArgs("key")
 	e.WillReturnRows(rows)
 
@@ -150,18 +150,18 @@ func TestSQL_Get_ok(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	rows := sqlmock.NewRows([]string{"val"})
+	rows := sqlmock.NewRows([]string{"vals"})
 	rows.AddRow("[1, 2]")
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT val FROM endorsement WHERE key = ?"))
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT vals FROM endorsement WHERE key = ?"))
 	e.WithArgs("key")
 	e.WillReturnRows(rows)
 
 	s := SQL{Type: TypeEndorsement, DB: db}
 
-	val, err := s.Get("key")
+	vals, err := s.Get("key")
 	assert.NoError(t, err)
-	assert.Equal(t, "[1, 2]", val)
+	assert.Equal(t, []string{"[1, 2]"}, vals)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %s", err)
@@ -207,7 +207,7 @@ func TestSQL_Set_db_layer_failure(t *testing.T) {
 
 	dbErrorString := "a DB error"
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO endorsement(key, val) VALUES(?, ?)"))
+	e := mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)"))
 	e.WithArgs(testKey, testVal)
 	e.WillReturnError(errors.New(dbErrorString))
 
@@ -228,9 +228,9 @@ func TestSQL_Set_ok(t *testing.T) {
 
 	s := SQL{Type: TypeEndorsement, DB: db}
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO endorsement(key, val) VALUES(?, ?)"))
+	e := mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)"))
 	e.WithArgs(testKey, testVal)
-	e.WillReturnRows()
+	e.WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = s.Set(testKey, testVal)
 	assert.NoError(t, err)
@@ -264,7 +264,7 @@ func TestSQL_Del_db_layer_failure(t *testing.T) {
 
 	dbErrorString := "a DB error"
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?"))
+	e := mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?"))
 	e.WithArgs(testKey)
 	e.WillReturnError(errors.New(dbErrorString))
 
@@ -285,9 +285,9 @@ func TestSQL_Del_ok(t *testing.T) {
 
 	s := SQL{Type: TypeEndorsement, DB: db}
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?"))
+	e := mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?"))
 	e.WithArgs(testKey)
-	e.WillReturnRows()
+	e.WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = s.Del(testKey)
 	assert.NoError(t, err)

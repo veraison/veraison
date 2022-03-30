@@ -1,37 +1,35 @@
-[
-	{
-		"software-components": [
-		    {
-			    "measurement-type": "BL",
-			    "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
-			    "version": "3.4.2",
-			    "description":  "TF-M_SHA256MemPreXIP",
-			    "measurement-value": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-		    },
-		    {
-			    "measurement-type": "M1",
-			    "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
-			    "version": "1.2.0",
-			    "description":  "",
-			    "measurement-value": "CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-		    },
-		    {
-			    "measurement-type": "M2",
-			    "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
-			    "version": "1.2.3",
-			    "description":  "",
-			    "measurement-value": "DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-		    },
-		    {
-			    "measurement-type": "M3",
-			    "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
-			    "version": "1.0.0",
-			    "description":  "",
-			    "measurement-value": "EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-		    }
-		],
-		"implementation-id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
-		"hardware-version": "acme-rr-trap",
-		"endorsement-id": 1
-	}
-]
+{
+  "software-components": [
+    {
+      "measurement-type": "BL",
+      "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+      "version": "3.4.2",
+      "description": "TF-M_SHA256MemPreXIP",
+      "measurement-value": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+    },
+    {
+      "measurement-type": "M1",
+      "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+      "version": "1.2.0",
+      "description": "",
+      "measurement-value": "CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+    },
+    {
+      "measurement-type": "M2",
+      "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+      "version": "1.2.3",
+      "description": "",
+      "measurement-value": "DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+    },
+    {
+      "measurement-type": "M3",
+      "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+      "version": "1.0.0",
+      "description": "",
+      "measurement-value": "EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+    }
+  ],
+  "implementation-id": "76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+  "hardware-version": "acme-rr-trap",
+  "endorsement-id": 1
+}

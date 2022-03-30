@@ -1,4 +1,4 @@
-// Copyright 2021 Contributors to the Veraison project.
+// Copyright 2021-2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -18,12 +18,12 @@ func (o *SQL) Init(cfg Config) error {
 		return err
 	}
 
-	driverName, err := cfg.ReadVarString(SQLDriverNameDirective)
+	driverName, err := cfg.ReadVarString(DirectiveSQLDriverName)
 	if err != nil {
 		return err
 	}
 
-	dataSourceName, err := cfg.ReadVarString(SQLDataSourceNameDirective)
+	dataSourceName, err := cfg.ReadVarString(DirectiveSQLDataSourceName)
 	if err != nil {
 		return err
 	}
@@ -42,32 +42,44 @@ func (o *SQL) Close() error {
 	return o.DB.Close()
 }
 
-func (o SQL) Get(key string) (string, error) {
+func (o SQL) Get(key string) ([]string, error) {
 	if o.DB == nil {
-		return "", errors.New("SQL store uninitialized")
+		return nil, errors.New("SQL store uninitialized")
 	}
 
 	if err := sanitizeK(key); err != nil {
-		return "", err
+		return nil, err
 	}
-
-	var s sql.NullString
 
 	// the lint warning here is spurious because o.Type.String() is not really
 	// under the control of the caller -- there is a very limited set of fixed
 	// outputs that it can produce
-	q := fmt.Sprintf("SELECT val FROM %s WHERE key = ?", o.Type.String())
+	q := fmt.Sprintf("SELECT vals FROM %s WHERE key = ?", o.Type.String()) // nolint: gosec
 
-	err := o.DB.QueryRow(q, key).Scan(&s)
+	rows, err := o.DB.Query(q, key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	if !s.Valid {
-		panic("broken invariant: found val with null string")
+	defer rows.Close()
+
+	var vals []string
+
+	for rows.Next() {
+		var s sql.NullString
+
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+
+		if !s.Valid {
+			panic("broken invariant: found val with null string")
+		}
+
+		vals = append(vals, s.String)
 	}
 
-	return s.String, nil
+	return vals, nil
 }
 
 func (o SQL) Set(key string, val string) error {
@@ -79,9 +91,9 @@ func (o SQL) Set(key string, val string) error {
 		return err
 	}
 
-	q := fmt.Sprintf("INSERT INTO %s(key, val) VALUES(?, ?)", o.Type.String()) // nolint: gosec
+	q := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.Type.String()) // nolint: gosec
 
-	_, err := o.DB.Query(q, key, val)
+	_, err := o.DB.Exec(q, key, val)
 	if err != nil {
 		return err
 	}
@@ -103,7 +115,7 @@ func (o SQL) Del(key string) error {
 	// outputs that it can produce
 	q := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.Type.String()) // nolint: gosec
 
-	_, err := o.DB.Query(q, key)
+	_, err := o.DB.Exec(q, key)
 	if err != nil {
 		return err
 	}

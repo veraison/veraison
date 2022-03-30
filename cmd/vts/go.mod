@@ -11,9 +11,8 @@ replace github.com/veraison/veraison/kvstore => ../../kvstore/
 replace github.com/veraison/trustedservices => ../../trustedservices/
 
 require (
+	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/veraison/common v0.0.0
-	github.com/veraison/policy v0.0.0
 	github.com/veraison/trustedservices v0.0.0
-	github.com/veraison/veraison/kvstore v0.0.0
 	google.golang.org/grpc v1.41.0
 )
