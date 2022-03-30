@@ -15,7 +15,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// TODO this a very minimal "frontend" implementation.
+// This a very minimal implementation of the VTS service
 func main() {
 	configPaths := common.NewConfigPaths()
 
