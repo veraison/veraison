@@ -11,6 +11,12 @@ type ExtractedEvidence struct {
 	SoftwareID string                 `json:"software_id"`
 }
 
+func NewExtractedEvidence() *ExtractedEvidence {
+	return &ExtractedEvidence{
+		Evidence: make(map[string]interface{}),
+	}
+}
+
 // IScheme defines the interface to attestation scheme specific functionality.
 // An object implementing this interface encapsulates all functionality
 // specific to a particular AttestationFormat, such as knowledge of token
