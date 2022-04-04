@@ -17,55 +17,17 @@ var (
 	altTestVal = `[1, 2, 3]`
 )
 
-func TestMemory_Init_negative_tests(t *testing.T) {
-	tvs := []struct {
-		desc        string
-		cfg         Config
-		expectedErr string
-	}{
-		{
-			desc:        "missing store type",
-			cfg:         Config{"some-random-directive": "blabla"},
-			expectedErr: `missing "type" directive`,
-		},
-		{
-			desc:        "empty store type",
-			cfg:         Config{"type": ""},
-			expectedErr: `invalid value for "type": unknown type ""`,
-		},
-		{
-			desc:        "unknown store type",
-			cfg:         Config{"type": "some-random-type"},
-			expectedErr: `invalid value for "type": unknown type "some-random-type"`,
-		},
-		{
-			desc:        "bad store type",
-			cfg:         Config{"type": []string{"invalid array type"}},
-			expectedErr: `"type" wants string values`,
-		}}
-
-	for _, tv := range tvs {
-		s := Memory{}
-
-		err := s.Init(tv.cfg)
-		assert.EqualError(t, err, tv.expectedErr)
-	}
-}
-
 func TestMemory_Init_Close_cycle_ok(t *testing.T) {
 	s := Memory{}
 
-	for _, typ := range []string{"trustanchor", "endorsement"} {
-		cfg := Config{"type": typ}
+	cfg := Config{}
 
-		err := s.Init(cfg)
-		assert.NoError(t, err)
-		assert.Equal(t, s.Type.String(), typ)
-		assert.Len(t, s.Data, 0)
+	err := s.Init(cfg)
+	assert.NoError(t, err)
+	assert.Len(t, s.Data, 0)
 
-		err = s.Close()
-		assert.NoError(t, err)
-	}
+	err = s.Close()
+	assert.NoError(t, err)
 }
 
 func TestMemory_Set_Get_Del_with_uninitialised_store(t *testing.T) {
@@ -85,7 +47,7 @@ func TestMemory_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 
 func TestMemory_Set_Get_ok(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -102,7 +64,7 @@ func TestMemory_Set_Get_ok(t *testing.T) {
 
 func TestMemory_Get_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -116,7 +78,7 @@ func TestMemory_Get_empty_key(t *testing.T) {
 
 func TestMemory_Del_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -130,7 +92,7 @@ func TestMemory_Del_empty_key(t *testing.T) {
 
 func TestMemory_Set_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -144,7 +106,7 @@ func TestMemory_Set_empty_key(t *testing.T) {
 
 func TestMemory_Set_bad_json(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -156,9 +118,9 @@ func TestMemory_Set_bad_json(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestMemory_Set_using_same_key_appends(t *testing.T) {
+func TestMemory_Add_using_same_key_different_vals(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -166,8 +128,7 @@ func TestMemory_Set_using_same_key_appends(t *testing.T) {
 	err = s.Set(testKey, testVal)
 	require.NoError(t, err)
 
-	// try to set with the same key is OK (values are appended)
-	err = s.Set(testKey, altTestVal)
+	err = s.Add(testKey, altTestVal)
 	assert.NoError(t, err)
 
 	expectedVal := []string{testVal, altTestVal}
@@ -177,9 +138,29 @@ func TestMemory_Set_using_same_key_appends(t *testing.T) {
 	assert.Equal(t, expectedVal, val)
 }
 
+func TestMemory_Add_using_same_key_same_vals(t *testing.T) {
+	s := Memory{}
+	cfg := Config{}
+
+	err := s.Init(cfg)
+	require.NoError(t, err)
+
+	err = s.Set(testKey, testVal)
+	require.NoError(t, err)
+
+	err = s.Add(testKey, testVal)
+	assert.NoError(t, err)
+
+	expectedVal := []string{testVal}
+
+	val, err := s.Get(testKey)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedVal, val)
+}
+
 func TestMemory_Del_ok(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -204,7 +185,7 @@ func TestMemory_Del_ok(t *testing.T) {
 
 func TestMemory_Get_no_such_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -217,7 +198,7 @@ func TestMemory_Get_no_such_key(t *testing.T) {
 
 func TestMemory_dump_ok(t *testing.T) {
 	s := Memory{}
-	cfg := Config{"type": "endorsement"}
+	cfg := Config{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)

@@ -6,26 +6,51 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
+)
+
+const (
+	DefaultTableName = "kvstore"
+)
+
+var (
+	safeTblNameRe = regexp.MustCompile(`[a-zA-Z0-9_]+`)
 )
 
 type SQL struct {
-	Type Type
-	DB   *sql.DB
+	TableName string
+	DB        *sql.DB
+}
+
+func isSafeTblName(s string) bool {
+	return safeTblNameRe.MatchString(s)
 }
 
 func (o *SQL) Init(cfg Config) error {
-	if err := o.Type.SetFromConfig(cfg); err != nil {
-		return err
+	tableName, err := cfg.ReadVarString(DirectiveSQLTableName)
+	if err != nil {
+		switch err {
+		case ErrMissingDirective:
+			o.TableName = DefaultTableName
+		default:
+			return fmt.Errorf("%w: %q", err, DirectiveSQLTableName)
+		}
+	} else {
+		o.TableName = tableName
+	}
+
+	if !isSafeTblName(o.TableName) {
+		return fmt.Errorf("unsafe table name: %q (MUST match %s)", o.TableName, safeTblNameRe)
 	}
 
 	driverName, err := cfg.ReadVarString(DirectiveSQLDriverName)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %q", err, DirectiveSQLDriverName)
 	}
 
 	dataSourceName, err := cfg.ReadVarString(DirectiveSQLDataSourceName)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %q", err, DirectiveSQLDataSourceName)
 	}
 
 	db, err := sql.Open(driverName, dataSourceName)
@@ -51,10 +76,9 @@ func (o SQL) Get(key string) ([]string, error) {
 		return nil, err
 	}
 
-	// the lint warning here is spurious because o.Type.String() is not really
-	// under the control of the caller -- there is a very limited set of fixed
-	// outputs that it can produce
-	q := fmt.Sprintf("SELECT vals FROM %s WHERE key = ?", o.Type.String()) // nolint: gosec
+	// nolint: gosec
+	// o.TableName has been checked by isSafeTblName on init
+	q := fmt.Sprintf("SELECT DISTINCT vals FROM %s WHERE key = ?", o.TableName)
 
 	rows, err := o.DB.Query(q, key)
 	if err != nil {
@@ -82,6 +106,25 @@ func (o SQL) Get(key string) ([]string, error) {
 	return vals, nil
 }
 
+func (o SQL) Add(key string, val string) error {
+	if o.DB == nil {
+		return errors.New("SQL store uninitialized")
+	}
+
+	if err := sanitizeKV(key, val); err != nil {
+		return err
+	}
+
+	q := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.TableName)
+
+	_, err := o.DB.Exec(q, key, val)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (o SQL) Set(key string, val string) error {
 	if o.DB == nil {
 		return errors.New("SQL store uninitialized")
@@ -91,14 +134,26 @@ func (o SQL) Set(key string, val string) error {
 		return err
 	}
 
-	q := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.Type.String()) // nolint: gosec
-
-	_, err := o.DB.Exec(q, key, val)
+	txn, err := o.DB.Begin()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	defer func() { _ = txn.Rollback() }()
+
+	delQ := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
+
+	if _, err = o.DB.Exec(delQ); err != nil {
+		return err
+	}
+
+	insQ := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.TableName)
+
+	if _, err = o.DB.Exec(insQ, key, val); err != nil {
+		return err
+	}
+
+	return txn.Commit()
 }
 
 func (o SQL) Del(key string) error {
@@ -110,10 +165,7 @@ func (o SQL) Del(key string) error {
 		return err
 	}
 
-	// the lint warning here is spurious because o.Type.String() is not really
-	// under the control of the caller -- there is a very limited set of fixed
-	// outputs that it can produce
-	q := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.Type.String()) // nolint: gosec
+	q := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
 
 	_, err := o.DB.Exec(q, key)
 	if err != nil {

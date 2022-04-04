@@ -6,6 +6,7 @@ type IKVStore interface {
 	Init(cfg Config) error
 	Close() error
 	Get(key string) ([]string, error)
-	Set(key string, val string) error
+	Set(key, val string) error
 	Del(key string) error
+	Add(key, val string) error
 }

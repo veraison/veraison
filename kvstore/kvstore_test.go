@@ -41,24 +41,9 @@ func TestKVStore_New_unsupported_backend(t *testing.T) {
 	assert.Nil(t, m)
 }
 
-func TestKVStore_New_memory_backend_failed_init(t *testing.T) {
-	cfg := Config{
-		"backend": "memory",
-		"type":    "abc",
-	}
-
-	m, err := New(cfg)
-
-	expectedErr := `invalid value for "type": unknown type "abc"`
-
-	assert.EqualError(t, err, expectedErr)
-	assert.Nil(t, m)
-}
-
 func TestKVStore_New_memory_backend_ok(t *testing.T) {
 	cfg := Config{
 		"backend": "memory",
-		"type":    "endorsement",
 	}
 
 	m, err := New(cfg)
@@ -69,15 +54,15 @@ func TestKVStore_New_memory_backend_ok(t *testing.T) {
 
 func TestKVStore_New_SQL_backend_failed_init(t *testing.T) {
 	cfg := Config{
-		"backend":    "sql",
-		"type":       "endorsement",
-		"sql_driver": "sqlite3",
-		// no sql_datasource
+		"backend":        "sql",
+		"sql_tablename":  "endorsement",
+		"sql_datasource": "db.sql",
+		// no sql_driver
 	}
 
 	m, err := New(cfg)
 
-	expectedErr := `missing "sql_datasource" directive`
+	expectedErr := `missing directive: "sql_driver"`
 
 	assert.EqualError(t, err, expectedErr)
 	assert.Nil(t, m)

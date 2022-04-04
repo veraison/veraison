@@ -124,7 +124,7 @@ func (o *LocalClient) AddSwComponents(req *common.AddSwComponentsRequest) (*comm
 	}
 
 	for _, key := range keys {
-		if err := o.EndorsementStore.Set(key, string(val)); err != nil {
+		if err := o.EndorsementStore.Add(key, string(val)); err != nil {
 			if err != nil {
 				return addSwComponentErrorResponse(err), nil
 			}
@@ -182,7 +182,7 @@ func (o *LocalClient) AddTrustAnchor(req *common.AddTrustAnchorRequest) (*common
 	}
 
 	for _, key := range keys {
-		if err := o.TrustAnchorStore.Set(key, string(val)); err != nil {
+		if err := o.TrustAnchorStore.Add(key, string(val)); err != nil {
 			if err != nil {
 				return addTrustAnchorErrorResponse(err), nil
 			}

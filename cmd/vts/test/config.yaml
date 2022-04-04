@@ -9,14 +9,12 @@ vts:
 
 endorsement:
   kvstore_config:
-    type: endorsement
     backend: sql
     sql_driver: sqlite3
     sql_datasource: test/veraison-endorsement.sql
 
 trust_anchor:
   kvstore_config:
-    type: trustanchor
     backend: sql
     sql_driver: sqlite3
     sql_datasource: test/veraison-trustanchor.sql
