@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	safeTblNameRe = regexp.MustCompile(`[a-zA-Z0-9_]+`)
+	safeTblNameRe = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 )
 
 type SQL struct {

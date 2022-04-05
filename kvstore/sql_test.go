@@ -4,6 +4,7 @@ package kvstore
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -36,6 +37,23 @@ func TestSQL_Init_missing_driver_name(t *testing.T) {
 	}
 
 	expectedErr := `missing directive: "sql_driver"`
+
+	err := s.Init(cfg)
+	assert.EqualError(t, err, expectedErr)
+}
+
+func TestSQL_Init_bad_tablename(t *testing.T) {
+	s := SQL{}
+
+	attemptedInjection := "kvstore ; DROP TABLE another ; SELECT * FROM kvstore"
+
+	cfg := Config{
+		"sql_tablename":  attemptedInjection,
+		"sql_datasource": "db=veraison-trustanchor.sql",
+		"sql_driver":     "sqlite3",
+	}
+
+	expectedErr := fmt.Sprintf("unsafe table name: %q (MUST match %s)", attemptedInjection, safeTblNameRe)
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
