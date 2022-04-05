@@ -5,7 +5,6 @@ option go_package = "github.com/veraison/common";
 
 
 import "google/protobuf/struct.proto";
-import "result.proto";
 import "attestation_format.proto";
 import "attestation.proto";
 import "token.proto";

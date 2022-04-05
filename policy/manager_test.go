@@ -14,6 +14,7 @@ import (
 
 	"github.com/veraison/common"
 
+	hclog "github.com/hashicorp/go-hclog"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,12 +61,18 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
 
-	pm := NewManager()
-
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+
+	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
+
+	pluginManager, err := common.NewPluginManager([]string{pluginDir}, hclog.Info)
+	require.Nil(err)
+	defer pluginManager.Close()
+
+	pm := NewManager(pluginManager)
 
 	schemaFile := filepath.Join(wd, "test", "iat-policy.sqlite")
 	dbPath, err := initDb(schemaFile)
@@ -74,16 +81,12 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 	}
 	defer finiDb(dbPath)
 
-	pluginDir := filepath.Join(wd, "..", "plugins", "bin")
-
 	managerParams, err := NewManagerParamStore()
 	require.Nil(err)
 
 	err = managerParams.PopulateFromMap(map[string]interface{}{
-		"PluginLocations":   []string{pluginDir},
 		"PolicyStoreName":   "sqlite",
 		"PolicyStoreParams": map[string]interface{}{"dbpath": dbPath},
-		"Quiet":             true,
 	})
 	if err != nil {
 		t.Errorf("%v", err)
@@ -93,7 +96,6 @@ func TestPutPolicyBytesAndGetPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer pm.Close()
 
 	assert.NotNil(pm.Store)
 

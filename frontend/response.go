@@ -13,6 +13,6 @@ type ResponseEvidence struct {
 
 type ResponseBody struct {
 	SessionInfo
-	Evidence ResponseEvidence         `json:"evidence" binding:"required"`
-	Result   common.AttestationResult `json:"result" binding:"required"`
+	Evidence ResponseEvidence          `json:"evidence" binding:"required"`
+	Result   *common.AttestationResult `json:"result" binding:"required"`
 }

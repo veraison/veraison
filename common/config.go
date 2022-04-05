@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -20,9 +22,13 @@ var DefaultConfigPaths = []string{
 
 type ConfigPaths []string
 
-func (p *ConfigPaths) Set(value string) error {
+func (p *ConfigPaths) Add(value string) error {
 	*p = append(*p, value)
 	return nil
+}
+
+func (p *ConfigPaths) Strings() []string {
+	return []string(*p)[:]
 }
 
 func (p *ConfigPaths) String() string {
@@ -32,6 +38,18 @@ func (p *ConfigPaths) String() string {
 	}
 
 	return ""
+}
+
+func (p *ConfigPaths) Set(text string) error {
+	paths := strings.Split(text, string(os.PathListSeparator))
+
+	for _, path := range paths {
+		if err := p.Add(path); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func NewConfigPaths() *ConfigPaths {
@@ -153,6 +171,15 @@ func (c Config) Get(name string) interface{} {
 	return retv.Interface()
 }
 
+func (c Config) GetBool(name string) bool {
+	store, ok := c.params[name]
+	if !ok {
+		return false
+	}
+
+	return store.GetBool(name)
+}
+
 func (c Config) GetInt(name string) int {
 	store, ok := c.params[name]
 	if !ok {
@@ -189,8 +216,12 @@ func (c Config) GetStringMapString(name string) map[string]string {
 	return store.GetStringMapString(name)
 }
 
-func (c Config) GetParamStore(name string) *ParamStore {
-	return c.stores[name]
+func (c Config) GetParamStore(name string) (*ParamStore, error) {
+	store, ok := c.stores[name]
+	if !ok {
+		return nil, fmt.Errorf("param store %q not in config", name)
+	}
+	return store, nil
 }
 
 func (c Config) validate() error {

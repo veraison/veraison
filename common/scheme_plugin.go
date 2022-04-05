@@ -12,9 +12,7 @@ import (
 )
 
 type SchemePlugin struct {
-	Impl         IScheme
-	PluginClient *plugin.Client
-	RPCClient    plugin.ClientProtocol
+	Impl IScheme
 }
 
 func (p SchemePlugin) Server(*plugin.MuxBroker) (interface{}, error) {
@@ -23,25 +21,6 @@ func (p SchemePlugin) Server(*plugin.MuxBroker) (interface{}, error) {
 
 func (p SchemePlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
 	return &SchemeRPC{client: c}, nil
-}
-
-func (p *SchemePlugin) Init(lp *LoadedPlugin) error {
-	var ok bool
-
-	p.Impl, ok = lp.Raw.(IScheme)
-	if !ok {
-		return fmt.Errorf("the loaded plugin (%T) does not implement common.IScheme", lp.Raw)
-	}
-
-	p.RPCClient = lp.RPCClient
-	p.PluginClient = lp.PluginClient
-
-	return nil
-}
-
-func (p *SchemePlugin) Close() error {
-	p.PluginClient.Kill()
-	return p.RPCClient.Close()
 }
 
 func (p *SchemePlugin) GetName() string {
@@ -319,17 +298,4 @@ func (s *SchemeRPC) GetAttestation(ec *EvidenceContext, endorsements []string) (
 	err = json.Unmarshal(resp, &attestation)
 
 	return &attestation, err
-}
-
-func LoadSchemePlugin(locations []string, format AttestationFormat) (*SchemePlugin, error) {
-	log.Printf("loading plugin for scheme: %s", format.String())
-
-	lp, err := LoadPlugin(locations, "scheme", format.String(), false)
-	if err != nil {
-		return nil, fmt.Errorf("loading plugin for scheme %s: %w", format.String(), err)
-	}
-
-	var schemePlugin SchemePlugin
-	err = schemePlugin.Init(lp)
-	return &schemePlugin, err
 }

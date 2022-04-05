@@ -240,6 +240,10 @@ func (s *ParamStore) PopulateFromStringMapString(sm map[string]string) error {
 	return s.PopulateFromMap(m)
 }
 
+func (s *ParamStore) PopulateFromStore(other *ParamStore) error {
+	return s.PopulateFromMap(other.Data.AsMap())
+}
+
 // Freeze prevents additional parameter defintions from being added (thus
 // "freezing" the definition of this store). It does *not* prevent parameter
 // values from being set.

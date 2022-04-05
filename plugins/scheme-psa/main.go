@@ -125,7 +125,7 @@ func (s Scheme) GetTrustAnchorID(token *common.AttestationToken) (string, error)
 
 	err := psaToken.FromCOSE(token.Data)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not decode COSE: %v", err)
 	}
 
 	implIDString := base64.StdEncoding.EncodeToString(*psaToken.ImplID)

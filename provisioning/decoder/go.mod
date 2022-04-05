@@ -16,7 +16,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.3.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
-	github.com/hashicorp/go-hclog v0.14.1 // indirect
+	github.com/hashicorp/go-hclog v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/magiconair/properties v1.8.1 // indirect

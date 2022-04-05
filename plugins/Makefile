@@ -17,7 +17,7 @@ ifdef CI_PIPELINE
 # it from the CI testing because it messes up the coverage collection filter.
 SUBDIR := $(filter-out opapolicyengine,$(SUBDIR))
 
-endif # test
 endif # in CI pipeline
+endif # test
 
 include ../mk/subdir.mk

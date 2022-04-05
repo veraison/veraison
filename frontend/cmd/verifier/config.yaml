@@ -1,0 +1,27 @@
+debug: true
+
+plugin:
+    locations:
+        - ../../../plugins/bin/
+policy:
+    store_name: sqlite
+    store_params:
+        dbPath: policy.db
+    engine_name: OPA
+
+endorsement:
+  kvstore_config:
+    backend: sql
+    sql_driver: sqlite3
+    sql_datasource: kvstore.db
+    sql_tablename: endorsement
+
+trust_anchor:
+  kvstore_config:
+    backend: sql
+    sql_driver: sqlite3
+    sql_datasource: kvstore.db
+    sql_tablename: trustanchor
+
+vts:
+    port: 50051

@@ -4,9 +4,8 @@
 package policy
 
 import (
+	"fmt"
 	"reflect"
-
-	"github.com/hashicorp/go-plugin"
 
 	"github.com/veraison/common"
 )
@@ -19,11 +18,6 @@ func NewManagerParamStore() (*common.ParamStore, error) {
 
 func PopulateManagerParams(store *common.ParamStore) error {
 	return store.AddParamDefinitions(map[string]*common.ParamDescription{
-		"PluginLocations": {
-			Kind:     uint32(reflect.Slice),
-			Path:     "plugin.locations",
-			Required: common.ParamNecessity_REQUIRED,
-		},
 		"PolicyStoreName": {
 			Kind:     uint32(reflect.String),
 			Path:     "policy.store_name",
@@ -34,43 +28,41 @@ func PopulateManagerParams(store *common.ParamStore) error {
 			Path:     "policy.store_params",
 			Required: common.ParamNecessity_OPTIONAL,
 		},
-		"Quiet": {
-			Kind:     uint32(reflect.Bool),
-			Path:     "quiet",
-			Required: common.ParamNecessity_OPTIONAL,
-		},
 	})
 }
 
 type Manager struct {
-	StoreName string
-	Store     common.IPolicyStore
-	RPCClient plugin.ClientProtocol
-	Client    *plugin.Client
+	StoreName     string
+	Store         common.IPolicyStore
+	PluginManager *common.PluginManager
 }
 
-func NewManager() *Manager {
+func NewManager(pluginManager *common.PluginManager) *Manager {
 	return &Manager{
-		StoreName: "[none]",
+		StoreName:     "[none]",
+		PluginManager: pluginManager,
 	}
 }
 
 func (pm *Manager) Init(params *common.ParamStore) error {
-	pluginLocaitons := params.GetStringSlice("PluginLocations")
 	storeName := common.Canonize(params.GetString("PolicyStoreName"))
 	storeParamMap := params.GetStringMapString("PolicyStoreParams")
-	quiet := params.GetBool("Quiet")
 
-	lp, err := common.LoadPlugin(pluginLocaitons, "policystore", storeName, quiet)
+	loaded, err := pm.PluginManager.Load("policystore", storeName)
 	if err != nil {
 		return err
 	}
 
-	pm.Store = lp.Raw.(common.IPolicyStore)
-	pm.RPCClient = lp.RPCClient
-	pm.Client = lp.PluginClient
+	var ok bool
+	pm.Store, ok = loaded.(common.IPolicyStore)
+	if !ok {
+		return fmt.Errorf(
+			"policystore plugin '%s' does not implement IPolicyStore",
+			storeName,
+		)
+	}
 
-	storeParams := common.NewParamStore("test")
+	storeParams := common.NewParamStore("policystore")
 	pdesc, err := pm.Store.GetParamDescriptions()
 	if err != nil {
 		return err
@@ -85,7 +77,6 @@ func (pm *Manager) Init(params *common.ParamStore) error {
 	}
 
 	if err = pm.Store.Init(storeParams); err != nil {
-		pm.Client.Kill()
 		return err
 	}
 
@@ -125,9 +116,6 @@ func (pm *Manager) DeletePolicy(tenantID int, tokenFormat common.AttestationForm
 	return pm.Store.DeletePolicy(tenantID, tokenFormat)
 }
 
-func (pm Manager) Close() error {
-	pm.Client.Kill()
-	pm.RPCClient.Close()
-
+func (pm *Manager) Close() error {
 	return nil
 }

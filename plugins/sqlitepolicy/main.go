@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 
 	"github.com/hashicorp/go-plugin"
@@ -38,7 +39,7 @@ type PolicyStore struct {
 }
 
 func (ps *PolicyStore) GetName() string {
-	return "SQLITE"
+	return "sqlite"
 }
 
 func (ps PolicyStore) GetParamDescriptions() (map[string]*common.ParamDescription, error) {
@@ -101,7 +102,11 @@ func (ps *PolicyStore) ListPolicies(tenantID int) ([]common.PolicyListEntry, err
 }
 
 // GetPolicy returns a policy matching a tenant and the Evidence format
-func (ps *PolicyStore) GetPolicy(tenantID int, tokenFormat common.AttestationFormat) (*common.Policy, error) {
+func (ps *PolicyStore) GetPolicy(
+	tenantID int,
+	tokenFormat common.AttestationFormat,
+) (*common.Policy, error) {
+	os.Stdout.Sync()
 	policy := common.NewPolicy()
 
 	policy.AttestationFormat = tokenFormat
@@ -115,6 +120,9 @@ func (ps *PolicyStore) GetPolicy(tenantID int, tokenFormat common.AttestationFor
 	}
 	var queryMapBytes []byte
 	if err := row.Scan(&queryMapBytes, &policy.Rules); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, common.ErrPolicyNotFound
+		}
 		return nil, err
 	}
 
@@ -143,7 +151,10 @@ func (ps *PolicyStore) PutPolicy(tenantID int, policy *common.Policy) error {
 }
 
 // DeletePolicy removes the policy identified by the tenantID and AttestationFormat
-func (ps *PolicyStore) DeletePolicy(tenantID int, tokenFormat common.AttestationFormat) error {
+func (ps *PolicyStore) DeletePolicy(
+	tenantID int,
+	tokenFormat common.AttestationFormat,
+) error {
 	// Make sure the policy is present before deleting
 	row := ps.db.QueryRow(
 		"select query_map, rules from policy where tenant_id = ? and token_format = ?",
@@ -158,6 +169,9 @@ func (ps *PolicyStore) DeletePolicy(tenantID int, tokenFormat common.Attestation
 
 	err := row.Scan(&queryMap, &rules)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return common.ErrPolicyNotFound
+		}
 		return err
 	}
 

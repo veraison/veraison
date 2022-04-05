@@ -156,6 +156,10 @@ func (e *PolicyStoreRPC) GetPolicy(tenantID int, tokenFormat AttestationFormat) 
 	args := GetPolicyArgs{TenantID: tenantID, TokenFormat: tokenFormat}
 	err := e.client.Call("Plugin.GetPolicy", args, &resp)
 
+	if err != nil && err.Error() == ErrPolicyNotFound.Error() {
+		return nil, ErrPolicyNotFound
+	}
+
 	return &resp, err
 }
 

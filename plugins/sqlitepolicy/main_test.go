@@ -86,9 +86,8 @@ func TestSqliteGetPolicy(t *testing.T) {
 		policy.QueryMap["software_components"]["measurements"])
 
 	policy, err = pm.GetPolicy(1, common.AttestationFormat(123))
-	require.NotNil(err)
-	assert.Contains(err.Error(), "no rows")
 	assert.Nil(policy)
+	assert.Equal(common.ErrPolicyNotFound, err)
 }
 
 func TestSqliteDeletePolicy(t *testing.T) {
@@ -116,6 +115,5 @@ func TestSqliteDeletePolicy(t *testing.T) {
 	assert.Nil(err)
 
 	err = pm.DeletePolicy(1, common.AttestationFormat_PSA_IOT)
-	require.NotNil(err)
-	assert.Contains(err.Error(), "no rows")
+	assert.Equal(common.ErrPolicyNotFound, err)
 }

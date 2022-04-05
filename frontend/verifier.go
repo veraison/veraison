@@ -3,60 +3,63 @@
 package frontend
 
 import (
-	"path"
+	"fmt"
 
 	"github.com/veraison/common"
 	"github.com/veraison/policy"
 	"github.com/veraison/trustedservices"
 	"github.com/veraison/verifier"
 
+	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
 
-func NewVerifier(pluginDir string, dbPath string, logger *zap.Logger) (*verifier.Verifier, error) {
-
-	policyDbPath := path.Join(dbPath, "policy.sqlite3")
-
-	verifierParams, err := verifier.NewVerifierParams()
+func CreateVerifier(
+	config *common.Config,
+	pluginManager *common.PluginManager,
+	logger *zap.Logger,
+) (*verifier.Verifier, error) {
+	pmParams, err := config.GetParamStore("policy_manager")
 	if err != nil {
 		return nil, err
 	}
 
-	pluginLocations := []string{pluginDir}
+	pm := policy.NewManager(pluginManager)
+	if err = pm.Init(pmParams); err != nil {
+		return nil, err
+	}
 
-	// TODO make configurable
-	verifierParams.SetStringSlice("PluginLocations", pluginLocations)
-	verifierParams.SetString("VtsHost", "")
-	verifierParams.SetString("VtsPort", "")
-	verifierParams.SetStringMapString("VtsParams", make(map[string]string))
+	loaded, err := pluginManager.Load("policyengine", "opa")
+	if err != nil {
+		return nil, err
+	}
+
+	pe, ok := loaded.(common.IPolicyEngine)
+	if !ok {
+		return nil, fmt.Errorf("could not get IPolicyEngine from plugin")
+	}
 
 	v, err := verifier.NewVerifier(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	connector := new(trustedservices.LocalClientConnector)
-
-	policyManagerParams, err := policy.NewManagerParamStore()
-	if err != nil {
-		return nil, err
-	}
-	// TODO make configurable
-	policyManagerParams.SetStringSlice("PluginLocations", pluginLocations)
-	policyManagerParams.SetString("PolicyStoreName", "sqlite")
-	policyManagerParams.SetStringMapString("PolicyStoreParams", map[string]string{"dbPath": policyDbPath})
-
-	pm := policy.NewManager()
-	err = pm.Init(policyManagerParams)
+	vtsParams, err := config.GetParamStore("vts-local")
 	if err != nil {
 		return nil, err
 	}
 
-	pe, err := common.LoadPolicyEnginePlugin(pluginLocations, "opa")
-	if err != nil {
+	vts := trustedservices.NewLocalClient(pluginManager)
+	if err = vts.Init(vtsParams); err != nil {
 		return nil, err
 	}
 
-	err = v.Init(verifierParams, connector, pm, pe)
+	verifierParams, err := config.GetParamStore("verifier")
+	if err != nil {
+
+		return nil, err
+	}
+
+	err = v.Init(verifierParams, vts, pm, pe)
 	return v, err
 }

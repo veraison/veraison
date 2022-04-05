@@ -48,13 +48,6 @@ func PopulateLocalClientParams(store *common.ParamStore) error {
 	})
 }
 
-type LocalClient struct {
-	PluginLocations  []string
-	Schemes          map[common.AttestationFormat]*common.SchemePlugin
-	TrustAnchorStore kvstore.IKVStore
-	EndorsementStore kvstore.IKVStore
-}
-
 func initStore(params *common.ParamStore, basename string) (kvstore.IKVStore, error) {
 	var (
 		store       kvstore.IKVStore
@@ -75,15 +68,23 @@ func initStore(params *common.ParamStore, basename string) (kvstore.IKVStore, er
 	return store, nil
 }
 
+type LocalClient struct {
+	Schemes          map[common.AttestationFormat]common.IScheme
+	TrustAnchorStore kvstore.IKVStore
+	EndorsementStore kvstore.IKVStore
+	PluginManager    *common.PluginManager
+}
+
+func NewLocalClient(pluginManager *common.PluginManager) *LocalClient {
+	client := new(LocalClient)
+	client.PluginManager = pluginManager
+	return client
+}
+
 func (c *LocalClient) Init(params *common.ParamStore) error {
 	var err error
 
-	c.PluginLocations, err = params.TryGetStringSlice("PluginLocations")
-	if err != nil {
-		return err
-	}
-
-	c.Schemes = make(map[common.AttestationFormat]*common.SchemePlugin)
+	c.Schemes = make(map[common.AttestationFormat]common.IScheme)
 
 	c.TrustAnchorStore, err = initStore(params, "TrustAnchor")
 	if err != nil {
@@ -100,15 +101,24 @@ func (c *LocalClient) Init(params *common.ParamStore) error {
 
 func (o *LocalClient) AddSwComponents(req *common.AddSwComponentsRequest) (*common.AddSwComponentsResponse, error) {
 	var (
-		err    error
-		keys   []string
-		scheme *common.SchemePlugin
-		val    []byte
+		keys []string
+		val  []byte
 	)
 
 	for _, swComp := range req.GetSwComponents() {
-		scheme, err = o.getSchemePlugin(swComp.GetScheme())
+		attestFormat := swComp.GetScheme()
+
+		loaded, err := o.PluginManager.Load("scheme", attestFormat.String())
 		if err != nil {
+			return addSwComponentErrorResponse(err), nil
+		}
+
+		scheme, ok := loaded.(common.IScheme)
+		if !ok {
+			err = fmt.Errorf(
+				"plugin '%s' does not implement IScheme",
+				attestFormat.String(),
+			)
 			return addSwComponentErrorResponse(err), nil
 		}
 
@@ -155,7 +165,7 @@ func (o *LocalClient) AddTrustAnchor(req *common.AddTrustAnchorRequest) (*common
 	var (
 		err    error
 		keys   []string
-		scheme *common.SchemePlugin
+		scheme common.IScheme
 		ta     *common.Endorsement
 		val    []byte
 	)
@@ -166,7 +176,7 @@ func (o *LocalClient) AddTrustAnchor(req *common.AddTrustAnchorRequest) (*common
 		return addTrustAnchorErrorResponse(err), nil
 	}
 
-	scheme, err = o.getSchemePlugin(ta.GetScheme())
+	scheme, err = o.getScheme(ta.GetScheme())
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
@@ -210,7 +220,7 @@ func addTrustAnchorErrorResponse(err error) *common.AddTrustAnchorResponse {
 }
 
 func (c *LocalClient) GetAttestation(token *common.AttestationToken) (*common.Attestation, error) {
-	scheme, err := c.getSchemePlugin(token.Format)
+	scheme, err := c.getScheme(token.Format)
 	if err != nil {
 		return nil, err
 	}
@@ -226,6 +236,30 @@ func (c *LocalClient) GetAttestation(token *common.AttestationToken) (*common.At
 	}
 
 	return scheme.GetAttestation(ec, endorsements)
+}
+
+func (c *LocalClient) getScheme(format common.AttestationFormat) (common.IScheme, error) {
+	scheme, ok := c.Schemes[format]
+	if ok {
+		return scheme, nil
+	}
+
+	loaded, err := c.PluginManager.Load("scheme", format.String())
+	if err != nil {
+		return nil, err
+	}
+
+	scheme, ok = loaded.(common.IScheme)
+	if !ok {
+		err = fmt.Errorf(
+			"plugin '%s' does not implement IScheme",
+			format.String(),
+		)
+		return nil, err
+	}
+
+	c.Schemes[format] = scheme
+	return scheme, nil
 }
 
 func (c LocalClient) Close() error {
@@ -244,14 +278,6 @@ func (c LocalClient) Close() error {
 		msg = append(msg, fmt.Sprintf("problem closing endorsement store: %s", err.Error()))
 	}
 
-	for format, sp := range c.Schemes {
-		err = sp.Close()
-		if err != nil {
-			msg = append(msg, fmt.Sprintf("error closing %q: %s", format.String(), err.Error()))
-		}
-
-	}
-
 	if len(msg) > 0 {
 		return errors.New(strings.Join(msg, "; "))
 	}
@@ -259,23 +285,8 @@ func (c LocalClient) Close() error {
 	return nil
 }
 
-func (c *LocalClient) getSchemePlugin(format common.AttestationFormat) (*common.SchemePlugin, error) {
-	sp, ok := c.Schemes[format]
-	if ok {
-		return sp, nil
-	}
-
-	sp, err := common.LoadSchemePlugin(c.PluginLocations, format)
-	if err != nil {
-		return nil, err
-	}
-
-	c.Schemes[format] = sp
-	return sp, nil
-}
-
 func (c *LocalClient) extractEvidence(
-	scheme *common.SchemePlugin,
+	scheme common.IScheme,
 	token *common.AttestationToken,
 ) (*common.EvidenceContext, error) {
 	var err error

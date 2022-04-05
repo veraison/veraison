@@ -80,8 +80,8 @@ other_client:
 	require.Nil(config.ReadConfig(bytes.NewBuffer(configText)))
 	assert.Equal("server.random", config.GetString("serverHost"))
 
-	store := config.GetParamStore("one")
-	require.NotNil(store)
+	store, err  := config.GetParamStore("one")
+	require.NoError(err)
 	assert.Equal(9999, store.GetInt("serverPort"))
 
 	err = config.AddStore(NewParamStore("two"))

@@ -11,6 +11,7 @@ replace github.com/veraison/veraison/kvstore => ../../kvstore/
 replace github.com/veraison/trustedservices => ../../trustedservices/
 
 require (
+	github.com/hashicorp/go-hclog v1.1.0 // indirect
 	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/veraison/common v0.0.0
 	github.com/veraison/trustedservices v0.0.0

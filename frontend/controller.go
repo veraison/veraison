@@ -83,7 +83,7 @@ func (c Controller) NewSession(g *gin.Context) {
 		}
 
 		nonce = make([]byte, nonceSize)
-		_, err := rand.Read(nonce)
+		_, err = rand.Read(nonce)
 		if err != nil {
 			reportProblem(g, http.StatusInternalServerError, err.Error())
 			return
@@ -112,19 +112,21 @@ func (c Controller) Verify(g *gin.Context) {
 
 	sessionID, err := strconv.Atoi(g.Param("sessionId"))
 	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err)
+		reportProblem(g, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	session := c.sessionManager.GetSession(int64(sessionID))
 	if session == nil {
-		reportProblem(g, http.StatusBadRequest, fmt.Sprintf("no session with id %d", sessionID))
+		reportProblem(g, http.StatusBadRequest,
+			fmt.Sprintf("no session with id %d", sessionID))
 		return
 	}
 
 	contentTypes := g.Request.Header["Content-Type"]
 	if len(contentTypes) != 1 {
-		reportProblem(g, http.StatusBadRequest, "must specify exactly one content type")
+		reportProblem(g, http.StatusBadRequest,
+			"must specify exactly one content type")
 		return
 	}
 	tokenFormat := contentTypeToTokenFormat(contentTypes[0])
@@ -155,7 +157,7 @@ func (c Controller) Verify(g *gin.Context) {
 			Type:  contentTypes[0],
 			Value: tokenData,
 		},
-		Result: *attestationResult,
+		Result: attestationResult,
 	}
 
 	if err = c.sessionManager.EndSession(session.GetID()); err != nil {

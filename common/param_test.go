@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/spf13/viper"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestParamStore_Values(t *testing.T) {
@@ -179,6 +180,32 @@ func TestParamStore_Map(t *testing.T) {
 
 	require.Nil(params.PopulateFromMap(map[string]interface{}{}))
 	assert.Equal(30, params.GetInt("numCats"))
+}
+
+func TestParamStore_FromStore(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	data, err := structpb.NewStruct(map[string]interface{}{
+		"name": "Philip J. Fry",
+		"age": 1025,
+		})
+	require.NoError(err)
+
+	origin := &ParamStore{
+		Name: "origin",
+		Data: data,
+	}
+
+	params := NewParamStore("test")
+	require.NoError(params.DefineParam("name", reflect.String, "person.name", ParamNecessity_REQUIRED))
+	require.NoError(params.DefineParam("age", reflect.Int, "person.age", ParamNecessity_OPTIONAL))
+
+	require.NoError(params.PopulateFromStore(origin))
+	assert.Equal("Philip J. Fry", params.GetString("name"))
+	assert.Equal(1025, params.GetInt("age"))
+
+	assert.Nil(nil)
 }
 
 func TestParamStore_Freeze(t *testing.T) {

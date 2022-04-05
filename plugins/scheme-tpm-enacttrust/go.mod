@@ -6,6 +6,7 @@ replace github.com/veraison/common => ../../common/
 
 require (
 	github.com/google/go-tpm v0.3.3
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-plugin v1.3.0
 	github.com/stretchr/testify v1.7.0
 	github.com/veraison/common v0.0.0
@@ -18,8 +19,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.3.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
-	github.com/hashicorp/go-hclog v0.12.0 // indirect
+	github.com/hashicorp/go-hclog v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/magiconair/properties v1.8.5 // indirect

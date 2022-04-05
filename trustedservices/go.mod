@@ -9,6 +9,7 @@ replace github.com/veraison/policy => ../policy/
 replace github.com/veraison/veraison/kvstore => ../kvstore/
 
 require (
+	github.com/hashicorp/go-hclog v1.1.0 // indirect
 	github.com/hashicorp/go-plugin v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.3
 	github.com/stretchr/testify v1.7.0

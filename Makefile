@@ -1,13 +1,13 @@
 # Copyright 2021 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-SUBDIR := plugins
-SUBDIR += common
+SUBDIR := common
 SUBDIR += policy
 SUBDIR += verifier
+SUBDIR += kvstore
+SUBDIR += plugins
 SUBDIR += frontend
 SUBDIR += cmd
-SUBDIR += kvstore
 SUBDIR += provisioning
 #SUBDIR += verification
 

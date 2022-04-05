@@ -7,6 +7,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -422,3 +423,5 @@ func getTokenFromat(name string) AttestationFormat {
 
 	return AttestationFormat(value)
 }
+
+var ErrPolicyNotFound = errors.New("policy not found")

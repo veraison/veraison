@@ -46,7 +46,11 @@ func (c StubVtsClient) GetAttestation(
 		"certification_authority": "Acme",
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not cert details for token %q: %s", token.Data, err.Error())
+		return nil, fmt.Errorf(
+			"could not cert details for token %q: %s",
+			token.Data,
+			err.Error(),
+		)
 	}
 
 	evidence, err := structpb.NewStruct(map[string]interface{}{})
@@ -62,9 +66,9 @@ func (c StubVtsClient) GetAttestation(
 				SoftwareUpToDateness: common.AR_Status_UNKNOWN,
 				RuntimeIntegrity:     common.AR_Status_UNKNOWN,
 				ConfigIntegrity:      common.AR_Status_UNKNOWN,
-				CertificationStatus:  common.AR_Status_SUCCESS,
+				CertificationStatus:  common.AR_Status_FAILURE,
 			},
-			Status:      common.AR_Status_SUCCESS,
+			Status:      common.AR_Status_FAILURE,
 			RawEvidence: token.Data,
 			Timestamp:   timestamppb.Now(),
 			EndorsedClaims: &common.EndorsedClaims{
@@ -81,22 +85,6 @@ func (c StubVtsClient) GetAttestation(
 	return &attestation, nil
 }
 
-type StubConnector struct {
-}
-
-func (c StubConnector) Connect(
-	host string,
-	port int,
-	params map[string]string,
-) (common.ITrustedServicesClient, error) {
-	vts := new(StubVtsClient)
-
-	store := common.NewParamStore("vts-stub")
-
-	err := vts.Init(store)
-	return vts, err
-}
-
 type StubManager struct {
 }
 
@@ -108,7 +96,10 @@ func (m *StubManager) ListPolicies(tenantID int) ([]common.PolicyListEntry, erro
 	return nil, nil
 }
 
-func (m *StubManager) GetPolicy(tenantID int, tokenFormat common.AttestationFormat) (*common.Policy, error) {
+func (m *StubManager) GetPolicy(
+	tenantID int,
+	tokenFormat common.AttestationFormat,
+) (*common.Policy, error) {
 	return nil, nil
 }
 
@@ -120,7 +111,10 @@ func (m *StubManager) PutPolicyBytes(tenantID int, policyBytes []byte) error {
 	return nil
 }
 
-func (m *StubManager) DeletePolicy(tenantID int, tokenFormat common.AttestationFormat) error {
+func (m *StubManager) DeletePolicy(
+	tenantID int,
+	tokenFormat common.AttestationFormat,
+) error {
 	return nil
 }
 
@@ -139,7 +133,10 @@ func (m *StubEngine) Init(params *common.ParamStore) error {
 	return nil
 }
 
-func (m *StubEngine) Appraise(attestation *common.Attestation, policy *common.Policy) error {
+func (m *StubEngine) Appraise(
+	attestation *common.Attestation,
+	policy *common.Policy,
+) error {
 
 	attestation.Result.TrustVector.CertificationStatus = common.AR_Status_FAILURE
 	attestation.Result.Status = common.AR_Status_FAILURE
@@ -176,7 +173,7 @@ func TestVerifier(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	err = v.Init(vc, new(StubConnector), new(StubManager), new(StubEngine))
+	err = v.Init(vc, new(StubVtsClient), new(StubManager), new(StubEngine))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

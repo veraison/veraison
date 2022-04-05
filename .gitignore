@@ -1,7 +1,9 @@
-plugins/bin/
 cmd/vts/vts
+common/test/plugin/bin/
+plugins/bin/
 plugins/scheme-tpm-enacttrust/test/cmd/gen-token/gen-token
 plugins/scheme-tpm-enacttrust/test/tokens/*.token
+provisioning/api/mocks/
 provisioning/cmd/provisioning
 provisioning/plugins/bin/
 main
@@ -9,4 +11,3 @@ protogen
 *.pb.go
 *.pb.json.go
 tags
-provisioning/api/mocks/
