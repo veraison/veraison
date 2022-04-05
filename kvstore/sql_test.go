@@ -274,6 +274,7 @@ func TestSQL_Set_ok(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?")).
+		WithArgs(testKey).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)")).
 		WithArgs(testKey, testVal).

@@ -143,7 +143,7 @@ func (o SQL) Set(key string, val string) error {
 
 	delQ := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
 
-	if _, err = o.DB.Exec(delQ); err != nil {
+	if _, err = o.DB.Exec(delQ, key); err != nil {
 		return err
 	}
 

@@ -19,7 +19,7 @@ type Memory struct {
 	Data map[string][]string
 }
 
-func (o *Memory) Init(cfg Config) error {
+func (o *Memory) Init(unused Config) error {
 	o.Data = make(map[string][]string)
 
 	return nil
