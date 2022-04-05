@@ -16,15 +16,10 @@ var (
 )
 
 type Memory struct {
-	Type Type
 	Data map[string][]string
 }
 
-func (o *Memory) Init(cfg Config) error {
-	if err := o.Type.SetFromConfig(cfg); err != nil {
-		return err
-	}
-
+func (o *Memory) Init(unused Config) error {
 	o.Data = make(map[string][]string)
 
 	return nil
@@ -55,7 +50,7 @@ func (o Memory) Get(key string) ([]string, error) {
 	return vals, nil
 }
 
-func (o *Memory) Set(key string, val string) error {
+func (o *Memory) Add(key string, val string) error {
 	if o.Data == nil {
 		return errors.New("memory store uninitialized")
 	}
@@ -69,11 +64,33 @@ func (o *Memory) Set(key string, val string) error {
 
 	data, ok := o.Data[key]
 	if ok {
-		// TODO(tho) -- check if the value is already stored, if so do not append
+		// check if val is already present
+		for _, d := range data {
+			if d == val {
+				return nil
+			}
+		}
 		o.Data[key] = append(data, val)
 	} else {
 		o.Data[key] = []string{val}
 	}
+
+	return nil
+}
+
+func (o *Memory) Set(key string, val string) error {
+	if o.Data == nil {
+		return errors.New("memory store uninitialized")
+	}
+
+	if err := sanitizeKV(key, val); err != nil {
+		return err
+	}
+
+	lk.Lock()
+	defer lk.Unlock()
+
+	o.Data[key] = []string{val}
 
 	return nil
 }

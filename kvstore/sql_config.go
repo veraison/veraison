@@ -4,6 +4,7 @@ package kvstore
 
 // SQL-specific directives use the "kvstore.sql_" namespace
 const (
+	DirectiveSQLTableName      string = "sql_tablename"
 	DirectiveSQLDriverName     string = "sql_driver"
 	DirectiveSQLDataSourceName string = "sql_datasource"
 )

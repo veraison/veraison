@@ -4,6 +4,7 @@ package kvstore
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -12,16 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSQL_Init_missing_store_type(t *testing.T) {
+func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 	s := SQL{}
 
 	cfg := Config{
-		"not_type_directive": "whatever",
-		"sql_driver":         "sqlite3",
-		"sql_datasource":     "db=veraison.sql",
+		"sql_tablename":  -1,
+		"sql_driver":     "sqlite3",
+		"sql_datasource": "db=veraison.sql",
 	}
 
-	expectedErr := `missing "type" directive`
+	expectedErr := `invalidly specified directive: "sql_tablename"`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -31,11 +32,28 @@ func TestSQL_Init_missing_driver_name(t *testing.T) {
 	s := SQL{}
 
 	cfg := Config{
-		"type":           "trustanchor",
+		"sql_tablename":  "trustanchor",
 		"sql_datasource": "db=veraison-trustanchor.sql",
 	}
 
-	expectedErr := `missing "sql_driver" directive`
+	expectedErr := `missing directive: "sql_driver"`
+
+	err := s.Init(cfg)
+	assert.EqualError(t, err, expectedErr)
+}
+
+func TestSQL_Init_bad_tablename(t *testing.T) {
+	s := SQL{}
+
+	attemptedInjection := "kvstore ; DROP TABLE another ; SELECT * FROM kvstore"
+
+	cfg := Config{
+		"sql_tablename":  attemptedInjection,
+		"sql_datasource": "db=veraison-trustanchor.sql",
+		"sql_driver":     "sqlite3",
+	}
+
+	expectedErr := fmt.Sprintf("unsafe table name: %q (MUST match %s)", attemptedInjection, safeTblNameRe)
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -45,11 +63,11 @@ func TestSQL_Init_missing_datasource_name(t *testing.T) {
 	s := SQL{}
 
 	cfg := Config{
-		"type":       "trustanchor",
-		"sql_driver": "postgres",
+		"sql_tablename": "trustanchor",
+		"sql_driver":    "postgres",
 	}
 
-	expectedErr := `missing "sql_datasource" directive`
+	expectedErr := `missing directive: "sql_datasource"`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -60,7 +78,7 @@ func TestSQL_Init_db_open_unknown_driver_postgres(t *testing.T) {
 	s := SQL{}
 
 	cfg := Config{
-		"type":           "trustanchor",
+		"sql_tablename":  "trustanchor",
 		"sql_driver":     "postgres",
 		"sql_datasource": "db=veraison-trustanchor.sql",
 	}
@@ -91,7 +109,7 @@ func TestSQL_Get_empty_key(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	emptyKey := ""
 
@@ -106,11 +124,11 @@ func TestSQL_Get_db_layer_failure(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	dbErrorString := "a DB error"
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT vals FROM endorsement WHERE key = ?"))
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT vals FROM endorsement WHERE key = ?"))
 	e.WithArgs("key")
 	e.WillReturnError(errors.New(dbErrorString))
 
@@ -129,12 +147,12 @@ func TestSQL_Get_broken_invariant_null_val_panic(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	rows := sqlmock.NewRows([]string{"vals"})
 	rows.AddRow(nil)
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT vals FROM endorsement WHERE key = ?"))
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT vals FROM endorsement WHERE key = ?"))
 	e.WithArgs("key")
 	e.WillReturnRows(rows)
 
@@ -153,11 +171,11 @@ func TestSQL_Get_ok(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"vals"})
 	rows.AddRow("[1, 2]")
 
-	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT vals FROM endorsement WHERE key = ?"))
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT vals FROM endorsement WHERE key = ?"))
 	e.WithArgs("key")
 	e.WillReturnRows(rows)
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	vals, err := s.Get("key")
 	assert.NoError(t, err)
@@ -173,7 +191,7 @@ func TestSQL_Set_empty_key(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	emptyKey := ""
 
@@ -188,7 +206,7 @@ func TestSQL_Set_bad_val(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	invalidJSON := ""
 
@@ -198,18 +216,19 @@ func TestSQL_Set_bad_val(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func TestSQL_Set_db_layer_failure(t *testing.T) {
+func TestSQL_Set_db_layer_delete_failure(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	dbErrorString := "a DB error"
 
-	e := mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)"))
-	e.WithArgs(testKey, testVal)
-	e.WillReturnError(errors.New(dbErrorString))
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?")).
+		WillReturnError(errors.New(dbErrorString))
+	mock.ExpectRollback()
 
 	expectedErr := dbErrorString
 
@@ -221,16 +240,46 @@ func TestSQL_Set_db_layer_failure(t *testing.T) {
 	}
 }
 
+func TestSQL_Set_db_layer_insert_failure(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	dbErrorString := "a DB error"
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?")).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)")).
+		WillReturnError(errors.New(dbErrorString))
+	mock.ExpectRollback()
+
+	expectedErr := dbErrorString
+
+	err = s.Set(testKey, testVal)
+	assert.EqualError(t, err, expectedErr)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
 func TestSQL_Set_ok(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
-	e := mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)"))
-	e.WithArgs(testKey, testVal)
-	e.WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?")).
+		WithArgs(testKey).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)")).
+		WithArgs(testKey, testVal).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
 
 	err = s.Set(testKey, testVal)
 	assert.NoError(t, err)
@@ -245,7 +294,7 @@ func TestSQL_Del_empty_key(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	emptyKey := ""
 
@@ -260,7 +309,7 @@ func TestSQL_Del_db_layer_failure(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	dbErrorString := "a DB error"
 
@@ -283,13 +332,85 @@ func TestSQL_Del_ok(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{Type: TypeEndorsement, DB: db}
+	s := SQL{TableName: "endorsement", DB: db}
 
 	e := mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?"))
 	e.WithArgs(testKey)
 	e.WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = s.Del(testKey)
+	assert.NoError(t, err)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
+func TestSQL_Add_empty_key(t *testing.T) {
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	emptyKey := ""
+
+	expectedErr := `the supplied key is empty`
+
+	err = s.Add(emptyKey, testVal)
+	assert.EqualError(t, err, expectedErr)
+}
+
+func TestSQL_Add_bad_val(t *testing.T) {
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	invalidJSON := ""
+
+	expectedErr := `the supplied val contains invalid JSON: unexpected end of JSON input`
+
+	err = s.Add(testKey, invalidJSON)
+	assert.EqualError(t, err, expectedErr)
+}
+
+func TestSQL_Add_db_layer_failure(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	dbErrorString := "a DB error"
+
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)")).
+		WithArgs(testKey, testVal).
+		WillReturnError(errors.New(dbErrorString))
+
+	expectedErr := dbErrorString
+
+	err = s.Add(testKey, testVal)
+	assert.EqualError(t, err, expectedErr)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
+func TestSQL_Add_ok(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement(key, vals) VALUES(?, ?)")).
+		WithArgs(testKey, testVal).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = s.Add(testKey, testVal)
 	assert.NoError(t, err)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
