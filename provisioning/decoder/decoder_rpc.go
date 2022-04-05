@@ -18,11 +18,11 @@ type RPCServer struct {
 	Impl IDecoder
 }
 
-func (s *RPCServer) Init(params Params, unused *interface{}) error {
+func (s *RPCServer) Init(params Params, unused interface{}) error {
 	return s.Impl.Init(params)
 }
 
-func (s RPCServer) Close(unused0 interface{}, unused1 *interface{}) error {
+func (s RPCServer) Close(unused0 interface{}, unused1 interface{}) error {
 	return s.Impl.Close()
 }
 

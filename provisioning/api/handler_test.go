@@ -23,10 +23,10 @@ import (
 
 var (
 	testGoodDecoderResponse = decoder.EndorsementDecoderResponse{
-		TrustAnchors: []*common.TrustAnchor{
+		TrustAnchors: []*common.Endorsement{
 			{},
 		},
-		SwComponents: []*common.SwComponent{
+		SwComponents: []*common.Endorsement{
 			{},
 		},
 	}
@@ -59,7 +59,7 @@ func TestHandler_Submit_UnsupportedAccept(t *testing.T) {
 	w := httptest.NewRecorder()
 	g, _ := gin.CreateTestContext(w)
 
-	g.Request, _ = http.NewRequest(http.MethodPost, "/", nil)
+	g.Request, _ = http.NewRequest(http.MethodPost, "/", http.NoBody)
 	g.Request.Header.Add("Accept", "application/unsupported+ber")
 
 	h.Submit(g)
@@ -106,7 +106,7 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 	w := httptest.NewRecorder()
 	g, _ := gin.CreateTestContext(w)
 
-	g.Request, _ = http.NewRequest(http.MethodPost, "/", nil)
+	g.Request, _ = http.NewRequest(http.MethodPost, "/", http.NoBody)
 	g.Request.Header.Add("Content-Type", mediaType)
 	g.Request.Header.Add("Accept", ProvisioningSessionMediaType)
 
@@ -377,7 +377,7 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&common.AddSwComponentsRequest{
-					Info: []*common.SwComponent{
+					SwComponents: []*common.Endorsement{
 						{},
 					},
 				},
@@ -452,7 +452,7 @@ func TestHandler_Submit_store_AddSwComponents_failure2(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&common.AddSwComponentsRequest{
-					Info: []*common.SwComponent{
+					SwComponents: []*common.Endorsement{
 						{},
 					},
 				},
@@ -525,7 +525,7 @@ func TestHandler_Submit_ok(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&common.AddSwComponentsRequest{
-					Info: []*common.SwComponent{
+					SwComponents: []*common.Endorsement{
 						{},
 					},
 				},

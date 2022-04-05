@@ -12,10 +12,8 @@ func NewRouter(handler IHandler) *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	v1 := router.Group("/endorsement-provisioning/v1")
-	{
-		v1.POST("/submit", handler.Submit)
-	}
+	router.Group("/endorsement-provisioning/v1").
+		POST("/submit", handler.Submit)
 
 	return router
 }

@@ -133,7 +133,7 @@ func (o *Handler) store(rsp *decoder.EndorsementDecoderResponse) error {
 
 	for _, swComp := range rsp.SwComponents {
 		swCompReq := &common.AddSwComponentsRequest{
-			Info: []*common.SwComponent{
+			SwComponents: []*common.Endorsement{
 				swComp,
 			},
 		}

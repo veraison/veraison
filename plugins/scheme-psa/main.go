@@ -66,14 +66,14 @@ func getFieldsFromParts(parts *structpb.Struct) (map[string]*structpb.Value, err
 	return fields, nil
 }
 
-func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.SwComponent) ([]string, error) {
+func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.Endorsement) ([]string, error) {
 	var (
 		absPath []string
 		fields  map[string]*structpb.Value
 		err     error
 	)
 
-	fields, err = getFieldsFromParts(swComp.GetId().GetParts())
+	fields, err = getFieldsFromParts(swComp.GetAttributes())
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize software component abs-path: %w", err)
 	}
@@ -92,14 +92,14 @@ func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.SwCompo
 	return []string{verificationLookupKey.String()}, nil
 }
 
-func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.TrustAnchor) ([]string, error) {
+func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.Endorsement) ([]string, error) {
 	var (
 		absPath []string
 		fields  map[string]*structpb.Value
 		err     error
 	)
 
-	fields, err = getFieldsFromParts(ta.GetId().GetParts())
+	fields, err = getFieldsFromParts(ta.GetAttributes())
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}

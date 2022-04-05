@@ -13,7 +13,7 @@ import (
 
 type Extractor struct{}
 
-func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwComponent, error) {
+func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 
 	if err := instanceAttrs.FromEnvironment(rv.Environment); err != nil {
@@ -25,7 +25,7 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwCompone
 	}
 
 	var (
-		swComponents []*common.SwComponent
+		swComponents []*common.Endorsement
 		swCompAttrs  SwCompAttributes
 		measurement  comid.Measurement = rv.Measurements[0]
 	)
@@ -34,21 +34,14 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwCompone
 		return nil, fmt.Errorf("extracting measurement: %w", err)
 	}
 
-	swID, err := makeSwID(instanceAttrs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create software component id: %w", err)
-	}
-
-	swAttrs, err := makeSwAttrs(swCompAttrs)
+	swAttrs, err := makeSwAttrs(instanceAttrs, swCompAttrs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
 
-	swComponent := common.SwComponent{
-		Id: &common.SwComponentID{
-			Type:  common.AttestationFormat_TPM_ENACTTRUST,
-			Parts: swID,
-		},
+	swComponent := common.Endorsement{
+		Scheme:     common.AttestationFormat_TPM_ENACTTRUST,
+		Type:       common.EndorsementType_REFERENCE_VALUE,
 		Attributes: swAttrs,
 	}
 
@@ -61,33 +54,21 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwCompone
 	return swComponents, nil
 }
 
-func makeSwID(i InstanceAttributes) (*structpb.Struct, error) {
+func makeSwAttrs(i InstanceAttributes, s SwCompAttributes) (*structpb.Struct, error) {
 	return structpb.NewStruct(
 		map[string]interface{}{
 			"enacttrust-tpm.node-id": i.NodeID,
+			"enacttrust-tpm.digest":  s.Digest,
+			"enacttrust-tpm.alg-id":  s.AlgID,
 		},
 	)
 }
 
-func makeSwAttrs(s SwCompAttributes) (*structpb.Struct, error) {
-	return structpb.NewStruct(
-		map[string]interface{}{
-			"enacttrust-tpm.digest": s.Digest,
-			"enacttrust-tpm.alg-id": s.AlgID,
-		},
-	)
-}
-
-func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, error) {
+func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 
 	if err := instanceAttrs.FromEnvironment(avk.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract node id: %w", err)
-	}
-
-	taID, err := makeTaID(instanceAttrs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create trust anchor id: %w", err)
 	}
 
 	// extract AK pub
@@ -97,37 +78,25 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, e
 
 	akPub := avk.VerifKeys[0].Key
 
-	taKey, err := makeTaRawPublicKey(akPub)
+	taAttrs, err := makeTaAttrs(instanceAttrs, akPub)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
 	}
 
-	ta := &common.TrustAnchor{
-		Id: &common.TrustAnchorID{
-			Type:  common.AttestationFormat_TPM_ENACTTRUST,
-			Parts: taID,
-		},
-		Value: &common.TrustAnchorValue{
-			Type:  common.TAType_TA_RAWPUBLICKEY,
-			Value: taKey,
-		},
+	ta := &common.Endorsement{
+		Scheme:     common.AttestationFormat_TPM_ENACTTRUST,
+		Type:       common.EndorsementType_VERIFICATION_KEY,
+		Attributes: taAttrs,
 	}
 
 	return ta, nil
 }
 
-func makeTaRawPublicKey(key string) (*structpb.Struct, error) {
-	iakPub := map[string]interface{}{
-		"enacttrust.ak-pub": key,
+func makeTaAttrs(i InstanceAttributes, key string) (*structpb.Struct, error) {
+	attrs := map[string]interface{}{
+		"enacttrust-tpm.node-id": i.NodeID,
+		"enacttrust.ak-pub":      key,
 	}
 
-	return structpb.NewStruct(iakPub)
-}
-
-func makeTaID(i InstanceAttributes) (*structpb.Struct, error) {
-	return structpb.NewStruct(
-		map[string]interface{}{
-			"enacttrust-tpm.node-id": i.NodeID,
-		},
-	)
+	return structpb.NewStruct(attrs)
 }

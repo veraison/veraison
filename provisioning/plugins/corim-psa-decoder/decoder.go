@@ -9,7 +9,7 @@ import (
 
 const (
 	SupportedMediaType = "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
-	PluginName         = "unsigned-corim (PSA_IOT profile)"
+	PluginName         = "unsigned-corim (PSA IoT profile)"
 )
 
 type Decoder struct{}
