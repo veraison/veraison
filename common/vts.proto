@@ -16,25 +16,8 @@ message Status {
     string error_detail = 2;
 }
 
-message EndorsementID {
-    AttestationFormat type = 1;
-    google.protobuf.Struct parts = 2;
-}
-
 message Evidence {
     google.protobuf.Struct value = 1;
-}
-
-message GetEndorsementsRequest{
-    EndorsementID id = 1;
-    Evidence evidence = 2;
-}
-
-message GetEndorsementsResponse {
-    Status status = 1;
-    string details = 2;
-    TrustVector trust_vector = 3;
-    google.protobuf.Struct endorsements = 4;
 }
 
 message AddSwComponentsRequest {
