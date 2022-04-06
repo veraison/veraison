@@ -106,8 +106,8 @@ func (o *LocalClient) AddSwComponents(req *common.AddSwComponentsRequest) (*comm
 		val    []byte
 	)
 
-	for _, swComp := range req.GetInfo() {
-		scheme, err = o.getSchemePlugin(swComp.GetId().GetType())
+	for _, swComp := range req.GetSwComponents() {
+		scheme, err = o.getSchemePlugin(swComp.GetScheme())
 		if err != nil {
 			return addSwComponentErrorResponse(err), nil
 		}
@@ -156,7 +156,7 @@ func (o *LocalClient) AddTrustAnchor(req *common.AddTrustAnchorRequest) (*common
 		err    error
 		keys   []string
 		scheme *common.SchemePlugin
-		ta     *common.TrustAnchor
+		ta     *common.Endorsement
 		val    []byte
 	)
 
@@ -166,7 +166,7 @@ func (o *LocalClient) AddTrustAnchor(req *common.AddTrustAnchorRequest) (*common
 		return addTrustAnchorErrorResponse(err), nil
 	}
 
-	scheme, err = o.getSchemePlugin(ta.GetId().GetType())
+	scheme, err = o.getSchemePlugin(ta.GetScheme())
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
@@ -176,7 +176,7 @@ func (o *LocalClient) AddTrustAnchor(req *common.AddTrustAnchorRequest) (*common
 		return addTrustAnchorErrorResponse(err), nil
 	}
 
-	val, err = json.Marshal(ta.GetValue())
+	val, err = json.Marshal(ta)
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}

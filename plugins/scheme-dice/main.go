@@ -32,11 +32,11 @@ func (s Scheme) GetTrustAnchorID(token *common.AttestationToken) (string, error)
 	return "dice://", nil
 }
 
-func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.SwComponent) ([]string, error) {
+func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.Endorsement) ([]string, error) {
 	return nil, errors.New("TODO")
 }
 
-func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.TrustAnchor) ([]string, error) {
+func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.Endorsement) ([]string, error) {
 	return nil, errors.New("TODO")
 }
 

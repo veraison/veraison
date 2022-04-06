@@ -46,12 +46,12 @@ func (s Scheme) GetFormat() common.AttestationFormat {
 	return common.AttestationFormat_TPM_ENACTTRUST
 }
 
-func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.SwComponent) ([]string, error) {
-	return synthKeysFromParts("software component", tenantID, swComp.GetId().GetParts())
+func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *common.Endorsement) ([]string, error) {
+	return synthKeysFromParts("software component", tenantID, swComp.GetAttributes())
 }
 
-func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.TrustAnchor) ([]string, error) {
-	return synthKeysFromParts("trust anchor", tenantID, ta.GetId().GetParts())
+func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *common.Endorsement) ([]string, error) {
+	return synthKeysFromParts("trust anchor", tenantID, ta.GetAttributes())
 }
 
 func (s Scheme) GetTrustAnchorID(token *common.AttestationToken) (string, error) {

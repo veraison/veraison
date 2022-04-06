@@ -28,6 +28,6 @@ type IScheme interface {
 	ExtractEvidence(token *AttestationToken, trustAnchor string) (*ExtractedEvidence, error)
 	GetAttestation(ec *EvidenceContext, endorsements []string) (*Attestation, error)
 
-	SynthKeysFromSwComponent(tenantID string, swComp *SwComponent) ([]string, error)
-	SynthKeysFromTrustAnchor(tenantID string, ta *TrustAnchor) ([]string, error)
+	SynthKeysFromSwComponent(tenantID string, swComp *Endorsement) ([]string, error)
+	SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error)
 }

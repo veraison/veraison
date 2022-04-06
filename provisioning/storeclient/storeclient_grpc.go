@@ -123,20 +123,6 @@ func (o *GRPC) AddTrustAnchor(ctx context.Context, in *common.AddTrustAnchorRequ
 	return c.AddTrustAnchor(ctx, in, opts...)
 }
 
-// GetTrustAnchor NOT IMPLEMENTED
-func (o *GRPC) GetTrustAnchor(
-	ctx context.Context, in *common.GetTrustAnchorRequest, opts ...grpc.CallOption,
-) (*common.GetTrustAnchorResponse, error) {
-	return nil, ErrNotImplemented
-}
-
-// GetSwComponent NOT IMPLEMENTED
-func (o *GRPC) GetSwComponent(
-	ctx context.Context, in *common.GetSwComponentRequest, opts ...grpc.CallOption,
-) (*common.GetSwComponentResponse, error) {
-	return nil, ErrNotImplemented
-}
-
 func (o *GRPC) GetAttestation(
 	ctx context.Context, in *common.AttestationToken, opts ...grpc.CallOption,
 ) (*common.Attestation, error) {

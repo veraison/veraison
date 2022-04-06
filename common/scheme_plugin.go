@@ -56,11 +56,11 @@ func (p *SchemePlugin) GetTrustAnchorID(token *AttestationToken) (string, error)
 	return p.Impl.GetTrustAnchorID(token)
 }
 
-func (p *SchemePlugin) SynthKeysFromSwComponent(tenantID string, swComp *SwComponent) ([]string, error) {
+func (p *SchemePlugin) SynthKeysFromSwComponent(tenantID string, swComp *Endorsement) ([]string, error) {
 	return p.Impl.SynthKeysFromSwComponent(tenantID, swComp)
 }
 
-func (p *SchemePlugin) SynthKeysFromTrustAnchor(tenantID string, ta *TrustAnchor) ([]string, error) {
+func (p *SchemePlugin) SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error) {
 	return p.Impl.SynthKeysFromTrustAnchor(tenantID, ta)
 }
 
@@ -97,7 +97,7 @@ type SynthKeysArgs struct {
 func (s *SchemeServer) SynthKeysFromSwComponent(args SynthKeysArgs, resp *[]string) error {
 	var (
 		err    error
-		swComp SwComponent
+		swComp Endorsement
 	)
 
 	err = json.Unmarshal(args.EndorsementJSON, &swComp)
@@ -113,7 +113,7 @@ func (s *SchemeServer) SynthKeysFromSwComponent(args SynthKeysArgs, resp *[]stri
 func (s *SchemeServer) SynthKeysFromTrustAnchor(args SynthKeysArgs, resp *[]string) error {
 	var (
 		err error
-		ta  TrustAnchor
+		ta  Endorsement
 	)
 
 	err = json.Unmarshal(args.EndorsementJSON, &ta)
@@ -212,7 +212,7 @@ func (s *SchemeRPC) GetFormat() AttestationFormat {
 	return resp
 }
 
-func (s *SchemeRPC) SynthKeysFromSwComponent(tenantID string, swComp *SwComponent) ([]string, error) {
+func (s *SchemeRPC) SynthKeysFromSwComponent(tenantID string, swComp *Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string
@@ -234,7 +234,7 @@ func (s *SchemeRPC) SynthKeysFromSwComponent(tenantID string, swComp *SwComponen
 	return resp, nil
 }
 
-func (s *SchemeRPC) SynthKeysFromTrustAnchor(tenantID string, ta *TrustAnchor) ([]string, error) {
+func (s *SchemeRPC) SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string

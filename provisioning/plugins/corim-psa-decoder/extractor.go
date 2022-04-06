@@ -13,7 +13,7 @@ import (
 
 type Extractor struct{}
 
-func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwComponent, error) {
+func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.Endorsement, error) {
 	var psaClassAttrs PSAClassAttributes
 
 	if err := psaClassAttrs.FromEnvironment(rv.Environment); err != nil {
@@ -26,7 +26,7 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwCompone
 	// measurements as needed, provided they belong to the same PSA RoT
 	// identified in the subject of the "reference value" triple.  A single
 	// reference-triple-record SHALL completely describe the updatable PSA RoT.
-	var swComponents []*common.SwComponent
+	var swComponents []*common.Endorsement
 
 	for i, m := range rv.Measurements {
 		var psaSwCompAttrs PSASwCompAttributes
@@ -35,21 +35,14 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwCompone
 			return nil, fmt.Errorf("extracting measurement at index %d: %w", i, err)
 		}
 
-		swID, err := makeSwID(psaClassAttrs, psaSwCompAttrs)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create software component id: %w", err)
-		}
-
-		swAttrs, err := makeSwAttrs(psaSwCompAttrs)
+		swAttrs, err := makeSwAttrs(psaClassAttrs, psaSwCompAttrs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create software component attributes: %w", err)
 		}
 
-		swComponent := common.SwComponent{
-			Id: &common.SwComponentID{
-				Type:  common.AttestationFormat_PSA_IOT,
-				Parts: swID,
-			},
+		swComponent := common.Endorsement{
+			Scheme:     common.AttestationFormat_PSA_IOT,
+			Type:       common.EndorsementType_REFERENCE_VALUE,
 			Attributes: swAttrs,
 		}
 
@@ -63,41 +56,34 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*common.SwCompone
 	return swComponents, nil
 }
 
-func makeSwID(c PSAClassAttributes, s PSASwCompAttributes) (*structpb.Struct, error) {
-	swID := map[string]interface{}{
-		"psa.impl-id":   c.ImplID,
-		"psa.signer-id": s.SignerID,
+func makeSwAttrs(c PSAClassAttributes, s PSASwCompAttributes) (*structpb.Struct, error) {
+	swAttrs := map[string]interface{}{
+		"psa.impl-id":           c.ImplID,
+		"psa.signer-id":         s.SignerID,
+		"psa.measurement-value": s.MeasurementValue,
+		"psa.measurement-desc":  s.AlgID,
 	}
 
 	if c.Vendor != "" {
-		swID["psa.hw-vendor"] = c.Vendor
+		swAttrs["psa.hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		swID["psa.hw-model"] = c.Model
+		swAttrs["psa.hw-model"] = c.Model
 	}
 
 	if s.MeasurementType != "" {
-		swID["psa.measurement-type"] = s.MeasurementType
+		swAttrs["psa.measurement-type"] = s.MeasurementType
 	}
 
 	if s.Version != "" {
-		swID["psa.version"] = s.Version
+		swAttrs["psa.version"] = s.Version
 	}
 
-	return structpb.NewStruct(swID)
+	return structpb.NewStruct(swAttrs)
 }
 
-func makeSwAttrs(s PSASwCompAttributes) (*structpb.Struct, error) {
-	return structpb.NewStruct(
-		map[string]interface{}{
-			"psa.measurement-value": s.MeasurementValue,
-			"psa.measurement-desc":  s.AlgID,
-		},
-	)
-}
-
-func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, error) {
+func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.Endorsement, error) {
 	// extract instance ID
 	var psaInstanceAttrs PSAInstanceAttributes
 
@@ -112,11 +98,6 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, e
 		return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
 	}
 
-	taID, err := makeTaID(psaInstanceAttrs, psaClassAttrs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create trust anchor id: %w", err)
-	}
-
 	// extract IAK pub
 	if len(avk.VerifKeys) != 1 {
 		return nil, errors.New("expecting exactly one IAK public key")
@@ -124,37 +105,27 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*common.TrustAnchor, e
 
 	iakPub := avk.VerifKeys[0].Key
 
-	taKey, err := makeTaRawPublicKey(iakPub)
+	// TODO(tho) check that format of IAK pub is as expected
+
+	taAttrs, err := makeTaAttrs(psaInstanceAttrs, psaClassAttrs, iakPub)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
+		return nil, fmt.Errorf("failed to create trust anchor attributes: %w", err)
 	}
 
-	ta := &common.TrustAnchor{
-		Id: &common.TrustAnchorID{
-			Type:  common.AttestationFormat_PSA_IOT,
-			Parts: taID,
-		},
-		Value: &common.TrustAnchorValue{
-			Type:  common.TAType_TA_RAWPUBLICKEY,
-			Value: taKey,
-		},
+	ta := &common.Endorsement{
+		Scheme:     common.AttestationFormat_PSA_IOT,
+		Type:       common.EndorsementType_VERIFICATION_KEY,
+		Attributes: taAttrs,
 	}
 
 	return ta, nil
 }
 
-func makeTaRawPublicKey(key string) (*structpb.Struct, error) {
-	iakPub := map[string]interface{}{
-		"psa.iak-pub": key,
-	}
-
-	return structpb.NewStruct(iakPub)
-}
-
-func makeTaID(i PSAInstanceAttributes, c PSAClassAttributes) (*structpb.Struct, error) {
+func makeTaAttrs(i PSAInstanceAttributes, c PSAClassAttributes, key string) (*structpb.Struct, error) {
 	taID := map[string]interface{}{
 		"psa.impl-id": c.ImplID,
 		"psa.inst-id": []byte(i.InstID),
+		"psa.iak-pub": key,
 	}
 
 	if c.Vendor != "" {

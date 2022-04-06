@@ -24,8 +24,8 @@ import (
 // well as extraction from the "global" CoRIM context.
 // See also https://github.com/veraison/veraison/issues/112
 type IExtractor interface {
-	SwCompExtractor(comid.ReferenceValue) ([]*common.SwComponent, error)
-	TaExtractor(comid.AttestVerifKey) (*common.TrustAnchor, error)
+	SwCompExtractor(comid.ReferenceValue) ([]*common.Endorsement, error)
+	TaExtractor(comid.AttestVerifKey) (*common.Endorsement, error)
 }
 
 func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDecoderResponse, error) {
