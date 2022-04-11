@@ -24,6 +24,8 @@ func New(cfg Config) (IKVStore, error) {
 		s = &Memory{}
 	case "sql":
 		s = &SQL{}
+	case "arango":
+		s = &ArangoStore{}
 	default:
 		return nil, fmt.Errorf("backend %q is not supported", backend)
 	}
