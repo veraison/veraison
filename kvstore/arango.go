@@ -147,7 +147,7 @@ func (o *ArangoStore) connect(ctx context.Context) error {
 		}
 
 		// Create the collection
-		_, err = o.connvars.db.CreateCollection(nil, o.dbparams.CollectionName, nil)
+		_, err = o.connvars.db.CreateCollection(ctx, o.dbparams.CollectionName, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create collection")
 		}
