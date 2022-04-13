@@ -27,7 +27,6 @@ type ArangoDBparams struct {
 
 // ArangoDBConnVars holds the dynamic connection information for arangoDB
 type ArangoDBConnVars struct {
-	paramValid bool
 	// HTTP Connection to the Data Base
 	conn driver.Connection
 
