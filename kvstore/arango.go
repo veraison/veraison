@@ -45,6 +45,11 @@ type ArangoStore struct {
 	connvars      ArangoDBConnVars
 }
 
+type ArangoDocument struct {
+	Key string `json:"_key"`
+	Val string `json:"_value"`
+}
+
 func (o *ArangoStore) Init(cfg Config) error {
 
 	ConnEP, err := cfg.ReadVarString(ConEndPoint)
@@ -175,5 +180,114 @@ func (o *ArangoStore) Close() error {
 		return fmt.Errorf("failed to remove database: %w", err)
 	}
 	o.isInitialised = false
+	return nil
+}
+
+// Set is to set a new key in the arango store
+func (o ArangoStore) Set(key string, val string) error {
+	if err := sanitizeKV(key, val); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	if err := o.connect(ctx); err != nil {
+		return fmt.Errorf("arango Set() failed unable to connect to DB %v", err)
+	}
+	doc := ArangoDocument{
+		Key: key,
+		Val: val,
+	}
+
+	col, err := o.connvars.db.Collection(ctx, o.dbparams.CollectionName)
+	if err != nil {
+		return fmt.Errorf("unable to get %s in the db, %v", o.dbparams.CollectionName, err)
+	}
+
+	meta, err := col.CreateDocument(ctx, doc)
+	if err != nil {
+		return fmt.Errorf("unable to create document %v:", err)
+	}
+	fmt.Printf("created document with key %s", meta.Key)
+	return nil
+}
+
+// Add is append a value to a key
+func (o ArangoStore) Add(key string, val string) error {
+
+	if err := sanitizeKV(key, val); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	if err := o.connect(ctx); err != nil {
+		return fmt.Errorf("arango Add() failed unable to connect to DB %v", err)
+	}
+	doc := ArangoDocument{
+		Key: key,
+		Val: val,
+	}
+
+	col, err := o.connvars.db.Collection(ctx, o.dbparams.CollectionName)
+	if err != nil {
+		return fmt.Errorf("unable to get %s in the db, %v", o.dbparams.CollectionName, err)
+	}
+
+	meta, err := col.UpdateDocument(ctx, doc)
+	if err != nil {
+		return fmt.Errorf("unable to update document %v:", err)
+	}
+	fmt.Printf("updated document with key %s", meta.Key)
+	return nil
+
+}
+func (o ArangoStore) Get(key string) ([]string, error) {
+	var vals []string
+	if err := sanitizeK(key); err != nil {
+		return err
+	}
+	ctx := context.Background()
+	if err := o.connect(ctx); err != nil {
+		return nil, fmt.Errorf("method get() failed unable to connect to DB %v", err)
+	}
+
+	query := "FOR d IN " + o.dbparams.CollectionName + "RETRUN d"
+	cursor, err := o.connvars.db.Query(ctx, query, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error with query: %v", err)
+	}
+	defer cursor.Close()
+	for {
+		var doc ArangoDocument
+		meta, err := cursor.ReadDocument(ctx, &doc)
+		if driver.IsNoMoreDocuments(err) {
+			break
+		} else if err != nil {
+			return nil, fmt.Errorf("error fetching document: %v", err)
+		} else {
+			vals = append(vals, doc.Val)
+		}
+		fmt.Printf("got doc with key '%s' from query", meta.Key)
+	}
+	return vals, nil
+}
+
+func (o ArangoStore) Del(key string) error {
+	if err := sanitizeK(key); err != nil {
+		return err
+	}
+	ctx := context.Background()
+	if err := o.connect(ctx); err != nil {
+		return fmt.Errorf("method Del() failed unable to connect to DB %v", err)
+	}
+
+	col, err := o.connvars.db.Collection(ctx, o.dbparams.CollectionName)
+	if err != nil {
+		return fmt.Errorf("unable to get %s in the db, %v", o.dbparams.CollectionName, err)
+	}
+	meta, err := col.RemoveDocument(ctx, key)
+	if err != nil {
+		return fmt.Errorf("unable to delete key: %s reason: %v:", key, err)
+	}
+	fmt.Printf("deleted document with key %s", meta.Key)
 	return nil
 }
