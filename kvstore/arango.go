@@ -156,7 +156,7 @@ func (o *ArangoStore) connect(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to connect to the Endorsement database: %w", err)
 		}
-		coll_exists, err := o.connvars.db.CollectionExists(nil, o.dbparams.CollectionName, nil)
+		coll_exists, err := o.connvars.db.CollectionExists(ctx, o.dbparams.CollectionName)
 
 		if err != nil {
 			return fmt.Errorf("failed to check the collection")
@@ -232,7 +232,7 @@ func (o ArangoStore) Add(key string, val string) error {
 		return fmt.Errorf("unable to get %s in the db, %v", o.dbparams.CollectionName, err)
 	}
 
-	meta, err := col.UpdateDocument(ctx, doc)
+	meta, err := col.UpdateDocument(ctx, key, doc)
 	if err != nil {
 		return fmt.Errorf("unable to update document %v:", err)
 	}
@@ -243,7 +243,7 @@ func (o ArangoStore) Add(key string, val string) error {
 func (o ArangoStore) Get(key string) ([]string, error) {
 	var vals []string
 	if err := sanitizeK(key); err != nil {
-		return err
+		return nil, err
 	}
 	ctx := context.Background()
 	if err := o.connect(ctx); err != nil {
