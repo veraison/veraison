@@ -141,27 +141,27 @@ func (o *ArangoStore) connect(ctx context.Context) error {
 
 	if !o.isInitialised {
 		// Create the data base now, should happen only once during system initialisation
-		o.connvars.db, err = o.connvars.client.CreateDatabase(nil, o.dbparams.StoreName, nil)
+		o.connvars.db, err = o.connvars.client.CreateDatabase(ctx, o.dbparams.StoreName, nil)
 		if err != nil {
-			return fmt.Errorf("failed to create database :%v", err)
+			return fmt.Errorf("failed to create database: %v", err)
 		}
 
 		// Create the collection
-		_, err := o.connvars.db.CreateCollection(nil, o.dbparams.CollectionName, nil)
+		_, err = o.connvars.db.CreateCollection(nil, o.dbparams.CollectionName, nil)
 		if err != nil {
-			fmt.Errorf("failed to create collection")
+			return fmt.Errorf("failed to create collection")
 		}
 	} else {
 		o.connvars.db, err = o.connvars.client.Database(ctx, o.dbparams.StoreName)
 		if err != nil {
 			return fmt.Errorf("failed to connect to the Endorsement database: %w", err)
 		}
-		coll_exists, err := o.connvars.db.CollectionExists(ctx, o.dbparams.CollectionName)
 
+		collExists, err := o.connvars.db.CollectionExists(ctx, o.dbparams.CollectionName)
 		if err != nil {
 			return fmt.Errorf("failed to check the collection")
 		}
-		if !coll_exists {
+		if !collExists {
 			return fmt.Errorf("unable to locate the collection: %v", o.dbparams.CollectionName)
 		}
 	}
@@ -205,7 +205,7 @@ func (o ArangoStore) Set(key string, val string) error {
 
 	meta, err := col.CreateDocument(ctx, doc)
 	if err != nil {
-		return fmt.Errorf("unable to create document %v:", err)
+		return fmt.Errorf("unable to create document: %v", err)
 	}
 	fmt.Printf("created document with key %s", meta.Key)
 	return nil
@@ -234,7 +234,7 @@ func (o ArangoStore) Add(key string, val string) error {
 
 	meta, err := col.UpdateDocument(ctx, key, doc)
 	if err != nil {
-		return fmt.Errorf("unable to update document %v:", err)
+		return fmt.Errorf("unable to update document %v", err)
 	}
 	fmt.Printf("updated document with key %s", meta.Key)
 	return nil
@@ -286,7 +286,7 @@ func (o ArangoStore) Del(key string) error {
 	}
 	meta, err := col.RemoveDocument(ctx, key)
 	if err != nil {
-		return fmt.Errorf("unable to delete key: %s reason: %v:", key, err)
+		return fmt.Errorf("unable to delete key: %s reason: %v", key, err)
 	}
 	fmt.Printf("deleted document with key %s", meta.Key)
 	return nil
