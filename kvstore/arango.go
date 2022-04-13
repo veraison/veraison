@@ -5,6 +5,10 @@ package kvstore
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
 
 	driver "github.com/arangodb/go-driver"
 	"github.com/arangodb/go-driver/http"
@@ -98,11 +102,41 @@ func (o *ArangoStore) Init(cfg Config) error {
 	}
 	o.dbparams.Password = Password
 
+	if err := o.startArango(); err != nil {
+		return fmt.Errorf("unable to start arango: %w", err)
+	}
+
 	ctx := context.Background()
 	if err = o.connect(ctx); err != nil {
 		return fmt.Errorf("initialisation failed unable to connect to DB %v", err)
 	}
 	o.isInitialised = true
+	return nil
+}
+
+func (o *ArangoStore) startArango() error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	dbpath := filepath.Join(wd, "arango-scripts")
+
+	os.Chdir(dbpath)
+	defer func() {
+		os.Chdir(wd)
+	}()
+
+	CmdStartArango := &exec.Cmd{
+		Path:   "./arango-start.sh",
+		Args:   []string{""},
+		Stdout: os.Stdout,
+		Stderr: os.Stdout,
+	}
+
+	log.Printf("Starting Command = %s", CmdStartArango.String())
+	if err := CmdStartArango.Run(); err != nil {
+		return fmt.Errorf("failed starting arango: %w", err)
+	}
 	return nil
 }
 
@@ -167,6 +201,29 @@ func (o *ArangoStore) connect(ctx context.Context) error {
 	return nil
 }
 
+func (o *ArangoStore) stopArango() error {
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Errorf("unable to get current working directory: %v", err)
+	}
+	dbpath := filepath.Join(wd, "arango-scripts")
+
+	os.Chdir(dbpath)
+	defer func() {
+		os.Chdir(wd)
+	}()
+
+	CmdStopArango := &exec.Cmd{
+		Path:   "./arango-stop.sh",
+		Args:   []string{""},
+		Stdout: os.Stdout,
+		Stderr: os.Stdout,
+	}
+
+	fmt.Println("Stopping Command", CmdStopArango.String())
+	return nil
+}
+
 // Close shuts down the store
 func (o *ArangoStore) Close() error {
 	ctx := context.Background()
@@ -178,6 +235,10 @@ func (o *ArangoStore) Close() error {
 	if err := o.connvars.db.Remove(ctx); err != nil {
 		return fmt.Errorf("failed to remove database: %w", err)
 	}
+	if err := o.stopArango(); err != nil {
+		return fmt.Errorf("unable to stop arango: %w", err)
+	}
+
 	o.isInitialised = false
 	return nil
 }
