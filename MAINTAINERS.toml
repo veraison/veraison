@@ -8,10 +8,12 @@
 
     [maintainers.core]
     people = [
-      "simonfrostarm", 
+      "simonfrost", 
       "thomasfossati",
       "yogeshdeshpande",   
       "sergeitrofimov",
+      "dimitomov",
+      "svetlozarkalchev",
     ]
 
 [people]
@@ -37,3 +39,13 @@
     Name = "Yogesh Deshpande"
     Email = "yogesh.deshpande@arm.com"
     GitHub = "yogeshbdeshpande"
+
+    [people.dimitomov]
+	Name = "Dimi Tomov"
+	Email = "dimi@tpm.dev"
+	GitHub = "tomoveu"
+
+    [people.svetlozarkalchev]
+	Name = "Svet Kalchev"
+	Email = "svetlozar.kalchev@enacttrust.com"
+	GitHub = "SvetlozarKalchev"
