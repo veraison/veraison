@@ -1,5 +1,8 @@
 // Copyright 2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
+
+// The api package implements the REST API defined in
+// https://github.com/veraison/docs/blob/main/api/challenge-response
 package api
 
 import (
