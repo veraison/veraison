@@ -61,23 +61,23 @@ func (o *Status) UnmarshalJSON(b []byte) error {
 	return o.FromString(s)
 }
 
-type Blob struct {
+type EvidenceBlob struct {
 	Type  string `json:"type"`
 	Value []byte `json:"value"`
 }
 
 type ChallengeResponseSession struct {
 	id       string
-	Status   Status    `json:"status"`
-	Nonce    []byte    `json:"nonce"`
-	Expiry   time.Time `json:"expiry"`
-	Accept   []string  `json:"accept"`
-	Evidence *Blob     `json:"evidence,omitempty"`
-	Result   *[]byte   `json:"result,omitempty"`
+	Status   Status        `json:"status"`
+	Nonce    []byte        `json:"nonce"`
+	Expiry   time.Time     `json:"expiry"`
+	Accept   []string      `json:"accept"`
+	Evidence *EvidenceBlob `json:"evidence,omitempty"`
+	Result   *[]byte       `json:"result,omitempty"`
 }
 
 func (o *ChallengeResponseSession) SetEvidence(mt string, evidence []byte) {
-	o.Evidence = &Blob{Type: mt, Value: evidence}
+	o.Evidence = &EvidenceBlob{Type: mt, Value: evidence}
 }
 
 func (o *ChallengeResponseSession) SetStatus(status Status) {
