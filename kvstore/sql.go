@@ -76,7 +76,7 @@ func (o SQL) Get(key string) ([]string, error) {
 		return nil, err
 	}
 
-	// nolint: gosec
+	// nolint:gosec
 	// o.TableName has been checked by isSafeTblName on init
 	q := fmt.Sprintf("SELECT DISTINCT vals FROM %s WHERE key = ?", o.TableName)
 
@@ -115,6 +115,8 @@ func (o SQL) Add(key string, val string) error {
 		return err
 	}
 
+	// nolint:gosec
+	// o.TableName has been checked by isSafeTblName on init
 	q := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.TableName)
 
 	_, err := o.DB.Exec(q, key, val)
@@ -141,12 +143,16 @@ func (o SQL) Set(key string, val string) error {
 
 	defer func() { _ = txn.Rollback() }()
 
+	// nolint:gosec
+	// o.TableName has been checked by isSafeTblName on init
 	delQ := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
 
 	if _, err = o.DB.Exec(delQ, key); err != nil {
 		return err
 	}
 
+	// o.TableName has been checked by isSafeTblName on init
+	// nolint:gosec
 	insQ := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.TableName)
 
 	if _, err = o.DB.Exec(insQ, key, val); err != nil {
@@ -165,6 +171,8 @@ func (o SQL) Del(key string) error {
 		return err
 	}
 
+	// nolint:gosec
+	// o.TableName has been checked by isSafeTblName on init
 	q := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
 
 	_, err := o.DB.Exec(q, key)
