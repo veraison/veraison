@@ -9,7 +9,7 @@ SUBDIR += frontend
 SUBDIR += cmd
 SUBDIR += kvstore
 SUBDIR += provisioning
-SUBDIR += verification
+#SUBDIR += verification
 
 # At present, the frontend has no tests We need to remove it from the CI
 # testing because it messes up the coverage collection filter.
