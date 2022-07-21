@@ -8,6 +8,8 @@ INTERFACES += ../decoder/idecoder_manager.go
 
 MOCKPKG := mocks
 
+lint-hook-pre: _mocks
+
 include ../../mk/common.mk
 include ../../mk/pkg.mk
 include ../../mk/lint.mk
