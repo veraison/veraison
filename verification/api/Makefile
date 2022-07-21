@@ -3,12 +3,10 @@
 
 .DEFAULT_GOAL := test
 
-INTERFACES := ../storeclient/istoreclient.go
-INTERFACES += ../decoder/idecoder_manager.go
+INTERFACES := ../sessionmanager/isessionmanager.go
+INTERFACES += ../verifier/iverifier.go
 
 MOCKPKG := mocks
-
-lint-hook-pre: _mocks
 
 include ../../mk/common.mk
 include ../../mk/pkg.mk
