@@ -14,6 +14,9 @@ jobs:
         go-version: "1.18"
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Install mockgen
+      run: |
+        go get github.com/golang/mock/mockgen@v1.6.0
     - name: Install golangci-lint 
       run: |
         go version
