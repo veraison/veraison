@@ -1,7 +1,7 @@
 # GitHub Actions - CI for Go to build & test.  See ci-go-cover.yml and linters.yml for code coverage and linters.
 # Taken from: https://github.com/fxamacker/cbor/workflows/ci.yml (thanks!)
 name: ci
-on: [push, pull_request]
+on: []
 jobs:
 
   # Test on Ubuntu latest with default Go version.
@@ -31,7 +31,7 @@ jobs:
         go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
     - name: Build project
       run: |
-        make 
+        make
     - name: Run tests
       run: |
         go version
