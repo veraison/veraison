@@ -17,7 +17,7 @@
 # This is suboptimal and need to go up.
 # (See https://github.com/veraison/veraison/issues/18)
 name: cover ≥13.9%
-on: [push, pull_request]
+on: []
 jobs:
 
   # Verify minimum coverage is reached using `go test -short -cover` on latest-ubuntu with default version of Go.
@@ -34,7 +34,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Install mockgen
-      run: | 
+      run: |
         go install github.com/golang/mock/mockgen@v1.6.0
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
@@ -50,5 +50,5 @@ jobs:
       run: |
         go version
         make CI_PIPELINE=true TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
- 
+
       shell: bash
