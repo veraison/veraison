@@ -12,3 +12,5 @@ Please look into the the project overview on Veraison Organization for the descr
 organized and where to look for specific things:
 
     https://github.com/veraison
+
+# This repository is now archived!
