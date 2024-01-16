@@ -1,24 +1,25 @@
+
 ---
-name: "\U0001F4A1 Feature request"
-about: Suggest an idea for this project
-title: 'feature: '
-labels: enhancement
+name: "Backlog Task"
+about: Items for the extended ToDo list
+title: 'Backlog: '
+labels: 'backlog'
 assignees: ''
-
 ---
 
-### Is your feature request related to a problem? Please describe
 
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+*Note:* Backlog Issues are distinct from Feature Enhancement requests in that they have been acknowledged as fitting (somewhere) on the extended project roadmap.
 
-### If possible, describe a solution
 
-A clear and concise description of what you want to happen.
+### Task Theme: 
 
-### Describe alternatives you have considered
+Please choose from: Verification Ability / Provisioning / Platform Abstraction / Documentation / Deployment / Community
 
-A clear and concise description of any alternative solutions or features you've considered.
+### Outline 
 
-## Additional context
+Brief description of the task. Links to any existing design / musing docs. 
 
-Add any other context or screenshots about the feature request here.
+
+### Related Tasks
+
+Other established Backlog tasks to which this is related 
