@@ -1,8 +1,8 @@
 ---
 name: Docs issue
-title: 'DOCS: '
 about: Report an issue regarding documentation
-labels: 'documentation'
+title: 'DOCS: '
+labels: documentation
 assignees: ''
 
 ---

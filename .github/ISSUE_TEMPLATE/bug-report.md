@@ -1,9 +1,10 @@
 ---
 name: Bug report
-title: 'BUG: '
 about: Help us improve
-labels: 'bug'
+title: 'BUG: '
+labels: bug
 assignees: ''
+
 ---
 
 ### What version of the package are you using?
